@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "create-block/kateandtoms-reviews",
+  "version": "0.1.0",
+  "title": "Kateandtoms Reviews",
+  "category": "widgets",
+  "icon": "format-quote",
+  "description": "A repeatable block for customer reviews",
+  "supports": {
+    "html": false,
+    "align": true,
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true
+    }
+  },
+  "attributes": {
+    "reviews": {
+      "type": "array",
+      "default": []
+    },
+    "textAlign": {
+      "type": "string",
+      "default": "left"
+    },
+    "reviewFontSize": {
+      "type": "string",
+      "default": "1.1em"
+    },
+    "reviewerFontSize": {
+      "type": "string",
+      "default": "0.9em"
+    }
+  },
+  "textdomain": "kateandtoms-reviews",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
+}

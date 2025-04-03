@@ -1,0 +1,26 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "kate-toms-core/button-form-extension",
+    "version": "1.0.0",
+    "title": "Button Form Extension",
+    "category": "widgets",
+    "description": "Extends core Button block with form loading functionality",
+    "supports": {
+        "html": false
+    },
+    "attributes": {
+        "showForm": {
+            "type": "boolean",
+            "default": false
+        },
+        "formType": {
+            "type": "string",
+            "default": "contact"
+        }
+    },
+    "textdomain": "kate-toms-core",
+    "editorScript": "file:./index.js",
+    "style": "file:./style.css",
+    "viewScript": "file:./view.js"
+} 

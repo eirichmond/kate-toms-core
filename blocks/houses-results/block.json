@@ -1,0 +1,26 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "kate-toms-core/houses-results",
+	"version": "0.1.0",
+	"title": "Houses Results",
+	"category": "widgets",
+	"icon": "media-interactive",
+	"description": "Dynamic results block for houses",
+	"example": {},
+	"supports": {
+		"interactivity": true,
+		"html": false
+	},
+	"textdomain": "kate-toms-core",
+	"attributes": {
+		"regionId": {
+			"type": "string"
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php",
+	"viewScriptModule": "file:./view.js"
+}

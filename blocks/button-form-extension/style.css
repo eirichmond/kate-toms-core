@@ -1,0 +1,144 @@
+/**
+ * Form styles (generic)
+ */
+
+.kt-form-modal select,
+.kt-form-modal textarea,
+.kt-form-modal input[type="text"],
+.kt-form-modal input[type="password"],
+.kt-form-modal input[type="datetime"],
+.kt-form-modal input[type="datetime-local"],
+.kt-form-modal input[type="date"],
+.kt-form-modal input[type="month"],
+.kt-form-modal input[type="time"],
+.kt-form-modal input[type="week"],
+.kt-form-modal input[type="number"],
+.kt-form-modal input[type="email"],
+.kt-form-modal input[type="url"],
+.kt-form-modal input[type="search"],
+.kt-form-modal input[type="tel"],
+.kt-form-modal input[type="color"] {
+    box-sizing: border-box;
+    padding: 10px 10px;
+    background-color: #fff;
+    border: 1px solid #d2d2d2;
+    margin-bottom: 10px;
+    width: 360px;
+    font-family: inherit;
+}
+
+.kt-form-modal input[type="submit"] {
+    background-color: var( --wp--preset--color--colorthree );
+    color: #fff;
+    border: none;
+}
+
+.kt-form-modal select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.4-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    padding-right: 30px;
+}
+
+.kt-form-modal select::-ms-expand {
+    display: none;
+}
+
+
+.kt-form-modal {
+    position: fixed;
+    top: 0;
+    left: -400px; /* Start off-screen */
+    width: 400px;
+    height: 100%;
+    z-index: 999999;
+    background: #fff;
+    box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+    transition: left 0.3s ease;
+    font-size: var( --wp--preset--font-size--small );
+}
+
+.kt-form-modal.is-open {
+    left: 0;
+}
+
+/* Main content wrapper */
+body.has-form-open {
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Transform the main content */
+body.has-form-open #page {
+    transform: translateX(400px);
+    transition: transform 0.3s ease;
+}
+
+/* Overlay for main content */
+.kt-form-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0s linear 0.3s;
+    z-index: 999998; /* Just below the form */
+}
+
+.kt-form-overlay.is-visible {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+}
+
+.kt-form-modal-content {
+    position: relative;
+    height: 100%;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.kt-form-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 5px 10px;
+    color: #666;
+    z-index: 2;
+}
+
+.kt-form-modal-close:hover {
+    color: #333;
+}
+
+.kt-form-modal-body {
+    padding: 40px 0;
+}
+
+
+/* Responsive styles */
+@media screen and (max-width: 768px) {
+    .kt-form-modal {
+        width: 100%;
+        left: -100%;
+    }
+
+    body.has-form-open #page {
+        transform: translateX(100%);
+    }
+
+    body.has-form-open {
+        overflow: hidden;
+    }
+} 

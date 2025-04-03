@@ -1,0 +1,24 @@
+/**
+ * The following styles get applied inside the editor only.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+
+.wp-block-create-block-kateandtoms-image-fader {
+	border: 1px dotted #f00;
+	.slide {
+		opacity: 1;
+	}
+	.add-fade-slider-img.is-primary {
+		position:absolute;
+		top: 1em;
+		left: 1em;
+		z-index: 999;
+	}
+	.remove-fade-slider-img.is-destructive {
+		position:absolute;
+		bottom: 1em;
+		right: 1em;
+		background: rgba(248, 200, 200, 0.55);
+	}
+}

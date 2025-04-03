@@ -1,0 +1,31 @@
+/**
+ * The following styles get applied both on the front of your site
+ * and in the editor.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+
+.wp-block-create-block-kateandtoms-image-fader {
+	position: relative;
+	.slide {
+		height: 100%; /* Ensure the container has height */
+		width: 100%; /* Optional: Ensure the container has width */
+		opacity: 0;
+		transition: opacity 1s ease-in-out;
+		overflow: hidden;
+		position: absolute; /* Ensure positioning context */
+		img {
+			min-width: 100%; /* Prevent the image from overflowing horizontally */
+			max-height: 100%; /* Prevent the image from overflowing vertically */
+			object-fit: cover; /* Maintain aspect ratio */
+			transform: scale(1);
+			transition: transform 4s ease;
+		}
+		&.active {
+			opacity: 1;
+			img {
+				transform: scale(1.1);
+			}
+		}
+	}
+}

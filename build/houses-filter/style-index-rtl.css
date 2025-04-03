@@ -1,0 +1,265 @@
+/*!********************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/houses-filter/style.scss ***!
+  \********************************************************************************************************************************************************************************************************************************************************/
+/**
+ * The following styles get applied both on the front of your site
+ * and in the editor.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+.wp-block-kate-toms-house-filter-houses-filter {
+  font-size: 1em;
+}
+.wp-block-kate-toms-house-filter-houses-filter.dark-theme {
+  background: #333;
+  color: #fff;
+}
+.wp-block-kate-toms-house-filter-houses-filter.dark-theme button {
+  background: #555;
+  color: #fff;
+  border: 1px solid #777;
+}
+.wp-block-kate-toms-house-filter-houses-filter.dark-theme p {
+  color: #ddd;
+}
+.wp-block-kate-toms-house-filter-houses-filter .screen-reader-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.houses-filter-wrapper {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.houses-filter__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(1, 1fr);
+  /* Tablet and up */
+  /* Desktop */
+}
+@media (min-width: 768px) {
+  .houses-filter__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
+  .houses-filter__grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+.houses-filter__field {
+  margin-bottom: 24px;
+}
+.houses-filter__label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #1e1e1e;
+}
+.houses-filter__date, .houses-filter__select {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.houses-filter__date {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.houses-filter__date:focus {
+  outline: none;
+  border-color: #007cba;
+  box-shadow: 0 0 0 1px #007cba;
+}
+.houses-filter__select {
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  background-color: #fff;
+  cursor: pointer;
+}
+.houses-filter__select:focus {
+  outline: none;
+  border-color: #007cba;
+  box-shadow: 0 0 0 1px #007cba;
+}
+.houses-filter__buttons {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+  width: 100%;
+}
+.houses-filter__button {
+  width: 100%;
+  margin: 0;
+  padding: 8px 4px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+.houses-filter__button:hover {
+  background: #f0f7fc;
+  border-color: #2271b1;
+  color: #2271b1;
+}
+.houses-filter__button[aria-pressed=true] {
+  background: #2271b1;
+  color: #fff;
+  border-color: #2271b1;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.houses-filter__button[aria-pressed=true]:hover {
+  background: #135e96;
+  border-color: #135e96;
+}
+.houses-filter__button:focus {
+  outline: 2px solid #2271b1;
+  outline-offset: 2px;
+}
+.houses-filter__button[aria-pressed=true]:focus {
+  outline-color: #fff;
+}
+.houses-filter__actions {
+  margin-top: 2rem;
+  text-align: center;
+}
+.houses-filter__submit {
+  padding: 1rem 2rem;
+  background: #007cba;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.houses-filter__submit:hover {
+  background: #006ba1;
+}
+.houses-filter__submit:disabled {
+  background: #ddd;
+  cursor: not-allowed;
+}
+.houses-filter__results {
+  margin-top: 2rem;
+}
+.houses-filter__loading {
+  text-align: center;
+  padding: 2rem;
+  color: #666;
+}
+.houses-filter__no-results {
+  text-align: center;
+  padding: 3rem;
+  background: #f8f8f8;
+  border-radius: 8px;
+  color: #666;
+}
+.houses-filter__no-results p {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.houses-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.house-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.house-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+.house-card__image {
+  position: relative;
+  padding-top: 100%;
+}
+.house-card__image img {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.house-card__content {
+  padding: 1.5rem;
+}
+.house-card__title {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  line-height: 1.4;
+}
+.house-card__title a {
+  color: #1e1e1e;
+  text-decoration: none;
+}
+.house-card__title a:hover {
+  color: #007cba;
+}
+.house-card__meta {
+  margin-bottom: 1rem;
+  color: #666;
+  font-size: 0.9rem;
+}
+.house-card__excerpt {
+  color: #444;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+.house-card__excerpt p {
+  margin: 0;
+}
+
+@media (max-width: 1024px) {
+  .houses-filter__buttons {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  .houses-filter {
+    padding: 1rem;
+  }
+  .houses-filter__buttons {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .houses-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+}
+@media (max-width: 480px) {
+  .houses-filter__buttons {
+    grid-template-columns: 1fr;
+  }
+}

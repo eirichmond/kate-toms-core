@@ -1,0 +1,51 @@
+/**
+ * The following styles get applied inside the editor only.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+
+.wp-block-kate-toms-house-filter-houses-filter input[type="text"] {
+	font-size: 1em;
+	color: inherit;
+	background: inherit;
+	border: 0;
+}
+
+.houses-filter {
+	padding: 20px;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+
+	&__field {
+		margin-bottom: 20px;
+
+		&:last-child {
+			margin-bottom: 0;
+		}
+	}
+
+	&__label {
+		display: block;
+		margin-bottom: 8px;
+		font-weight: 600;
+	}
+	
+
+	.components-button-group {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+
+		.components-button {
+			flex: 1;
+			justify-content: center;
+			min-width: 100px;
+			margin: 0;
+		}
+	}
+
+	.components-datetime__date {
+		margin-bottom: 0;
+	}
+}

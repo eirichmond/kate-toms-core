@@ -1,0 +1,64 @@
+.wp-block-create-block-kateandtoms-reviews {
+    .reviews-container {
+        margin: 0 auto;
+        position: relative;
+        min-height: 200px;
+    }
+
+    .review-item {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        margin-bottom: 2em;
+        border-radius: 8px;
+        opacity: 0;
+        transition: opacity 0.5s ease-in-out;
+        pointer-events: none;
+        
+        &.visible {
+            opacity: 1;
+            pointer-events: auto;
+            z-index: 1;
+        }
+
+        &.paused {
+            animation-play-state: paused;
+        }
+    }
+
+    .review-text {
+        margin-bottom: 1em;
+        line-height: 1.6;
+        color: #333;
+    }
+
+    .reviewer-name {
+        display: block;
+        font-weight: 600;
+        color: #666;
+        text-align: right;
+		font-weight: bold;
+    }
+}
+
+.has-text-align-center {
+    text-align: center;
+    .reviewer-name {
+        text-align: center;
+    }
+}
+
+.has-text-align-right {
+    text-align: right;
+    .reviewer-name {
+        text-align: right;
+    }
+}
+
+.has-text-align-left {
+    text-align: left;
+    .reviewer-name {
+        text-align: right;
+    }
+}

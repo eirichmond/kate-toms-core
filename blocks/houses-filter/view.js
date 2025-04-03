@@ -1,0 +1,155 @@
+/**
+ * WordPress dependencies
+ */
+import { store } from '@wordpress/interactivity';
+
+/**
+ * Store configuration for the houses filter block.
+ */
+const storeName = 'kate-toms-house-filter';
+
+// Get the region ID from the form's data-wp-context
+const form = document.querySelector('.houses-filter');
+const context = form ? JSON.parse(form.getAttribute('data-wp-context') || '{}') : {};
+const initialRegionId = context.regionId || '';
+
+const { state, actions } = store(storeName, {
+	state: {
+		isLoading: false,
+		date: '',
+		dtype: '',
+		size: '',
+		local: '',
+		feature: '',
+		regionId: initialRegionId,
+		// Track active states for each filter section
+		activeFilters: {
+			dtype: [],
+			size: [],
+			local: [],
+			feature: []
+		},
+		// Map for size values
+		sizeMap: {
+			'2-10': '2',
+			'10-20': '10',
+			'20+': '20'
+		}
+	},
+	actions: {
+		updateDate(event) {
+			state.date = event.target.value;
+			actions.updateFilters();
+		},
+
+		updateDtype(event) {
+			const value = event.target.dataset.value;
+			
+			// Toggle the value in activeFilters
+			if (state.activeFilters.dtype.includes(value)) {
+				state.activeFilters.dtype = state.activeFilters.dtype.filter(v => v !== value);
+				state.dtype = '';
+			} else {
+				state.activeFilters.dtype = [value]; // Single selection
+				state.dtype = value;
+			}
+			actions.updateFilters();
+		},
+
+		updateSize(event) {
+			const value = event.target.dataset.value || event.target.value;
+			
+			// Toggle the value in activeFilters
+			if (state.activeFilters.size.includes(value)) {
+				state.activeFilters.size = state.activeFilters.size.filter(v => v !== value);
+				state.size = '';
+			} else {
+				state.activeFilters.size = [value]; // Single selection
+				state.size = state.sizeMap[value] || value;
+			}
+			actions.updateFilters();
+		},
+
+		updateLocation(event) {
+			const value = event.target.dataset.value || event.target.value;
+			
+			// Toggle the value in activeFilters
+			if (state.activeFilters.local.includes(value)) {
+				state.activeFilters.local = state.activeFilters.local.filter(v => v !== value);
+				state.local = '';
+			} else {
+				state.activeFilters.local = [value]; // Single selection
+				state.local = value;
+			}
+			actions.updateFilters();
+		},
+
+		updateFeature(event) {
+			const value = event.target.dataset.value || event.target.value;
+			
+			// Toggle the value in activeFilters
+			if (state.activeFilters.feature.includes(value)) {
+				state.activeFilters.feature = state.activeFilters.feature.filter(v => v !== value);
+				state.feature = '';
+			} else {
+				state.activeFilters.feature = [value]; // Single selection
+				state.feature = value;
+			}
+			actions.updateFilters();
+		},
+
+		async updateFilters() {
+			try {
+				state.isLoading = true;
+
+				// Build query parameters
+				const params = new URLSearchParams();
+				if (state.date) params.append('date', state.date);
+				if (state.dtype) params.append('dtype', state.dtype);
+				if (state.size) params.append('size', state.size);
+				if (state.local) params.append('local', state.local);
+				if (state.feature) params.append('feature', state.feature);
+
+				const apiUrl = `/wp-json/kate-toms/v1/houses?${params.toString()}`;
+				console.log('Fetching:', apiUrl);
+
+				// Fetch filtered results using REST API
+				const fetchResponse = await fetch(apiUrl);
+				console.log('Raw Response:', fetchResponse);
+
+				if (!fetchResponse.ok) {
+					throw new Error(`API Error: ${fetchResponse.status} ${fetchResponse.statusText}`);
+				}
+
+				const jsonResponse = await fetchResponse.json();
+				console.log('JSON Response:', jsonResponse);
+
+				if (!jsonResponse || !jsonResponse.success) {
+					throw new Error('Invalid response from API');
+				}
+
+				// Update the houses region with new results
+				const housesRegion = document.querySelector(`[data-wp-router-region="${state.regionId}"]`);
+				if (housesRegion) {
+					if (jsonResponse.data && jsonResponse.data.html) {
+						housesRegion.innerHTML = jsonResponse.data.html;
+					} else {
+						housesRegion.innerHTML = '<div class="houses-filter__no-results"><p>No houses found matching your criteria.</p></div>';
+					}
+				} else {
+					console.error('Houses region not found:', state.regionId);
+				}
+			} catch (error) {
+				console.error('Error updating filters:', error);
+				
+				// Show user-friendly error message
+				const housesRegion = document.querySelector(`[data-wp-router-region="${state.regionId}"]`);
+				if (housesRegion) {
+					housesRegion.innerHTML = `<div class="houses-filter__error"><p>Error loading houses: ${error.message}</p></div>`;
+				}
+			} finally {
+				state.isLoading = false;
+			}
+		}
+	}
+});

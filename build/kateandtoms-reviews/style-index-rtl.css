@@ -1,0 +1,60 @@
+/*!**************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/kateandtoms-reviews/style.scss ***!
+  \**************************************************************************************************************************************************************************************************************************************************************/
+.wp-block-create-block-kateandtoms-reviews .reviews-container {
+  margin: 0 auto;
+  position: relative;
+  min-height: 200px;
+}
+.wp-block-create-block-kateandtoms-reviews .review-item {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  margin-bottom: 2em;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  pointer-events: none;
+}
+.wp-block-create-block-kateandtoms-reviews .review-item.visible {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 1;
+}
+.wp-block-create-block-kateandtoms-reviews .review-item.paused {
+  animation-play-state: paused;
+}
+.wp-block-create-block-kateandtoms-reviews .review-text {
+  margin-bottom: 1em;
+  line-height: 1.6;
+  color: #333;
+}
+.wp-block-create-block-kateandtoms-reviews .reviewer-name {
+  display: block;
+  font-weight: 600;
+  color: #666;
+  text-align: left;
+  font-weight: bold;
+}
+
+.has-text-align-center {
+  text-align: center;
+}
+.has-text-align-center .reviewer-name {
+  text-align: center;
+}
+
+.has-text-align-right {
+  text-align: left;
+}
+.has-text-align-right .reviewer-name {
+  text-align: left;
+}
+
+.has-text-align-left {
+  text-align: right;
+}
+.has-text-align-left .reviewer-name {
+  text-align: left;
+}

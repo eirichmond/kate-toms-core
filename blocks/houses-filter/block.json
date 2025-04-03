@@ -1,0 +1,48 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "kate-toms-core/houses-filter",
+	"version": "0.1.0",
+	"title": "Houses Filter",
+	"category": "widgets",
+	"icon": "media-interactive",
+	"description": "Dynamic search filter block for houses",
+	"example": {},
+	"supports": {
+		"interactivity": true,
+		"html": false
+	},
+	"textdomain": "kate-and-toms-houses-filter-search",
+	"attributes": {
+		"date": {
+			"type": "string",
+			"default": ""
+		},
+		"dtype": {
+			"type": "string",
+			"default": ""
+		},
+		"size": {
+			"type": "string",
+			"default": ""
+		},
+		"local": {
+			"type": "string",
+			"default": ""
+		},
+		"feature": {
+			"type": "string",
+			"default": ""
+		},
+		"displayStyle": {
+			"type": "string",
+			"default": "buttons",
+			"enum": ["buttons", "dropdown"]
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php",
+	"viewScriptModule": "file:./view.js"
+}

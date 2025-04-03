@@ -1,0 +1,314 @@
+/**
+ * The following styles get applied both on the front of your site
+ * and in the editor.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+
+.wp-block-kate-toms-house-filter-houses-filter {
+	font-size: 1em;
+	&.dark-theme {
+		background: #333;
+		color: #fff;
+
+		button {
+			background: #555;
+			color: #fff;
+			border: 1px solid #777;
+		}
+
+		p {
+			color: #ddd;
+		}
+	}
+	.screen-reader-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+}
+
+.houses-filter-wrapper {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.houses-filter {
+
+	&__grid {
+		display: grid;
+		gap: 1rem;
+		grid-template-columns: repeat(1, 1fr);
+
+		/* Tablet and up */
+		@media (min-width: 768px) {
+			grid-template-columns: repeat(2, 1fr);
+		}
+
+		/* Desktop */
+		@media (min-width: 1024px) {
+			grid-template-columns: repeat(4, 1fr);
+		}
+
+	}
+
+	&__field {
+		margin-bottom: 24px;
+	}
+
+	&__label {
+		display: block;
+		margin-bottom: 8px;
+		font-weight: 600;
+		color: #1e1e1e;
+	}
+	
+	&__date,
+	&__select {
+		width: 100%;
+		margin-bottom: 8px;
+	}
+
+	&__date {
+		padding: 0.75rem;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		font-size: 1rem;
+		box-sizing: border-box;
+		&:focus {
+			outline: none;
+			border-color: #007cba;
+			box-shadow: 0 0 0 1px #007cba;
+		}
+	}
+
+	&__select {
+		padding: 0.75rem;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		font-size: 1rem;
+		background-color: #fff;
+		cursor: pointer;
+
+		&:focus {
+			outline: none;
+			border-color: #007cba;
+			box-shadow: 0 0 0 1px #007cba;
+		}
+	}
+
+	&__buttons {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 8px;
+		margin-top: 8px;
+		width: 100%;
+	}
+
+	&__button {
+		width: 100%;
+		margin: 0;
+		padding: 8px 4px;
+		background: #fff;
+		border: 1px solid #ddd;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: all 0.2s ease;
+		font-size: 14px;
+		line-height: 1.4;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		text-align: center;
+
+		// Hover state
+		&:hover {
+			background: #f0f7fc;
+			border-color: #2271b1;
+			color: #2271b1;
+		}
+
+		// Active/Selected state
+		&[aria-pressed="true"] {
+			background: #2271b1;
+			color: #fff;
+			border-color: #2271b1;
+			box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+
+			// Hover state when active
+			&:hover {
+				background: #135e96;
+				border-color: #135e96;
+			}
+		}
+
+		// Focus state
+		&:focus {
+			outline: 2px solid #2271b1;
+			outline-offset: 2px;
+		}
+
+		// Active + Focus state
+		&[aria-pressed="true"]:focus {
+			outline-color: #fff;
+		}
+	}
+
+	&__actions {
+		margin-top: 2rem;
+		text-align: center;
+	}
+
+	&__submit {
+		padding: 1rem 2rem;
+		background: #007cba;
+		color: #fff;
+		border: none;
+		border-radius: 4px;
+		font-size: 1rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.2s ease;
+
+		&:hover {
+			background: #006ba1;
+		}
+
+		&:disabled {
+			background: #ddd;
+			cursor: not-allowed;
+		}
+	}
+
+	&__results {
+		margin-top: 2rem;
+	}
+
+	&__loading {
+		text-align: center;
+		padding: 2rem;
+		color: #666;
+	}
+
+	&__no-results {
+		text-align: center;
+		padding: 3rem;
+		background: #f8f8f8;
+		border-radius: 8px;
+		color: #666;
+
+		p {
+			margin: 0;
+			font-size: 1.1rem;
+		}
+	}
+}
+
+// Houses grid and cards
+.houses-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 1rem;
+	margin-top: 2rem;
+}
+
+.house-card {
+	background: #fff;
+	border-radius: 8px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+	transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+	&:hover {
+		transform: translateY(-4px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+	}
+
+	&__image {
+		position: relative;
+		padding-top: 100%; // 3:2 aspect ratio
+
+		img {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+	}
+
+	&__content {
+		padding: 1.5rem;
+	}
+
+	&__title {
+		margin: 0 0 1rem;
+		font-size: 1.25rem;
+		line-height: 1.4;
+
+		a {
+			color: #1e1e1e;
+			text-decoration: none;
+
+			&:hover {
+				color: #007cba;
+			}
+		}
+	}
+
+	&__meta {
+		margin-bottom: 1rem;
+		color: #666;
+		font-size: 0.9rem;
+	}
+
+	&__excerpt {
+		color: #444;
+		font-size: 0.95rem;
+		line-height: 1.6;
+
+		p {
+			margin: 0;
+		}
+	}
+}
+
+// Responsive adjustments
+@media (max-width: 1024px) {
+	.houses-filter {
+		&__buttons {
+			grid-template-columns: repeat(3, 1fr);
+		}
+	}
+}
+
+@media (max-width: 768px) {
+	.houses-filter {
+		padding: 1rem;
+
+		&__buttons {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	.houses-grid {
+		grid-template-columns: 1fr;
+		gap: 1.5rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.houses-filter {
+		&__buttons {
+			grid-template-columns: 1fr;
+		}
+	}
+}
+
