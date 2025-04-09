@@ -21,17 +21,6 @@
 			color: #ddd;
 		}
 	}
-	.screen-reader-only {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
-	}
 }
 
 .houses-filter-wrapper {
@@ -67,6 +56,17 @@
 		margin-bottom: 8px;
 		font-weight: 600;
 		color: #1e1e1e;
+		&.screen-reader-only {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			padding: 0;
+			margin: -1px;
+			overflow: hidden;
+			clip: rect(0, 0, 0, 0);
+			white-space: nowrap;
+			border: 0;
+		}
 	}
 	
 	&__date,
@@ -207,6 +207,14 @@
 			margin: 0;
 			font-size: 1.1rem;
 		}
+	}
+
+	&__size-controls,
+	&__location-controls,
+	&__feature-controls {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
 	}
 }
 

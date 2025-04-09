@@ -4,6 +4,9 @@
  * Replace them with your own styles or remove the file completely.
  */
 
-.wp-block-create-block-houses-results {
-	border: 1px dotted #f00;
+.wp-block-create-block-houses-filtered-results input[type="text"] {
+	font-size: 1em;
+	color: inherit;
+	background: inherit;
+	border: 0;
 }

@@ -44,14 +44,13 @@ class Kate_Toms_Core_Admin {
 	 * Initialize the class and set its properties.
 	 *
 	 * @since    1.0.0
-	 * @param      string    $plugin_name       The name of this plugin.
-	 * @param      string    $version    The version of this plugin.
+	 * @param      string $plugin_name       The name of this plugin.
+	 * @param      string $version    The version of this plugin.
 	 */
 	public function __construct( $plugin_name, $version ) {
 
 		$this->plugin_name = $plugin_name;
-		$this->version = $version;
-
+		$this->version     = $version;
 	}
 
 	/**
@@ -74,7 +73,6 @@ class Kate_Toms_Core_Admin {
 		 */
 
 		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/kate-toms-core-admin.css', array(), $this->version, 'all' );
-
 	}
 
 	/**
@@ -97,7 +95,6 @@ class Kate_Toms_Core_Admin {
 		 */
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/kate-toms-core-admin.js', array( 'jquery' ), $this->version, false );
-
 	}
 
 	/**
@@ -106,25 +103,27 @@ class Kate_Toms_Core_Admin {
 	 * @return void
 	 */
 	public function register_kateandtoms_core_blocks() {
-		$directory_path = plugin_dir_path( dirname( __FILE__ ) ) . '/build';
-		
+		$directory_path = plugin_dir_path( __DIR__ ) . '/build';
+
 		// Check if the directory exists
 		if ( is_dir( $directory_path ) ) {
 			// Scan the directory and get an array of items
-			$items = scandir($directory_path);
+			$items = scandir( $directory_path );
 
 			// Filter and list only directories
-			$folders = array_filter( $items, function ( $item ) use ( $directory_path ) {
-				return is_dir( $directory_path . DIRECTORY_SEPARATOR . $item ) && $item !== '.' && $item !== '..';
-			});
+			$folders = array_filter(
+				$items,
+				function ( $item ) use ( $directory_path ) {
+					return is_dir( $directory_path . DIRECTORY_SEPARATOR . $item ) && $item !== '.' && $item !== '..';
+				}
+			);
 
 			foreach ( $folders as $folder ) {
-				register_block_type( plugin_dir_path( dirname( __FILE__ ) ) . '/build/' . $folder );
+				register_block_type( plugin_dir_path( __DIR__ ) . '/build/' . $folder );
 			}
 		} else {
-			error_log( "The specified path to block directory is not a valid of found directory." );
+			error_log( 'The specified path to block directory is not a valid of found directory.' );
 		}
-		
 	}
 
 	/**
@@ -269,13 +268,13 @@ class Kate_Toms_Core_Admin {
 			'types',
 			'houses',
 			array(
-				'hierarchical' => true,
-				'labels'       => $labels,
-				'show_in_rest' => true,
-				'show_ui'      => true,
-				'query_var'    => true,
+				'hierarchical'      => true,
+				'labels'            => $labels,
+				'show_in_rest'      => true,
+				'show_ui'           => true,
+				'query_var'         => true,
 				'show_admin_column' => true,
-				'rewrite'      => array( 'slug' => 'types' ),
+				'rewrite'           => array( 'slug' => 'types' ),
 			)
 		);
 
@@ -305,13 +304,13 @@ class Kate_Toms_Core_Admin {
 			'occasion',
 			'houses',
 			array(
-				'hierarchical' => true,
-				'labels'       => $labels,
+				'hierarchical'      => true,
+				'labels'            => $labels,
 				'show_in_rest'      => true,
-				'show_ui'      => true,
-				'query_var'    => true,
+				'show_ui'           => true,
+				'query_var'         => true,
 				'show_admin_column' => true,
-				'rewrite'      => array( 'slug' => 'occasion' ),
+				'rewrite'           => array( 'slug' => 'occasion' ),
 			)
 		);
 
@@ -351,7 +350,6 @@ class Kate_Toms_Core_Admin {
 			)
 		);
 
-
 		/**
 		 * Houses post type
 		 */
@@ -374,11 +372,11 @@ class Kate_Toms_Core_Admin {
 			'labels'             => $labels,
 			'public'             => true,
 			'has_archive'        => true,
-			'hierarchical'		 => true, // Enables parent-child relationships
+			'hierarchical'       => true, // Enables parent-child relationships
 			'rewrite'            => array( 'slug' => 'houses' ),
 			'supports'           => array( 'title', 'editor', 'author', 'revisions', 'custom-fields', 'thumbnail', 'page-attributes' ),
 			'show_in_rest'       => true,
-			'rest_base'       	 => 'houses',
+			'rest_base'          => 'houses',
 			'menu_icon'          => 'dashicons-layout',
 			'capability_type'    => 'post',
 			'show_ui'            => true,
@@ -393,76 +391,74 @@ class Kate_Toms_Core_Admin {
 		 * Availability
 		 */
 			$labels = array(
-			'name'               => _x( 'Availability Periods', 'post type general name' ),
-			'singular_name'      => _x( 'Availability Period', 'post type singular name' ),
-			'add_new'            => _x( 'Add New', 'houses', 'availability' ),
-			'add_new_item'       => __( 'Add New Period', 'availability' ),
-			'edit_item'          => __( 'Edit Period', 'availability' ),
-			'new_item'           => __( 'New Period', 'availability' ),
-			'all_items'          => __( 'All Availability Periods', 'availability' ),
-			'view_item'          => __( 'View Period', 'availability' ),
-			'search_items'       => __( 'Search Availability Periods', 'availability' ),
-			'not_found'          => __( 'No Availability Periods found', 'houses' ),
-			'not_found_in_trash' => __( 'No periods found in Trash', 'availability' ),
-			'parent_item_colon'  => '',
-			'menu_name'          => __( 'Avail. Periods', 'houses' ),
-		);
-		$args   = array(
-			'labels'             => $labels,
-			'public'             => true,
-			'publicly_queryable' => true,
-			'show_ui'            => true,
-			'show_in_menu'       => true,
-			'query_var'          => true,
-			'rewrite'            => true,
-			'has_archive'        => false,
-			'capability_type'    => 'page',
-			'supports'           => array( 'title', 'editor', 'thumbnail' ),
-		);
-		register_post_type( 'availability', $args );
+				'name'               => _x( 'Availability Periods', 'post type general name' ),
+				'singular_name'      => _x( 'Availability Period', 'post type singular name' ),
+				'add_new'            => _x( 'Add New', 'houses', 'availability' ),
+				'add_new_item'       => __( 'Add New Period', 'availability' ),
+				'edit_item'          => __( 'Edit Period', 'availability' ),
+				'new_item'           => __( 'New Period', 'availability' ),
+				'all_items'          => __( 'All Availability Periods', 'availability' ),
+				'view_item'          => __( 'View Period', 'availability' ),
+				'search_items'       => __( 'Search Availability Periods', 'availability' ),
+				'not_found'          => __( 'No Availability Periods found', 'houses' ),
+				'not_found_in_trash' => __( 'No periods found in Trash', 'availability' ),
+				'parent_item_colon'  => '',
+				'menu_name'          => __( 'Avail. Periods', 'houses' ),
+			);
+			$args   = array(
+				'labels'             => $labels,
+				'public'             => true,
+				'publicly_queryable' => true,
+				'show_ui'            => true,
+				'show_in_menu'       => true,
+				'query_var'          => true,
+				'rewrite'            => true,
+				'has_archive'        => false,
+				'capability_type'    => 'page',
+				'supports'           => array( 'title', 'editor', 'thumbnail' ),
+			);
+			register_post_type( 'availability', $args );
 
-		/**
-		 * Seasonal
-		 */
+			/**
+			 * Seasonal
+			 */
 			$labels = array(
-			'name'               => _x( 'Seasonal Periods', 'post type general name' ),
-			'singular_name'      => _x( 'Seasonal Period', 'post type singular name' ),
-			'add_new'            => _x( 'Add New', 'houses', 'seasonal' ),
-			'add_new_item'       => __( 'Add New Period', 'seasonal' ),
-			'edit_item'          => __( 'Edit Period', 'seasonal' ),
-			'new_item'           => __( 'New Period', 'seasonal' ),
-			'all_items'          => __( 'All Seasonal Periods', 'seasonal' ),
-			'view_item'          => __( 'View Period', 'seasonal' ),
-			'search_items'       => __( 'Search Seasonal Periods', 'seasonal' ),
-			'not_found'          => __( 'No seasonal periods found', 'houses' ),
-			'not_found_in_trash' => __( 'No periods found in Trash', 'seasonal' ),
-			'parent_item_colon'  => '',
-			'menu_name'          => __( 'Seasonal Periods', 'houses' ),
-		);
-		$args   = array(
-			'labels'             => $labels,
-			'public'             => true,
-			'publicly_queryable' => true,
-			'show_ui'            => true,
-			'show_in_menu'       => true,
-			'query_var'          => true,
-			'rewrite'            => true,
-			'has_archive'        => false,
-			'capability_type'    => 'page',
-			'supports'           => array( 'title', 'editor', 'thumbnail' ),
-		);
-		register_post_type( 'seasonal', $args );
+				'name'               => _x( 'Seasonal Periods', 'post type general name' ),
+				'singular_name'      => _x( 'Seasonal Period', 'post type singular name' ),
+				'add_new'            => _x( 'Add New', 'houses', 'seasonal' ),
+				'add_new_item'       => __( 'Add New Period', 'seasonal' ),
+				'edit_item'          => __( 'Edit Period', 'seasonal' ),
+				'new_item'           => __( 'New Period', 'seasonal' ),
+				'all_items'          => __( 'All Seasonal Periods', 'seasonal' ),
+				'view_item'          => __( 'View Period', 'seasonal' ),
+				'search_items'       => __( 'Search Seasonal Periods', 'seasonal' ),
+				'not_found'          => __( 'No seasonal periods found', 'houses' ),
+				'not_found_in_trash' => __( 'No periods found in Trash', 'seasonal' ),
+				'parent_item_colon'  => '',
+				'menu_name'          => __( 'Seasonal Periods', 'houses' ),
+			);
+			$args   = array(
+				'labels'             => $labels,
+				'public'             => true,
+				'publicly_queryable' => true,
+				'show_ui'            => true,
+				'show_in_menu'       => true,
+				'query_var'          => true,
+				'rewrite'            => true,
+				'has_archive'        => false,
+				'capability_type'    => 'page',
+				'supports'           => array( 'title', 'editor', 'thumbnail' ),
+			);
+			register_post_type( 'seasonal', $args );
 
+			// $areas = array( 'houses' );
 
-		// $areas = array( 'houses' );
-
-		// $options = get_option( 'plugin_options' );
-		// if ( isset( $options['activate_suppliers'] ) ) {
-		// 	if ( $options['activate_suppliers'] ) {
-		// 		array_push( $areas, 'suppliers' );
-		// 	}
-		// }
-
+			// $options = get_option( 'plugin_options' );
+			// if ( isset( $options['activate_suppliers'] ) ) {
+			// if ( $options['activate_suppliers'] ) {
+			// array_push( $areas, 'suppliers' );
+			// }
+			// }
 	}
 
 	/**
@@ -474,7 +470,7 @@ class Kate_Toms_Core_Admin {
 			'sleeps_min',
 			'sleeps_max',
 			'location_text',
-			'brief_description'
+			'brief_description',
 		);
 
 		/**
@@ -485,10 +481,9 @@ class Kate_Toms_Core_Admin {
 		 * @param array $args
 		 *
 		 * @return void
-		 *
 		 */
-		foreach ( $metas as $meta) {
-			# code...
+		foreach ( $metas as $meta ) {
+			// code...
 			register_meta(
 				'post',
 				$meta,
@@ -497,7 +492,7 @@ class Kate_Toms_Core_Admin {
 					'show_in_rest'      => true,
 					'single'            => true,
 					'type'              => 'string',
-					'sanitize_callback' => 'wp_strip_all_tags'
+					'sanitize_callback' => 'wp_strip_all_tags',
 				)
 			);
 		}
@@ -521,7 +516,7 @@ class Kate_Toms_Core_Admin {
 	public function kate_toms_post_thumbnail_html_filter( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
 		$size = 'square';
 		if ( wp_get_environment_type() === 'local' ) {
-			return $this->image_string_replace($html);
+			return $this->image_string_replace( $html );
 		} else {
 			return $html;
 		}
@@ -535,15 +530,12 @@ class Kate_Toms_Core_Admin {
 	 */
 	public function image_string_replace( $string ) {
 
-        $filtered_string = str_replace(
-            ['https://kateandtomsblocks.test', 'blogs.dir/11/files'],
-            ['https://kateandtoms.com', 'uploads'],
-            $string
-        );
+		$filtered_string = str_replace(
+			array( 'https://kateandtomsblocks.test', 'blogs.dir/11/files' ),
+			array( 'https://kateandtoms.com', 'uploads' ),
+			$string
+		);
 
 		return $filtered_string;
-
 	}
-	
-
 }

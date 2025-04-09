@@ -1,0 +1,13 @@
+{
+    "phpcs.enable": true,
+    "phpcs.standard": ".phpcs.xml.dist",
+    "phpcs.executablePath": "${workspaceFolder}/vendor/bin/phpcs",
+    "phpcbf.enable": true,
+    "phpcbf.documentFormattingProvider": true,
+    "phpcbf.standard": ".phpcs.xml.dist",
+    "phpcbf.executablePath": "${workspaceFolder}/vendor/bin/phpcbf",
+    "editor.formatOnSave": true,
+    "[php]": {
+        "editor.defaultFormatter": "persoderlind.vscode-phpcbf"
+    }
+}

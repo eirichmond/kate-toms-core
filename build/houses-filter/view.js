@@ -83,6 +83,7 @@ const {
     size: '',
     local: '',
     feature: '',
+    results: 0,
     regionId: initialRegionId,
     // Track active states for each filter section
     activeFilters: {
@@ -96,6 +97,9 @@ const {
       '2-10': '2',
       '10-20': '10',
       '20+': '20'
+    },
+    get hasResults() {
+      return state.results > 0;
     }
   },
   actions: {
@@ -161,24 +165,24 @@ const {
 
         // Build query parameters
         const params = new URLSearchParams();
-        if (state.date) params.append('date', state.date);
-        if (state.dtype) params.append('dtype', state.dtype);
-        if (state.size) params.append('size', state.size);
-        if (state.local) params.append('local', state.local);
-        if (state.feature) params.append('feature', state.feature);
+        if (state.date) params.append("date", state.date);
+        if (state.dtype) params.append("dtype", state.dtype);
+        if (state.size) params.append("size", state.size);
+        if (state.local) params.append("local", state.local);
+        if (state.feature) params.append("feature", state.feature);
         const apiUrl = `/wp-json/kate-toms/v1/houses?${params.toString()}`;
-        console.log('Fetching:', apiUrl);
+        console.log("Fetching:", apiUrl);
 
         // Fetch filtered results using REST API
         const fetchResponse = await fetch(apiUrl);
-        console.log('Raw Response:', fetchResponse);
+        console.log("Raw Response:", fetchResponse);
         if (!fetchResponse.ok) {
           throw new Error(`API Error: ${fetchResponse.status} ${fetchResponse.statusText}`);
         }
         const jsonResponse = await fetchResponse.json();
-        console.log('JSON Response:', jsonResponse);
+        console.log("JSON Response:", jsonResponse);
         if (!jsonResponse || !jsonResponse.success) {
-          throw new Error('Invalid response from API');
+          throw new Error("Invalid response from API");
         }
 
         // Update the houses region with new results
@@ -186,11 +190,14 @@ const {
         if (housesRegion) {
           if (jsonResponse.data && jsonResponse.data.html) {
             housesRegion.innerHTML = jsonResponse.data.html;
+            // Update the results count in the state
+            state.results = jsonResponse.data.total || 0;
           } else {
             housesRegion.innerHTML = '<div class="houses-filter__no-results"><p>No houses found matching your criteria.</p></div>';
+            state.results = 0;
           }
         } else {
-          console.error('Houses region not found:', state.regionId);
+          console.error("Houses region not found:", state.regionId);
         }
       } catch (error) {
         console.error('Error updating filters:', error);
@@ -200,6 +207,7 @@ const {
         if (housesRegion) {
           housesRegion.innerHTML = `<div class="houses-filter__error"><p>Error loading houses: ${error.message}</p></div>`;
         }
+        state.results = 0;
       } finally {
         state.isLoading = false;
       }

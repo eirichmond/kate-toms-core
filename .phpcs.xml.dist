@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Plugin Coding Standards">
+    <description>PHPCS Ruleset for Kate &amp; Toms Core Plugin</description>
+
+    <!-- What to scan -->
+    <file>.</file>
+    
+    <!-- Exclude paths -->
+    <exclude-pattern>/vendor/</exclude-pattern>
+    <exclude-pattern>/node_modules/</exclude-pattern>
+    <exclude-pattern>/build/</exclude-pattern>
+    
+    <!-- Only check PHP files -->
+    <arg name="extensions" value="php"/>
+    
+    <!-- Show progress and sniff codes -->
+    <arg value="ps"/>
+    
+    <!-- Show sniff codes in all reports -->
+    <arg value="s"/>
+    
+    <!-- Use colors in output -->
+    <arg name="colors"/>
+    
+    <!-- Set severity -->
+    <arg name="severity" value="1"/>
+    
+    <!-- Use WordPress standards -->
+    <rule ref="WordPress">
+        <!-- Exclude rules if needed -->
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+    </rule>
+    
+    <!-- Allow short array syntax -->
+    <rule ref="Generic.Arrays.DisallowShortArraySyntax.Found">
+        <severity>0</severity>
+    </rule>
+    
+    <!-- Set minimum PHP version -->
+    <config name="testVersion" value="7.4-"/>
+    
+    <!-- Set text domain -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="kate-toms-core"/>
+            </property>
+        </properties>
+    </rule>
+</ruleset>

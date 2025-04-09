@@ -80,7 +80,7 @@ class Kate_Toms_Core {
 		$this->define_public_hooks();
 
 		// Add button block filter
-		add_filter('render_block', array($this, 'modify_button_block_html'), 10, 2);
+		add_filter( 'render_block', array( $this, 'modify_button_block_html' ), 10, 2 );
 	}
 
 	/**
@@ -105,35 +105,34 @@ class Kate_Toms_Core {
 		 * The class responsible for orchestrating the actions and filters of the
 		 * core plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-kate-toms-core-loader.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-core-loader.php';
 
 		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/class-kate-toms-core-i18n.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-core-i18n.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the admin area.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'admin/class-kate-toms-core-admin.php';
+		require_once plugin_dir_path( __DIR__ ) . 'admin/class-kate-toms-core-admin.php';
 
 		/**
 		 * The class responsible for defining all actions that occur in the public-facing
 		 * side of the site.
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'public/class-kate-toms-core-public.php';
+		require_once plugin_dir_path( __DIR__ ) . 'public/class-kate-toms-core-public.php';
 
 		/**
 		 * The class responsible for the Houses Filter API functionality
 		 */
-		require_once plugin_dir_path( dirname( __FILE__ ) ) . 'includes/houses-filter/class-houses-filter-api.php';
+		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-houses-filter-api.php';
 
 		$this->loader = new Kate_Toms_Core_Loader();
 
 		// Initialize the API
 		new Houses_Filter_API();
-
 	}
 
 	/**
@@ -150,7 +149,6 @@ class Kate_Toms_Core {
 		$plugin_i18n = new Kate_Toms_Core_i18n();
 
 		$this->loader->add_action( 'plugins_loaded', $plugin_i18n, 'load_plugin_textdomain' );
-
 	}
 
 	/**
@@ -166,12 +164,11 @@ class Kate_Toms_Core {
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-		
+
 		$this->loader->add_action( 'init', $plugin_admin, 'register_kateandtoms_core_blocks' );
 		$this->loader->add_action( 'init', $plugin_admin, 'custom_post_types_taxonomies_callback' );
 		$this->loader->add_action( 'init', $plugin_admin, 'custom_meta_houses_callback' );
-		
-		
+
 		$this->loader->add_filter( 'post_thumbnail_size', $plugin_admin, 'kate_toms_post_thumbnail_size_filter', 10, 2 );
 		$this->loader->add_filter( 'post_thumbnail_html', $plugin_admin, 'kate_toms_post_thumbnail_html_filter', 10, 5 );
 	}
@@ -189,8 +186,6 @@ class Kate_Toms_Core {
 
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
-		
-
 	}
 
 	/**
@@ -236,20 +231,19 @@ class Kate_Toms_Core {
 	/**
 	 * Add custom attributes to button block HTML
 	 */
-	public function modify_button_block_html($block_content, $block) {
-		if ($block['blockName'] === 'core/button' && !empty($block['attrs']['showForm'])) {
+	public function modify_button_block_html( $block_content, $block ) {
+		if ( $block['blockName'] === 'core/button' && ! empty( $block['attrs']['showForm'] ) ) {
 			$dom = new DOMDocument();
-			$dom->loadHTML($block_content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD);
-			
-			$button = $dom->getElementsByTagName('div')->item(0);
-			if ($button) {
-				$button->setAttribute('data-show-form', 'true');
-				$button->setAttribute('data-form-type', $block['attrs']['formType'] ?? 'contact');
+			$dom->loadHTML( $block_content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+
+			$button = $dom->getElementsByTagName( 'div' )->item( 0 );
+			if ( $button ) {
+				$button->setAttribute( 'data-show-form', 'true' );
+				$button->setAttribute( 'data-form-type', $block['attrs']['formType'] ?? 'contact' );
 			}
-			
+
 			return $dom->saveHTML();
 		}
 		return $block_content;
 	}
-
 }

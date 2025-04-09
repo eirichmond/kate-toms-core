@@ -1,0 +1,17 @@
+{
+  "apiVersion": 3,
+  "name": "kate-toms-core/houses-filtered-results",
+  "title": "Houses Filtered Results",
+  "category": "widgets",
+  "icon": "list-view",
+  "description": "Display filtered house results that respond to the houses filter block",
+  "supports": {
+    "html": false,
+    "interactivity": true
+  },
+  "textdomain": "kate-toms-core",
+  "editorScript": "file:./index.js",
+  "viewScript": "file:./view.js",
+  "render": "file:./render.php",
+  "style": "file:./style.css"
+}

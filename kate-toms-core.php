@@ -1,5 +1,4 @@
 <?php
-
 /**
  * The plugin bootstrap file
  *
@@ -77,65 +76,68 @@ function run_kate_toms_core() {
 
 	$plugin = new Kate_Toms_Core();
 	$plugin->run();
-
 }
 run_kate_toms_core();
 
 // Register button form extension
 function register_button_form_extension() {
-    register_block_type( __DIR__ . '/blocks/button-form-extension' );
+	register_block_type( __DIR__ . '/blocks/button-form-extension' );
 }
-add_action('init', 'register_button_form_extension');
+add_action( 'init', 'register_button_form_extension' );
 
 // Handle frontend scripts
 function enqueue_button_form_scripts() {
-    // Only enqueue if we have a button block with form enabled
-    if (has_block('core/button')) {
-        wp_enqueue_script(
-            'kate-toms-form-handler',
-            plugins_url('blocks/button-form-extension/view.js', __FILE__),
-            array('jquery'),
-            '1.0.0',
-            true
-        );
+	// Only enqueue if we have a button block with form enabled
+	if ( has_block( 'core/button' ) ) {
+		wp_enqueue_script(
+			'kate-toms-form-handler',
+			plugins_url( 'blocks/button-form-extension/view.js', __FILE__ ),
+			array( 'jquery' ),
+			'1.0.0',
+			true
+		);
 
-        wp_localize_script('kate-toms-form-handler', 'ktFormSettings', array(
-            'nonce' => wp_create_nonce('kt_form_nonce'),
-            'ajaxUrl' => admin_url('admin-ajax.php')
-        ));
+		wp_localize_script(
+			'kate-toms-form-handler',
+			'ktFormSettings',
+			array(
+				'nonce'   => wp_create_nonce( 'kt_form_nonce' ),
+				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+			)
+		);
 
-        wp_enqueue_style(
-            'kate-toms-form-styles',
-            plugins_url('blocks/button-form-extension/style.css', __FILE__),
-            array(),
-            '1.0.0'
-        );
-    }
+		wp_enqueue_style(
+			'kate-toms-form-styles',
+			plugins_url( 'blocks/button-form-extension/style.css', __FILE__ ),
+			array(),
+			'1.0.0'
+		);
+	}
 }
-add_action('wp_enqueue_scripts', 'enqueue_button_form_scripts');
+add_action( 'wp_enqueue_scripts', 'enqueue_button_form_scripts' );
 
 // AJAX handler for loading contact form
 function load_contact_form_callback() {
-    check_ajax_referer('kt_form_nonce', 'nonce');
-    
-    ob_start();
-    include plugin_dir_path(__FILE__) . '../kate-and-toms-get-in-touch/public/partials/kate-and-toms-get-in-touch-form.php';
-    $form_html = ob_get_clean();
-    
-    wp_send_json_success(array('html' => $form_html));
+	check_ajax_referer( 'kt_form_nonce', 'nonce' );
+
+	ob_start();
+	include plugin_dir_path( __FILE__ ) . '../kate-and-toms-get-in-touch/public/partials/kate-and-toms-get-in-touch-form.php';
+	$form_html = ob_get_clean();
+
+	wp_send_json_success( array( 'html' => $form_html ) );
 }
-add_action('wp_ajax_load_contact_form', 'load_contact_form_callback');
-add_action('wp_ajax_nopriv_load_contact_form', 'load_contact_form_callback');
+add_action( 'wp_ajax_load_contact_form', 'load_contact_form_callback' );
+add_action( 'wp_ajax_nopriv_load_contact_form', 'load_contact_form_callback' );
 
 // AJAX handler for loading booking form
 function load_booking_form_callback() {
-    check_ajax_referer('kt_form_nonce', 'nonce');
-    
-    ob_start();
-    include plugin_dir_path(__FILE__) . '../kate-and-toms-get-in-touch/public/partials/kate-and-toms-book-now-form.php';
-    $form_html = ob_get_clean();
-    
-    wp_send_json_success(array('html' => $form_html));
+	check_ajax_referer( 'kt_form_nonce', 'nonce' );
+
+	ob_start();
+	include plugin_dir_path( __FILE__ ) . '../kate-and-toms-get-in-touch/public/partials/kate-and-toms-book-now-form.php';
+	$form_html = ob_get_clean();
+
+	wp_send_json_success( array( 'html' => $form_html ) );
 }
-add_action('wp_ajax_load_booking_form', 'load_booking_form_callback');
-add_action('wp_ajax_nopriv_load_booking_form', 'load_booking_form_callback');
+add_action( 'wp_ajax_load_booking_form', 'load_booking_form_callback' );
+add_action( 'wp_ajax_nopriv_load_booking_form', 'load_booking_form_callback' );
