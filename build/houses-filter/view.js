@@ -84,7 +84,6 @@ const {
     local: '',
     feature: '',
     results: 0,
-    regionId: initialRegionId,
     // Track active states for each filter section
     activeFilters: {
       dtype: [],
@@ -186,7 +185,7 @@ const {
         }
 
         // Update the houses region with new results
-        const housesRegion = document.querySelector(`[data-wp-router-region="${state.regionId}"]`);
+        const housesRegion = document.querySelector('.wp-block-kate-toms-core-houses-filtered-results .houses-grid');
         if (housesRegion) {
           if (jsonResponse.data && jsonResponse.data.html) {
             housesRegion.innerHTML = jsonResponse.data.html;
@@ -197,13 +196,13 @@ const {
             state.results = 0;
           }
         } else {
-          console.error("Houses region not found:", state.regionId);
+          console.error("Houses region not found");
         }
       } catch (error) {
         console.error('Error updating filters:', error);
 
         // Show user-friendly error message
-        const housesRegion = document.querySelector(`[data-wp-router-region="${state.regionId}"]`);
+        const housesRegion = document.querySelector('.wp-block-kate-toms-core-houses-filtered-results .houses-grid');
         if (housesRegion) {
           housesRegion.innerHTML = `<div class="houses-filter__error"><p>Error loading houses: ${error.message}</p></div>`;
         }

@@ -242,12 +242,5 @@ $duration_options = array(
 			</button>
 		</div> -->
     </form>
-
-    <!-- Results Region -->
-    <div class="houses-filter__results" data-wp-router-region="<?php echo esc_attr( $results_region ); ?>"
-        data-wp-bind--aria-busy="state.isLoading">
-        <div data-wp-bind--hidden="!state.isLoading" class="houses-filter__loading">
-            <?php esc_html_e( 'Loading...', 'kate-and-toms-houses-filter-search' ); ?>
-        </div>
-    </div>
+    
 </div>

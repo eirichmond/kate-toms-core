@@ -94,13 +94,11 @@ __webpack_require__.r(__webpack_exports__);
  */
 
 
-// We'll use the same store as the filter block
+// We'll use the same store as the filter block, but we won't redefine it
+// Just subscribe to it
 const {
   state
 } = (0,_wordpress_interactivity__WEBPACK_IMPORTED_MODULE_0__.store)("kate-toms-house-filter");
-
-// The store is already configured in the filter block's view.js
-// This block just needs to register with the same store to receive updates
 })();
 
 /******/ })()
