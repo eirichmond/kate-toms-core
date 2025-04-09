@@ -47,9 +47,6 @@
 
 	}
 
-	&__field {
-		margin-bottom: 24px;
-	}
 
 	&__label {
 		display: block;
@@ -72,7 +69,6 @@
 	&__date,
 	&__select {
 		width: 100%;
-		margin-bottom: 8px;
 	}
 
 	&__date {
@@ -107,7 +103,6 @@
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
 		gap: 8px;
-		margin-top: 8px;
 		width: 100%;
 	}
 
@@ -209,6 +204,7 @@
 		}
 	}
 
+	&__date-controls,
 	&__size-controls,
 	&__location-controls,
 	&__feature-controls {

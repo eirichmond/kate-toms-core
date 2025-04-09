@@ -42,29 +42,6 @@ $context = wp_json_encode(
 	)
 );
 
-// Prepare heading styles
-$heading_styles = array();
-if ( ! empty( $attributes['textAlign'] ) ) {
-	$heading_styles[] = 'text-align: ' . esc_attr( $attributes['textAlign'] );
-}
-
-if ( ! empty( $attributes['style']['typography'] ) ) {
-	foreach ( $attributes['style']['typography'] as $property => $value ) {
-		$heading_styles[] = esc_attr( $property ) . ': ' . esc_attr( $value );
-	}
-}
-
-$heading_style = ! empty( $heading_styles ) ? ' style="' . implode( '; ', $heading_styles ) . '"' : '';
-$heading_class = 'houses-filtered-results__heading';
-if ( ! empty( $attributes['textAlign'] ) ) {
-	$heading_class .= ' has-text-align-' . esc_attr( $attributes['textAlign'] );
-}
-if ( ! empty( $attributes['fontSize'] ) ) {
-	$heading_class .= ' has-' . esc_attr( $attributes['fontSize'] ) . '-font-size';
-}
-if ( ! empty( $attributes['fontFamily'] ) ) {
-	$heading_class .= ' has-' . esc_attr( $attributes['fontFamily'] ) . '-font-family';
-}
 ?>
 
 <div
@@ -73,18 +50,6 @@ if ( ! empty( $attributes['fontFamily'] ) ) {
 	data-wp-context="<?php echo esc_attr( $context ); ?>"
 	data-block-id="<?php echo esc_attr( $attributes['blockId'] ); ?>"
 >
-	<h2 <?php
-		echo wp_kses_post(
-			get_block_wrapper_attributes(
-				array(
-					'class' => $heading_class,
-					'data-appearance' => $attributes['appearance'] ?? 'default',
-				)
-			)
-		);
-	?>>
-		<?php echo esc_html( $attributes['title'] ?? __( 'Houses', 'kate-toms-core' ) ); ?>
-	</h2>
 	<div class="houses-grid">
 		<?php
 		if ( $query->have_posts() ) {

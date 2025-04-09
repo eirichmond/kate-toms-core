@@ -45,9 +45,6 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
-.houses-filter__field {
-  margin-bottom: 24px;
-}
 .houses-filter__label {
   display: block;
   margin-bottom: 8px;
@@ -67,7 +64,6 @@
 }
 .houses-filter__date, .houses-filter__select {
   width: 100%;
-  margin-bottom: 8px;
 }
 .houses-filter__date {
   padding: 0.75rem;
@@ -98,7 +94,6 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-top: 8px;
   width: 100%;
 }
 .houses-filter__button {
@@ -180,7 +175,7 @@
   margin: 0;
   font-size: 1.1rem;
 }
-.houses-filter__size-controls, .houses-filter__location-controls, .houses-filter__feature-controls {
+.houses-filter__date-controls, .houses-filter__size-controls, .houses-filter__location-controls, .houses-filter__feature-controls {
   display: flex;
   flex-direction: column;
   gap: 8px;

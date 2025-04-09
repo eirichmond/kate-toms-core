@@ -61,7 +61,6 @@ function Edit({
 }) {
   const {
     defaultLocation,
-    title,
     textAlign,
     style,
     fontSize,
@@ -102,38 +101,25 @@ function Edit({
         })
       })
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__.InspectorControls, {
-      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelBody, {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelBody, {
         title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Block Settings', 'kate-toms-core'),
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
-          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Title', 'kate-toms-core'),
-          value: title,
-          onChange: value => setAttributes({
-            title: value
-          })
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.SelectControl, {
+        children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.SelectControl, {
           label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Default Location', 'kate-toms-core'),
           value: defaultLocation,
           options: locationOptions,
           onChange: value => setAttributes({
             defaultLocation: Number(value) || ''
           })
-        })]
+        })
       })
-    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsxs)("div", {
+    }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
       ...blockProps,
-      children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("h2", {
-        className: "houses-filtered-results__heading",
-        style: {
-          textAlign,
-          ...style?.typography
-        },
-        children: title || (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Houses', 'kate-toms-core')
-      }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
+      children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("div", {
         className: "houses-grid",
         children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_5__.jsx)("p", {
           children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Houses Filtered Results', 'kate-toms-core')
         })
-      })]
+      })
     })]
   });
 }
@@ -291,7 +277,7 @@ module.exports = window["wp"]["i18n"];
   \***************************************************/
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"apiVersion":3,"name":"kate-toms-core/houses-filtered-results","title":"Houses Filtered Results","category":"widgets","icon":"list-view","description":"Display filtered house results that respond to the houses filter block","attributes":{"defaultLocation":{"type":"number"},"blockId":{"type":"string"},"appearance":{"type":"string","default":"default"},"title":{"type":"string","default":"Houses"},"textAlign":{"type":"string","default":"left"},"style":{"type":"object"},"fontSize":{"type":"string"},"fontFamily":{"type":"string"}},"supports":{"html":false,"interactivity":true,"typography":{"fontSize":true,"lineHeight":true,"fontStyle":true,"fontWeight":true,"__experimentalFontFamily":true,"__experimentalFontStyle":true,"__experimentalFontWeight":true,"__experimentalLetterSpacing":true,"__experimentalTextTransform":true,"__experimentalTextDecoration":true,"__experimentalDefaultControls":{"fontSize":true,"fontFamily":true}},"align":true},"textdomain":"kate-toms-core","editorScript":"file:./index.js","viewScript":"file:./view.js","render":"file:./render.php","style":"file:./style.css"}');
+module.exports = /*#__PURE__*/JSON.parse('{"apiVersion":3,"name":"kate-toms-core/houses-filtered-results","title":"Houses Filtered Results","category":"widgets","icon":"list-view","description":"Display filtered house results that respond to the houses filter block","attributes":{"defaultLocation":{"type":"number"},"blockId":{"type":"string"}},"supports":{"html":false,"interactivity":true,"align":true},"textdomain":"kate-toms-core","editorScript":"file:./index.js","viewScript":"file:./view.js","render":"file:./render.php","style":"file:./style.css"}');
 
 /***/ })
 

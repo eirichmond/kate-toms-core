@@ -42,7 +42,6 @@ import { store as coreStore } from '@wordpress/core-data';
 export default function Edit( { attributes, setAttributes } ) {
 	const {
 		defaultLocation,
-		title,
 		textAlign,
 		style,
 		fontSize,
@@ -80,11 +79,6 @@ export default function Edit( { attributes, setAttributes } ) {
 			</BlockControls>
 			<InspectorControls>
 				<PanelBody title={__('Block Settings', 'kate-toms-core')}>
-					<TextControl
-						label={__('Title', 'kate-toms-core')}
-						value={title}
-						onChange={(value) => setAttributes({ title: value })}
-					/>
 					<SelectControl
 						label={__('Default Location', 'kate-toms-core')}
 						value={defaultLocation}
@@ -94,15 +88,6 @@ export default function Edit( { attributes, setAttributes } ) {
 				</PanelBody>
 			</InspectorControls>
 			<div {...blockProps}>
-				<h2 
-					className="houses-filtered-results__heading"
-					style={{
-						textAlign,
-						...style?.typography,
-					}}
-				>
-					{title || __('Houses', 'kate-toms-core')}
-				</h2>
 				<div className="houses-grid">
 					<p>{__('Houses Filtered Results', 'kate-toms-core')}</p>
 				</div>

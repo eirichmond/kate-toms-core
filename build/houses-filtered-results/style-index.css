@@ -7,22 +7,5 @@
  *
  * Replace them with your own styles or remove the file completely.
  */
-.wp-block-create-block-houses-filtered-results {
-  font-size: 1em;
-  background: rgba(255, 255, 0, 0.1019607843);
-  padding: 1em;
-}
-.wp-block-create-block-houses-filtered-results.dark-theme {
-  background: #333;
-  color: #fff;
-}
-.wp-block-create-block-houses-filtered-results.dark-theme button {
-  background: #555;
-  color: #fff;
-  border: 1px solid #777;
-}
-.wp-block-create-block-houses-filtered-results.dark-theme p {
-  color: #ddd;
-}
 
 /*# sourceMappingURL=style-index.css.map*/

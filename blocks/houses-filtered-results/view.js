@@ -45,11 +45,10 @@ const { actions, callbacks } = store("kate-toms-house-filter", {
                     throw new Error("Invalid response from API");
                 }
 
+                // Keep the heading and only update the houses grid content
                 const housesGrid = block.querySelector('.houses-grid');
-                if (housesGrid) {
-                    if (data.data && data.data.html) {
-                        housesGrid.innerHTML = data.data.html;
-                    }
+                if (housesGrid && data.data && data.data.html) {
+                    housesGrid.innerHTML = data.data.html;
                 }
             } catch (error) {
                 console.error('Error refreshing results:', error);
