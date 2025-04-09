@@ -13,6 +13,7 @@
 $args = array(
 	'post_type'      => 'houses',
 	'posts_per_page' => 12,
+    'post_status'    => 'publish'
 );
 
 $query = new WP_Query( $args );
@@ -22,7 +23,12 @@ $query = new WP_Query( $args );
 	<?php echo wp_kses_post( get_block_wrapper_attributes() ); ?>
 	data-wp-interactive="kate-toms-house-filter"
 >
+
+    # I want to add a title attribute here, I also want to add setting that appends an aditional term attribute from the Locations taxonomy for this block only.
+
 	<div class="houses-grid">
+
+
 		<?php
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {

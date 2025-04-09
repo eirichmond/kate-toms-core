@@ -204,13 +204,7 @@ class Houses_Filter_API {
 			ob_start();
 
 			if ( $query->have_posts() ) {
-				// Get and display the term name
-				$term = get_term( $term_id, 'location' );
-				if ( ! is_wp_error( $term ) ) {
-					echo '<h2 class="location-heading">' . esc_html( $term->name ) . '</h2>';
-				}
 
-				echo '<div class="houses-grid">';
 				while ( $query->have_posts() ) {
 					$query->the_post();
 					?>
@@ -231,8 +225,7 @@ class Houses_Filter_API {
 								$capacity = get_post_meta( get_the_ID(), 'house_capacity', true );
 								if ( $capacity ) {
 									printf(
-										/* translators: %s: House capacity */
-										esc_html__( 'Sleeps %s', 'kate-and-toms-houses-filter-search' ),
+										esc_html__( 'Sleeps %s', 'kate-toms-core' ),
 										esc_html( $capacity )
 									);
 								}
@@ -245,7 +238,11 @@ class Houses_Filter_API {
 					</article>
 					<?php
 				}
-				echo '</div>';
+
+				if ( ! is_wp_error( $term ) ) {
+					echo '</div>'; // Close location-houses
+					echo '</div>'; // Close location-section
+				}
 			} else {
 				?>
 				<div class="houses-filter__no-results">
