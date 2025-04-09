@@ -133,29 +133,43 @@ const { state, actions } = store(storeName, {
 					throw new Error("Invalid response from API");
 				}
 
-				// Update the houses region with new results
-				const housesRegion = document.querySelector('.wp-block-kate-toms-core-houses-filtered-results .houses-grid');
+				// Update all houses regions with new results
+				const housesRegions = document.querySelectorAll('.wp-block-kate-toms-core-houses-filtered-results');
+				let totalResults = 0;
 
-				if (housesRegion) {
-					if (jsonResponse.data && jsonResponse.data.html) {
-						housesRegion.innerHTML = jsonResponse.data.html;
-						// Update the results count in the state
-						state.results = jsonResponse.data.total || 0;
-					} else {
-						housesRegion.innerHTML = '<div class="houses-filter__no-results"><p>No houses found matching your criteria.</p></div>';
-						state.results = 0;
+				housesRegions.forEach(region => {
+					const context = JSON.parse(region.getAttribute('data-wp-context') || '{}');
+					const defaultLocation = context.defaultLocation ? context.defaultLocation.toString() : '';
+					const selectedLocation = state.local ? state.local.toString() : '';
+					
+					// If this region has a default location and it doesn't match the selected location,
+					// skip updating it unless no location is selected
+					if (defaultLocation && selectedLocation && defaultLocation == selectedLocation) {
+						return;
 					}
-				} else {
-					console.error("Houses region not found");
-				}
+
+					const housesGrid = region.querySelector('.houses-grid');
+					if (housesGrid) {
+						if (jsonResponse.data && jsonResponse.data.html) {
+							housesGrid.innerHTML = jsonResponse.data.html;
+							totalResults += jsonResponse.data.total || 0;
+						} else {
+							housesGrid.innerHTML = '<div class="houses-filter__no-results"><p>No houses found matching your criteria.</p></div>';
+						}
+					}
+				});
+
+				// Update the results count in the state
+				state.results = totalResults;
+
 			} catch (error) {
 				console.error('Error updating filters:', error);
 			
-				// Show user-friendly error message
-				const housesRegion = document.querySelector('.wp-block-kate-toms-core-houses-filtered-results .houses-grid');
-				if (housesRegion) {
-					housesRegion.innerHTML = `<div class="houses-filter__error"><p>Error loading houses: ${error.message}</p></div>`;
-				}
+				// Show user-friendly error message in all regions
+				const housesRegions = document.querySelectorAll('.wp-block-kate-toms-core-houses-filtered-results .houses-grid');
+				housesRegions.forEach(region => {
+					region.innerHTML = `<div class="houses-filter__error"><p>Error loading houses: ${error.message}</p></div>`;
+				});
 				state.results = 0;
 			} finally {
 				state.isLoading = false;

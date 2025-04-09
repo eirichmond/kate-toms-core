@@ -5,6 +5,14 @@
   "category": "widgets",
   "icon": "list-view",
   "description": "Display filtered house results that respond to the houses filter block",
+  "attributes": {
+    "defaultLocation": {
+      "type": "number"
+    },
+    "blockId": {
+      "type": "string"
+    }
+  },
   "supports": {
     "html": false,
     "interactivity": true

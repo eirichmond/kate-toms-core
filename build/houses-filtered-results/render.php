@@ -9,26 +9,47 @@
  * @var WP_Block $block      Block instance.
  */
 
+// Generate a unique block ID if not set.
+if ( empty( $attributes['blockId'] ) ) {
+	$attributes['blockId'] = wp_unique_id( 'houses-results-' );
+}
+
 // Get initial houses query.
 $args = array(
 	'post_type'      => 'houses',
 	'posts_per_page' => 12,
-    'post_status'    => 'publish'
+	'post_status'    => 'publish',
 );
 
+// Add default location to query if set.
+if ( ! empty( $attributes['defaultLocation'] ) ) {
+	$args['tax_query'] = array(
+		array(
+			'taxonomy' => 'location',
+			'field'    => 'term_id',
+			'terms'    => $attributes['defaultLocation'],
+		),
+	);
+}
+
 $query = new WP_Query( $args );
+
+// Prepare context data.
+$context = wp_json_encode(
+	array(
+		'blockId'         => $attributes['blockId'],
+		'defaultLocation' => $attributes['defaultLocation'] ?? '',
+	)
+);
 ?>
 
-<div 
+<div
 	<?php echo wp_kses_post( get_block_wrapper_attributes() ); ?>
 	data-wp-interactive="kate-toms-house-filter"
+	data-wp-context="<?php echo esc_attr( $context ); ?>"
+	data-block-id="<?php echo esc_attr( $attributes['blockId'] ); ?>"
 >
-
-    # I want to add a title attribute here, I also want to add setting that appends an aditional term attribute from the Locations taxonomy for this block only.
-
 	<div class="houses-grid">
-
-
 		<?php
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
