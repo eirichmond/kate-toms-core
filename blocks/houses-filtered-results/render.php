@@ -85,12 +85,6 @@ $context = wp_json_encode(
 				</article>
 				<?php
 			}
-		} else {
-			?>
-			<div class="houses-filter__no-results">
-				<p>No houses found.</p>
-			</div>
-			<?php
 		}
 		wp_reset_postdata();
 		?>

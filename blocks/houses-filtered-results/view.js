@@ -49,8 +49,6 @@ const { actions, callbacks } = store("kate-toms-house-filter", {
                 if (housesGrid) {
                     if (data.data && data.data.html) {
                         housesGrid.innerHTML = data.data.html;
-                    } else {
-                        housesGrid.innerHTML = '<div class="houses-filter__no-results"><p>No houses found matching your criteria.</p></div>';
                     }
                 }
             } catch (error) {

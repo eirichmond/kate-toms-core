@@ -140,27 +140,36 @@ const { state, actions } = store(storeName, {
 				housesRegions.forEach(region => {
 					const context = JSON.parse(region.getAttribute('data-wp-context') || '{}');
 					const defaultLocation = context.defaultLocation ? context.defaultLocation.toString() : '';
-					const selectedLocation = state.local ? state.local.toString() : '';
 					
-					// If this region has a default location and it doesn't match the selected location,
-					// skip updating it unless no location is selected
-					if (defaultLocation && selectedLocation && defaultLocation == selectedLocation) {
-						return;
+					// Add default location to the API request
+					const regionParams = new URLSearchParams(params);
+					if (defaultLocation) {
+						regionParams.append('default_location', defaultLocation);
 					}
 
-					const housesGrid = region.querySelector('.houses-grid');
-					if (housesGrid) {
-						if (jsonResponse.data && jsonResponse.data.html) {
-							housesGrid.innerHTML = jsonResponse.data.html;
-							totalResults += jsonResponse.data.total || 0;
-						} else {
-							housesGrid.innerHTML = '<div class="houses-filter__no-results"><p>No houses found matching your criteria.</p></div>';
-						}
-					}
+					// Make a separate request for this region with its default location
+					fetch(`/wp-json/kate-toms/v1/houses?${regionParams.toString()}`)
+						.then(response => response.json())
+						.then(data => {
+							if (data.success) {
+								const housesGrid = region.querySelector('.houses-grid');
+								if (housesGrid) {
+									if (data.data && data.data.html) {
+										housesGrid.innerHTML = data.data.html;
+										totalResults += data.data.total || 0;
+										state.results = totalResults;
+									}
+								}
+							}
+						})
+						.catch(error => {
+							console.error('Error updating region:', error);
+							const housesGrid = region.querySelector('.houses-grid');
+							if (housesGrid) {
+								housesGrid.innerHTML = `<div class="houses-filter__error"><p>Error loading houses: ${error.message}</p></div>`;
+							}
+						});
 				});
-
-				// Update the results count in the state
-				state.results = totalResults;
 
 			} catch (error) {
 				console.error('Error updating filters:', error);
