@@ -11,11 +11,49 @@
     },
     "blockId": {
       "type": "string"
+    },
+    "appearance": {
+      "type": "string",
+      "default": "default"
+    },
+    "title": {
+      "type": "string",
+      "default": "Houses"
+    },
+    "textAlign": {
+      "type": "string",
+      "default": "left"
+    },
+    "style": {
+      "type": "object"
+    },
+    "fontSize": {
+      "type": "string"
+    },
+    "fontFamily": {
+      "type": "string"
     }
   },
   "supports": {
     "html": false,
-    "interactivity": true
+    "interactivity": true,
+    "typography": {
+      "fontSize": true,
+      "lineHeight": true,
+      "fontStyle": true,
+      "fontWeight": true,
+      "__experimentalFontFamily": true,
+      "__experimentalFontStyle": true,
+      "__experimentalFontWeight": true,
+      "__experimentalLetterSpacing": true,
+      "__experimentalTextTransform": true,
+      "__experimentalTextDecoration": true,
+      "__experimentalDefaultControls": {
+        "fontSize": true,
+        "fontFamily": true
+      }
+    },
+    "align": true
   },
   "textdomain": "kate-toms-core",
   "editorScript": "file:./index.js",

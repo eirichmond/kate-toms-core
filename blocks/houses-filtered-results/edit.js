@@ -11,8 +11,19 @@ import { __ } from '@wordpress/i18n';
  *
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
  */
-import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, SelectControl } from '@wordpress/components';
+import {
+	useBlockProps,
+	InspectorControls,
+	BlockControls,
+	AlignmentToolbar,
+	__experimentalPanelColorGradientSettings as PanelColorGradientSettings,
+} from '@wordpress/block-editor';
+import {
+	PanelBody,
+	SelectControl,
+	TextControl,
+	ToolbarGroup,
+} from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 
@@ -29,8 +40,21 @@ import { store as coreStore } from '@wordpress/core-data';
  * @return {Element} Element to render.
  */
 export default function Edit( { attributes, setAttributes } ) {
-	const blockProps = useBlockProps();
-	const { defaultLocation } = attributes;
+	const {
+		defaultLocation,
+		title,
+		textAlign,
+		style,
+		fontSize,
+		fontFamily,
+	} = attributes;
+
+	const blockProps = useBlockProps({
+		className: `text-align-${textAlign}`,
+		style: {
+			...style?.typography,
+		},
+	});
 
 	const { locations } = useSelect((select) => {
 		const { getEntityRecords } = select(coreStore);
@@ -48,8 +72,19 @@ export default function Edit( { attributes, setAttributes } ) {
 
 	return (
 		<>
+			<BlockControls>
+				<AlignmentToolbar
+					value={textAlign}
+					onChange={(value) => setAttributes({ textAlign: value })}
+				/>
+			</BlockControls>
 			<InspectorControls>
-				<PanelBody title={__('Location Settings', 'kate-toms-core')}>
+				<PanelBody title={__('Block Settings', 'kate-toms-core')}>
+					<TextControl
+						label={__('Title', 'kate-toms-core')}
+						value={title}
+						onChange={(value) => setAttributes({ title: value })}
+					/>
 					<SelectControl
 						label={__('Default Location', 'kate-toms-core')}
 						value={defaultLocation}
@@ -59,7 +94,18 @@ export default function Edit( { attributes, setAttributes } ) {
 				</PanelBody>
 			</InspectorControls>
 			<div {...blockProps}>
-				<p>{__('Houses Filtered Results', 'kate-toms-core')}</p>
+				<h2 
+					className="houses-filtered-results__heading"
+					style={{
+						textAlign,
+						...style?.typography,
+					}}
+				>
+					{title || __('Houses', 'kate-toms-core')}
+				</h2>
+				<div className="houses-grid">
+					<p>{__('Houses Filtered Results', 'kate-toms-core')}</p>
+				</div>
 			</div>
 		</>
 	);
