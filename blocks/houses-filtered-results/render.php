@@ -34,6 +34,7 @@ if ( ! empty( $attributes['defaultLocation'] ) ) {
 
 $query = new WP_Query( $args );
 
+
 // Prepare context data.
 $context = wp_json_encode(
 	array(
@@ -56,34 +57,10 @@ $context = wp_json_encode(
 			while ( $query->have_posts() ) {
 				$query->the_post();
 				?>
-				<article class="house-card">
-					<?php
-					if ( has_post_thumbnail() ) {
-						?>
-						<div class="house-card__image">
-							<?php the_post_thumbnail( 'medium' ); ?>
-						</div>
-						<?php
-					}
-					?>
-					<div class="house-card__content">
-						<h3 class="house-card__title">
-							<a href="<?php the_permalink(); ?>"><?php the_title(); ?></a>
-						</h3>
-						<?php
-						// Add house details.
-						$location = get_the_terms( get_the_ID(), 'location' );
-						if ( $location && ! is_wp_error( $location ) ) {
-							echo '<div class="house-card__location">' . esc_html( $location[0]->name ) . '</div>';
-						}
-
-						$size = get_post_meta( get_the_ID(), 'house_size', true );
-						if ( $size ) {
-							echo '<div class="house-card__size">Sleeps ' . esc_html( $size ) . '</div>';
-						}
-						?>
-					</div>
-				</article>
+				<?php
+				// Use your custom pattern.
+				echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
+				?>
 				<?php
 			}
 		} else {
@@ -101,6 +78,14 @@ $context = wp_json_encode(
 		class="houses-loading-overlay" 
 		data-wp-bind--hidden="!state.isLoading"
 	>
-		<div class="houses-loading-spinner"></div>
+		<div class="houses-loading-spinner">
+			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24">
+				<path fill="currentColor" d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/>
+				<path fill="currentColor" d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z">
+				<animateTransform attributeName="transform" type="rotate" dur="0.75s" values="0 12 12;360 12 12" repeatCount="indefinite"/>
+				</path>
+			</svg>
+
+		</div>
 	</div>
 </div>

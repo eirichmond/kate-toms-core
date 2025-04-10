@@ -222,7 +222,12 @@ class Houses_Filter_API {
 			while ( $query->have_posts() ) {
 				$query->the_post();
 				?>
-				<article class="house-card">
+				<?php
+				// Use your custom pattern.
+				echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
+				?>
+
+				<!-- <article class="house-card">
 					<?php if ( has_post_thumbnail() ) : ?>
 						<div class="house-card__image">
 							<?php the_post_thumbnail( 'medium' ); ?>
@@ -252,7 +257,7 @@ class Houses_Filter_API {
 							<?php the_excerpt(); ?>
 						</div>
 					</div>
-				</article>
+				</article> -->
 				<?php
 			}
 		}

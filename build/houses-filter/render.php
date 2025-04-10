@@ -232,15 +232,6 @@ $duration_options = array(
 			</div>
 		</div>
 
-		<!-- <div class="houses-filter__actions">
-			<button 
-				type="submit" 
-				class="houses-filter__submit"
-				data-wp-bind--disabled="state.isLoading"
-			>
-				<?php // esc_html_e( 'Search Houses', 'kate-and-toms-houses-filter-search' ); ?>
-			</button>
-		</div> -->
 	</form>
 	
 </div>

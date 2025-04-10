@@ -538,4 +538,19 @@ class Kate_Toms_Core_Admin {
 
 		return $filtered_string;
 	}
+
+	/**
+	 * Register pattern categories
+	 *
+	 * @return void
+	 */
+	public function kate_toms_core_register_patterns() {
+		register_block_pattern_category(
+			'house-card-search',
+			array(
+				'label'       => 'House Card Search',
+				'description' => 'House card search patterns',
+			)
+		);
+	}
 }

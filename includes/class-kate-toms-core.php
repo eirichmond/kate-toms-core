@@ -168,6 +168,7 @@ class Kate_Toms_Core {
 		$this->loader->add_action( 'init', $plugin_admin, 'register_kateandtoms_core_blocks' );
 		$this->loader->add_action( 'init', $plugin_admin, 'custom_post_types_taxonomies_callback' );
 		$this->loader->add_action( 'init', $plugin_admin, 'custom_meta_houses_callback' );
+		$this->loader->add_action( 'init', $plugin_admin, 'kate_toms_core_register_patterns' );
 
 		$this->loader->add_filter( 'post_thumbnail_size', $plugin_admin, 'kate_toms_post_thumbnail_size_filter', 10, 2 );
 		$this->loader->add_filter( 'post_thumbnail_html', $plugin_admin, 'kate_toms_post_thumbnail_html_filter', 10, 5 );

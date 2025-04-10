@@ -103,6 +103,7 @@ const { state, actions } = store(storeName, {
 
 		async updateFilters() {
 			try {
+				debugger;
 				state.isLoading = true;
 
 				// Build query parameters

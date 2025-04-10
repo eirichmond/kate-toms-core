@@ -160,6 +160,7 @@ const {
     },
     async updateFilters() {
       try {
+        debugger;
         state.isLoading = true;
 
         // Build query parameters
