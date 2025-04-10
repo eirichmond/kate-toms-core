@@ -133,6 +133,7 @@ const {
       actions.updateFilters();
     },
     updateLocation(event) {
+      state.isLoading = true;
       const value = event.target.dataset.value || event.target.value;
 
       // Toggle the value in activeFilters
@@ -160,7 +161,6 @@ const {
     },
     async updateFilters() {
       try {
-        debugger;
         state.isLoading = true;
 
         // Build query parameters
@@ -170,57 +170,51 @@ const {
         if (state.size) params.append("size", state.size);
         if (state.local) params.append("local", state.local);
         if (state.feature) params.append("feature", state.feature);
-        const apiUrl = `/wp-json/kate-toms/v1/houses?${params.toString()}`;
-        console.log("Fetching:", apiUrl);
 
-        // Fetch filtered results using REST API
-        const fetchResponse = await fetch(apiUrl);
-        console.log("Raw Response:", fetchResponse);
-        if (!fetchResponse.ok) {
-          throw new Error(`API Error: ${fetchResponse.status} ${fetchResponse.statusText}`);
-        }
-        const jsonResponse = await fetchResponse.json();
-        console.log("JSON Response:", jsonResponse);
-        if (!jsonResponse || !jsonResponse.success) {
-          throw new Error("Invalid response from API");
-        }
-
-        // Update all houses regions with new results
+        // Get all houses regions and their default locations
         const housesRegions = document.querySelectorAll('.wp-block-kate-toms-core-houses-filtered-results');
         let totalResults = 0;
-        housesRegions.forEach(region => {
+
+        // Create an array of promises for all fetch operations
+        const fetchPromises = Array.from(housesRegions).map(async region => {
           const context = JSON.parse(region.getAttribute('data-wp-context') || '{}');
           const defaultLocation = context.defaultLocation ? context.defaultLocation.toString() : '';
 
-          // Add default location to the API request
+          // Create region-specific params
           const regionParams = new URLSearchParams(params);
           if (defaultLocation) {
             regionParams.append('default_location', defaultLocation);
           }
-
-          // Make a separate request for this region with its default location
-          fetch(`/wp-json/kate-toms/v1/houses?${regionParams.toString()}`).then(response => response.json()).then(data => {
+          const apiUrl = `/wp-json/kate-toms/v1/houses?${regionParams.toString()}`;
+          console.log("Fetching:", apiUrl);
+          try {
+            const response = await fetch(apiUrl);
+            console.log("Raw Response:", response);
+            const data = await response.json();
+            console.log("JSON Response:", data);
             if (data.success) {
               const housesGrid = region.querySelector('.houses-grid');
-              if (housesGrid) {
-                if (data.data && data.data.html) {
-                  housesGrid.innerHTML = data.data.html;
-                  totalResults += data.data.total || 0;
-                  state.results = totalResults;
-                }
+              if (housesGrid && data.data && data.data.html) {
+                housesGrid.innerHTML = data.data.html;
+                return data.data.total || 0;
               }
             }
-          }).catch(error => {
+            return 0;
+          } catch (error) {
             console.error('Error updating region:', error);
             const housesGrid = region.querySelector('.houses-grid');
             if (housesGrid) {
               housesGrid.innerHTML = `<div class="houses-filter__error"><p>Error loading houses: ${error.message}</p></div>`;
             }
-          });
+            return 0;
+          }
         });
+
+        // Wait for all fetch operations to complete
+        const results = await Promise.all(fetchPromises);
+        state.results = results.reduce((sum, count) => sum + count, 0);
       } catch (error) {
         console.error('Error updating filters:', error);
-
         // Show user-friendly error message in all regions
         const housesRegions = document.querySelectorAll('.wp-block-kate-toms-core-houses-filtered-results .houses-grid');
         housesRegions.forEach(region => {

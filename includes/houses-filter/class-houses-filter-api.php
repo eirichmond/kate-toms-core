@@ -224,7 +224,15 @@ class Houses_Filter_API {
 				?>
 				<?php
 				// Use your custom pattern.
-				echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
+					if( in_array( 604, $location_terms ) ) {
+						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
+					} elseif ( in_array( 810, $location_terms )) {
+						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-coast"} /-->' );
+					} elseif ( in_array( 790, $location_terms )) {
+						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-country"} /-->' );
+					} elseif ( in_array( 603, $location_terms )) {
+						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-town"} /-->' );
+					}
 				?>
 
 				<!-- <article class="house-card">
@@ -260,6 +268,8 @@ class Houses_Filter_API {
 				</article> -->
 				<?php
 			}
+		} else {
+			echo '<div class="houses-filter__error"><p>No houses found</p></div>';
 		}
 
 		wp_reset_postdata();

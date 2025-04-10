@@ -305,5 +305,30 @@
     grid-template-columns: 1fr;
   }
 }
+.houses-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+.houses-loading-overlay[hidden] {
+  display: none;
+}
+
+.houses-loading-spinner {
+  width: 48px;
+  height: 48px;
+  color: #2271b1;
+}
+.houses-loading-spinner svg {
+  width: 100%;
+  height: 100%;
+}
 
 /*# sourceMappingURL=style-index.css.map*/
