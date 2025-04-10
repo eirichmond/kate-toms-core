@@ -193,6 +193,7 @@ const {
             const data = await response.json();
             console.log("JSON Response:", data);
             if (data.success) {
+              debugger;
               const housesGrid = region.querySelector('.houses-grid');
               if (housesGrid && data.data && data.data.html) {
                 housesGrid.innerHTML = data.data.html;

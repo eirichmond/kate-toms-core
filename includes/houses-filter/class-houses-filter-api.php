@@ -221,52 +221,16 @@ class Houses_Filter_API {
 		if ( $query->have_posts() ) {
 			while ( $query->have_posts() ) {
 				$query->the_post();
-				?>
-				<?php
 				// Use your custom pattern.
-					if( in_array( 604, $location_terms ) ) {
-						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
-					} elseif ( in_array( 810, $location_terms )) {
-						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-coast"} /-->' );
-					} elseif ( in_array( 790, $location_terms )) {
-						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-country"} /-->' );
-					} elseif ( in_array( 603, $location_terms )) {
-						echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-town"} /-->' );
-					}
-				?>
-
-				<!-- <article class="house-card">
-					<?php if ( has_post_thumbnail() ) : ?>
-						<div class="house-card__image">
-							<?php the_post_thumbnail( 'medium' ); ?>
-						</div>
-					<?php endif; ?>
-					<div class="house-card__content">
-						<h3 class="house-card__title">
-							<a href="<?php the_permalink(); ?>">
-								<?php the_title(); ?>
-							</a>
-						</h3>
-						<div class="house-card__meta">
-							<?php
-							/**
-							 * Translators: %s is the number of people the house can accommodate.
-							 */
-							$capacity = get_post_meta( get_the_ID(), 'house_capacity', true );
-							if ( $capacity ) {
-								printf(
-									esc_html__( 'Sleeps %s', 'kate-toms-core' ),
-									esc_html( $capacity )
-								);
-							}
-							?>
-						</div>
-						<div class="house-card__excerpt">
-							<?php the_excerpt(); ?>
-						</div>
-					</div>
-				</article> -->
-				<?php
+				if( in_array( 604, $location_terms ) ) {
+					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
+				} elseif ( in_array( 810, $location_terms )) {
+					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-coast"} /-->' );
+				} elseif ( in_array( 790, $location_terms )) {
+					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-country"} /-->' );
+				} elseif ( in_array( 603, $location_terms )) {
+					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-town"} /-->' );
+				}
 			}
 		} else {
 			echo '<div class="houses-filter__error"><p>No houses found</p></div>';
