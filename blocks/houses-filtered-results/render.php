@@ -21,6 +21,7 @@ $args = array(
 	'post_status'    => 'publish',
 );
 
+
 // Add default location to query if set.
 if ( ! empty( $attributes['defaultLocation'] ) ) {
 	$args['tax_query'] = array(
@@ -42,6 +43,7 @@ $context = wp_json_encode(
 		'defaultLocation' => $attributes['defaultLocation'] ?? '',
 	)
 );
+
 
 ?>
 

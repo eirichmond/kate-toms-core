@@ -122,7 +122,7 @@ const { state, actions } = store(storeName, {
 				const fetchPromises = Array.from(housesRegions).map(async region => {
 					const context = JSON.parse(region.getAttribute('data-wp-context') || '{}');
 					const defaultLocation = context.defaultLocation ? context.defaultLocation.toString() : '';
-					
+
 					// Create region-specific params
 					const regionParams = new URLSearchParams(params);
 					if (defaultLocation) {
@@ -139,11 +139,24 @@ const { state, actions } = store(storeName, {
 						console.log("JSON Response:", data);
 						
 						if (data.success) {
-							debugger;
 							const housesGrid = region.querySelector('.houses-grid');
 							if (housesGrid && data.data && data.data.html) {
 								housesGrid.innerHTML = data.data.html;
-								return data.data.total || 0;
+								const total = data.data.total || 0;
+								
+								// Find the parent block element and all its .wp-block-group ancestors
+								let currentElement = region;
+								while (currentElement) {
+									// If this is a .wp-block-group or our results block, toggle visibility
+									if (currentElement.classList.contains('wp-block-group') || 
+										currentElement.classList.contains('wp-block-kate-toms-core-houses-filtered-results')) {
+										currentElement.style.display = total === 0 ? 'none' : '';
+									}
+									// Move up to the next parent
+									currentElement = currentElement.parentElement;
+								}
+								
+								return total;
 							}
 						}
 						return 0;

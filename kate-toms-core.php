@@ -79,6 +79,99 @@ function run_kate_toms_core() {
 }
 run_kate_toms_core();
 
+
+// below are helper function that run globally
+
+function kate_toms_post_thumbnail_size_filter( $size, $post_id ) {
+	$size = 'square';
+	return $size;
+}
+add_filter( 'post_thumbnail_size', 'kate_toms_post_thumbnail_size_filter', 10, 2 );
+
+
+/**
+ * Filter post thumbnail HTML to replace all image domains with kateandtoms.com in local environment.
+ *
+ * @param string       $html              The post thumbnail HTML.
+ * @param int          $post_id           The post ID.
+ * @param int          $post_thumbnail_id The post thumbnail ID.
+ * @param string|int[] $size              The size of the image.
+ * @param array        $attr              Attributes for the image.
+ * @return string       Modified HTML with domains replaced if local.
+ */
+function kate_toms_post_thumbnail_html_filter( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
+	if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'staging' ) {
+		$callback = function( $matches ) {
+			$url = $matches[0];
+			$parsed_url = wp_parse_url( $url );
+			if ( $parsed_url && isset( $parsed_url['host'] ) ) {
+				$parsed_url['host'] = 'kateandtoms.com';
+				$new_url = ( isset( $parsed_url['scheme'] ) ? $parsed_url['scheme'] . '://' : '' ) .
+					$parsed_url['host'] .
+					( isset( $parsed_url['port'] ) ? ':' . $parsed_url['port'] : '' ) .
+					( isset( $parsed_url['path'] ) ? $parsed_url['path'] : '' ) .
+					( isset( $parsed_url['query'] ) ? '?' . $parsed_url['query'] : '' ) .
+					( isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : '' );
+				return $new_url;
+			}
+			return $url;
+		};
+		// Replace all URLs in the HTML.
+		$filtered_html = preg_replace_callback( '#https?://[\w\.-]+(?:/[^"\s]*)?#', $callback, $html );
+		return $filtered_html;
+	}
+	return $html;
+}
+add_filter( 'post_thumbnail_html', 'kate_toms_post_thumbnail_html_filter', 10, 5 );
+
+/**
+ * Filter the image src array to always return 'kateandtoms.com' as the URL.
+ *
+ * @param array        $image         Array of image data: [0] => URL, [1] => width, [2] => height, [3] => is_icon.
+ * @param int          $attachment_id Attachment ID.
+ * @param string|int[] $size          Size of image.
+ * @param bool         $icon          Whether the image is an icon.
+ * @return array       Modified image array with URL replaced.
+ */
+function kate_toms_replace_image_srcset_url( $image, $attachment_id, $size, $icon ) {
+	if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'staging' ) {
+		if ( is_array( $image ) && isset( $image[0] ) ) {
+			$parsed_url = wp_parse_url( $image[0] );
+			if ( $parsed_url && isset( $parsed_url['host'] ) ) {
+				$parsed_url['host'] = 'kateandtoms.com';
+				// Rebuild the URL
+				$image[0] = ( isset( $parsed_url['scheme'] ) ? $parsed_url['scheme'] . '://' : '' ) .
+					$parsed_url['host'] .
+					( isset( $parsed_url['port'] ) ? ':' . $parsed_url['port'] : '' ) .
+					( isset( $parsed_url['path'] ) ? $parsed_url['path'] : '' ) .
+					( isset( $parsed_url['query'] ) ? '?' . $parsed_url['query'] : '' ) .
+					( isset( $parsed_url['fragment'] ) ? '#' . $parsed_url['fragment'] : '' );
+			}
+		}
+	}
+	return $image;
+}
+add_filter( 'wp_get_attachment_image_src', 'kate_toms_replace_image_srcset_url', 10, 4 );
+
+function kate_toms_calculate_image_srcset ( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
+	if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'staging' ) {
+		$cdn_url = 'https://kateandtoms.com'; // Replace with your actual CDN URL
+		$site_url = wp_parse_url( site_url(), PHP_URL_HOST );
+
+		foreach ( $sources as $width => &$source ) {
+			$source_url  = $source['url'];
+			$source_host = parse_url( $source_url, PHP_URL_HOST );
+			// Only replace if the URL is from our site
+			if ( $source_host === $site_url) {
+				$source['url'] = str_replace( "https://{$site_url}", $cdn_url, $source_url );
+			}
+		}
+	}
+	return $sources;
+}
+
+add_filter( 'wp_calculate_image_srcset', 'kate_toms_calculate_image_srcset', 10, 5 );
+
 // Register button form extension
 function register_button_form_extension() {
 	register_block_type( __DIR__ . '/blocks/button-form-extension' );
@@ -88,7 +181,7 @@ add_action( 'init', 'register_button_form_extension' );
 // Handle frontend scripts
 function enqueue_button_form_scripts() {
 	// Only enqueue if we have a button block with form enabled
-	if ( has_block( 'core/button' ) ) {
+	//if ( has_block( 'core/button' ) ) {
 		wp_enqueue_script(
 			'kate-toms-form-handler',
 			plugins_url( 'blocks/button-form-extension/view.js', __FILE__ ),
@@ -112,7 +205,7 @@ function enqueue_button_form_scripts() {
 			array(),
 			'1.0.0'
 		);
-	}
+	//}
 }
 add_action( 'wp_enqueue_scripts', 'enqueue_button_form_scripts' );
 

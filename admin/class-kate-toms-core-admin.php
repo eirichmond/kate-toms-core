@@ -498,53 +498,14 @@ class Kate_Toms_Core_Admin {
 		}
 	}
 
-	public function kate_toms_post_thumbnail_size_filter( $size, $post_id ) {
-		$size = 'square';
-		return $size;
-	}
 
-	/**
-	 * Filter post thumbnail based on environment
-	 *
-	 * @param [type] $html
-	 * @param [type] $post_id
-	 * @param [type] $post_thumbnail_id
-	 * @param [type] $size
-	 * @param [type] $attr
-	 * @return void
-	 */
-	public function kate_toms_post_thumbnail_html_filter( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
-		$size = 'square';
-		if ( wp_get_environment_type() === 'local' ) {
-			return $this->image_string_replace( $html );
-		} else {
-			return $html;
-		}
-	}
-
-	/**
-	 * Helper function to replace test domain with production domain
-	 *
-	 * @param [type] $string
-	 * @return void
-	 */
-	public function image_string_replace( $string ) {
-
-		$filtered_string = str_replace(
-			array( 'https://kateandtomsblocks.test', 'blogs.dir/11/files' ),
-			array( 'https://kateandtoms.com', 'uploads' ),
-			$string
-		);
-
-		return $filtered_string;
-	}
 
 	/**
 	 * Register pattern categories
 	 *
 	 * @return void
 	 */
-	public function kate_toms_core_register_patterns() {
+	public function kate_toms_core_register_pattern_categories() {
 		register_block_pattern_category(
 			'house-card-search',
 			array(
@@ -552,5 +513,31 @@ class Kate_Toms_Core_Admin {
 				'description' => 'House card search patterns',
 			)
 		);
+	}
+
+	/**
+	 * Register patterns
+	 *
+	 * @return void
+	 */
+	public function kate_toms_core_register_patterns() {
+		register_block_pattern(
+			'kate-toms-core/house-card-test',
+			array(
+				'title' => 'House Card Test',
+				'categories' => array( 'house-card-search' ),
+				'viewportWidth' => 1500,
+				'filePath' => plugin_dir_path( __FILE__ ) . 'partials/patterns/house-card-test.php',
+			)
+		);
+	}
+
+	/**
+	 * Remove core patterns
+	 *
+	 * @return void
+	 */
+	public function remove_core_patterns() {
+		remove_theme_support( 'core-block-patterns' );
 	}
 }

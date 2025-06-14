@@ -103,10 +103,21 @@ class Houses_Filter_API {
 	}
 
 	/**
-	 * Get filtered houses.
-	 *
-	 * @param WP_REST_Request $request The request object.
-	 * @return WP_REST_Response The response object.
+	 * Get filtered houses based on user-selected filters and default locations.
+	 * 
+	 * This endpoint is triggered by:
+	 * 1. Initial page load with default filters
+	 * 2. User interaction with filter controls in the frontend (houses-filter/view.js)
+	 * 3. Automatic updates when filter values change in the state
+	 * 
+	 * @param WP_REST_Request $request The request object containing filter parameters:
+	 *                                - local: Selected location term ID
+	 *                                - default_location: Default location term ID
+	 *                                - feature: Selected feature term ID
+	 *                                - date: Selected date (YYYY-MM-DD)
+	 *                                - dtype: Date type filter
+	 *                                - size: Size filter
+	 * @return WP_REST_Response The response object containing filtered houses
 	 */
 	public function get_filtered_houses( $request ) {
 		$params = $request->get_params();
@@ -125,24 +136,27 @@ class Houses_Filter_API {
 		if ( ! empty( $params['local'] ) || ! empty( $params['default_location'] ) ) {
 			$location_terms = array();
 			
-			// Add user-selected location if present.
+			// Add user-selected location if present
 			if ( ! empty( $params['local'] ) ) {
 				$location_terms[] = $params['local'];
 			}
 			
-			// Add default location if present.
+			// Add default location if present
 			if ( ! empty( $params['default_location'] ) ) {
 				$location_terms[] = $params['default_location'];
 			}
 
-			// If we have location terms, add them to the tax query.
+			// If we have location terms, add them to the tax query
 			if ( ! empty( $location_terms ) ) {
-				$tax_query[] = array(
-					'taxonomy' => 'location',
-					'field'    => 'term_id',
-					'terms'    => $location_terms,
-					'operator' => 'AND', // Use AND to require both locations.
-				);
+				// Create separate tax query clause for each location term
+				foreach ($location_terms as $term_id) {
+					$tax_query[] = array(
+						'taxonomy' => 'location',
+						'field'    => 'term_id',
+						'terms'    => array($term_id),
+						'operator' => 'IN'
+					);
+				}
 			}
 		}
 

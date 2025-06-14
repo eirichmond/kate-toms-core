@@ -96,4 +96,71 @@ class Kate_Toms_Core_Public {
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/kate-toms-core-public.js', array( 'jquery' ), $this->version, false );
 	}
+	
+
+
+	
+
+	/**
+	 * Helper Functions
+	 *
+	 * The functions below are related to testing or can be considered
+	 * as temporary helper functions for development purposes. They
+	 * may potentially be removed in future versions of the plugin.
+	 *
+	 * @since 1.0.0
+	 */
+
+	/**
+	 * Outputs the BugHerd tracking script in the frontend.
+	 *
+	 * Note: This is a development tool and should be properly managed via wp_enqueue_script().
+	 * Consider refactoring to use WordPress enqueue system for better practice.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function bugherd_script() {
+		echo '<script type="text/javascript" src="https://www.bugherd.com/sidebarv2.js?apikey=8je1j3guc7qdsjlkvgxhyq" async="true"></script>';
+	}
+
+	/**
+	 * Modifies featured image HTML to handle URL differences between environments.
+	 *
+	 * @since 1.0.0
+	 * @param string $html               The featured image HTML.
+	 * @param int    $post_id           The post ID.
+	 * @param int    $post_thumbnail_id The post thumbnail ID.
+	 * @param string $size              The requested image size.
+	 * @param array  $attr              Array of image attributes.
+	 * @return string Modified featured image HTML.
+	 */
+	public function modify_featured_image_html_local_staging_production( $html, $post_id, $post_thumbnail_id, $size, $attr ) {
+		// Modify the HTML here
+		$html = str_replace(
+			[ 'bigholidayhomes.co.uk', 'http://kateandtomsblocks.test', 'blogs.dir/11/files'],
+			[ 'kateandtoms.com', 'https://kateandtoms.com', 'uploads'],
+			$html
+		);
+		return $html;
+	}
+
+	/**
+	 * Replaces the domain in image srcset URLs with the CDN domain.
+	 *
+	 * @since 1.0.0
+	 * @param array  $sources      The array of image sources for the srcset.
+	 * @param array  $size_array   Array of width and height values in pixels (in that order).
+	 * @param string $image_src    The image source URL.
+	 * @param array  $image_meta   The image meta data.
+	 * @param int    $attachment_id The image attachment ID.
+	 * @return array Modified array of image sources with CDN URLs.
+	 */
+	public function kate_toms_replace_image_srcset_url( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
+		foreach ( $sources as &$source ) {
+			$source['url'] = str_replace( '//kateandtomsblocks.test', '//kateandtoms.com', $source['url'] );
+		}
+		return $sources;
+	}
+
 }
