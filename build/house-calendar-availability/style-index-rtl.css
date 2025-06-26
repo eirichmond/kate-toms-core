@@ -1,0 +1,260 @@
+/*!**********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/house-calendar-availability/style.scss ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************/
+.house-calendar-availability {
+  margin: 2rem 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.house-calendar-availability .calendar-container {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+.house-calendar-availability .kt-calendar-month .month-header {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+.house-calendar-availability .kt-calendar-month .month-header h3 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+}
+.house-calendar-availability .kt-calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.house-calendar-availability .kt-calendar-table th, .house-calendar-availability .kt-calendar-table td {
+  padding: 8px 4px;
+  text-align: center;
+  border: 1px solid #ddd;
+  font-size: 0.8rem;
+  position: relative;
+}
+.house-calendar-availability .kt-calendar-table .day-headers th {
+  background: #e8f4f8;
+  font-weight: 600;
+  color: #2c3e50;
+  min-width: 35px;
+}
+.house-calendar-availability .kt-calendar-table .period-headers th {
+  background: #f1f8ff;
+  font-weight: 600;
+  color: #34495e;
+  font-size: 0.7rem;
+  padding: 4px 2px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day {
+  width: 35px;
+  height: 35px;
+  position: relative;
+  font-weight: 600;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail {
+  background: #c5c951;
+  color: #fff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_unav {
+  background: #e3634b;
+  color: #fff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_partial {
+  background: #fff3cd;
+  color: #856404;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.halfafter::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 50px 50px 0;
+  border-color: transparent transparent #c5c951 transparent;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.halfbefore::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 50px 50px 0;
+  border-color: transparent transparent #e3634b transparent;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.checkin-day {
+  border-right: 3px solid #007bff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.checkout-day {
+  border-left: 3px solid #6c757d;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.today {
+  background: #007bff !important;
+  color: white !important;
+  font-weight: bold;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.other-month {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell {
+  font-size: 0.75rem;
+  vertical-align: middle;
+  min-width: 60px;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell .price {
+  font-weight: 600;
+  color: #28a745;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell .special-offer {
+  font-weight: 600;
+  color: #dc3545;
+  font-size: 0.7rem;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell .price-from {
+  font-weight: 600;
+  color: #ffc107;
+  font-size: 0.7rem;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell:empty {
+  background: #f8f9fa;
+}
+.house-calendar-availability .month-notes {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  margin-top: 0.5rem;
+}
+.house-calendar-availability .month-notes p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6c757d;
+  line-height: 1.4;
+  text-align: center;
+  font-style: italic;
+}
+.house-calendar-availability .calendar-legend {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+.house-calendar-availability .calendar-legend h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+.house-calendar-availability .calendar-legend .legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.house-calendar-availability .calendar-legend .legend-section h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #495057;
+}
+.house-calendar-availability .calendar-legend .legend-section .legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.house-calendar-availability .calendar-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+.house-calendar-availability .calendar-legend .legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  position: relative;
+}
+.house-calendar-availability .calendar-legend .legend-color.available {
+  background: #d4edda;
+}
+.house-calendar-availability .calendar-legend .legend-color.booked {
+  background: #f8d7da;
+}
+.house-calendar-availability .calendar-legend .legend-color.partial {
+  background: #fff3cd;
+}
+.house-calendar-availability .calendar-legend .legend-color.checkin::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 10px 10px;
+  border-color: transparent transparent transparent #28a745;
+}
+.house-calendar-availability .calendar-legend .legend-color.checkout::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 10px 0 0;
+  border-color: #dc3545 transparent transparent transparent;
+}
+.house-calendar-availability .offers-note {
+  padding: 1rem;
+  background: #e9ecef;
+  border-top: 1px solid #dee2e6;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+.house-calendar-availability .offers-note p {
+  margin: 0.5rem 0;
+}
+.house-calendar-availability .offers-note p:first-child {
+  margin-top: 0;
+}
+.house-calendar-availability .offers-note p:last-child {
+  margin-bottom: 0;
+}
+.house-calendar-availability .calendar-loading {
+  padding: 2rem;
+  text-align: center;
+}
+.house-calendar-availability .calendar-loading .loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007cba;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}
+@media (max-width: 768px) {
+  .house-calendar-availability .kt-calendar-table {
+    font-size: 0.7rem;
+  }
+  .house-calendar-availability .kt-calendar-table th, .house-calendar-availability .kt-calendar-table td {
+    padding: 4px 2px;
+  }
+  .house-calendar-availability .kt-calendar-table .period-headers th {
+    font-size: 0.6rem;
+  }
+  .house-calendar-availability .legend-grid {
+    grid-template-columns: 1fr;
+  }
+}

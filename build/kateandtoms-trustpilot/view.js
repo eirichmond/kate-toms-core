@@ -1,14 +1,1 @@
-/******/ (() => { // webpackBootstrap
-/*!***********************************************!*\
-  !*** ./blocks/kateandtoms-trustpilot/view.js ***!
-  \***********************************************/
-if (!window.trustpilotScriptLoaded) {
-  const script = document.createElement("script");
-  script.src = "//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js";
-  script.async = true;
-  document.body.appendChild(script);
-  window.trustpilotScriptLoaded = true;
-}
-/******/ })()
-;
-//# sourceMappingURL=view.js.map
+(()=>{if(!window.trustpilotScriptLoaded){const t=document.createElement("script");t.src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js",t.async=!0,document.body.appendChild(t),window.trustpilotScriptLoaded=!0}})();

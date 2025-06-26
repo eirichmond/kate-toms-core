@@ -128,11 +128,17 @@ class Kate_Toms_Core {
 		 * The class responsible for the Houses Filter API functionality
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-houses-filter-api.php';
+		
+		/**
+		 * The class responsible for the House Availability API functionality
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-houses-calendar-availability-api.php';
 
 		$this->loader = new Kate_Toms_Core_Loader();
 
-		// Initialize the API
+		// Initialize the APIs
 		new Houses_Filter_API();
+		new House_Calendar_Manager();
 	}
 
 	/**

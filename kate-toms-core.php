@@ -234,3 +234,5 @@ function load_booking_form_callback() {
 }
 add_action( 'wp_ajax_load_booking_form', 'load_booking_form_callback' );
 add_action( 'wp_ajax_nopriv_load_booking_form', 'load_booking_form_callback' );
+
+

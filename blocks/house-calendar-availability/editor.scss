@@ -1,0 +1,87 @@
+.kt-house-calendar-editor {
+	padding: 1rem;
+	border: 1px solid #ddd;
+	border-radius: 4px;
+	background: #fff;
+
+	.kt-calendar-preview {
+		text-align: center;
+
+		.kt-calendar-icon {
+			svg {
+				width: 48px;
+				height: 48px;
+				color: #135e96;
+				margin-bottom: 1rem;
+			}
+		}
+
+		h3 {
+			margin: 0 0 1rem 0;
+			color: #135e96;
+			font-size: 1.25rem;
+		}
+
+		.components-notice {
+			margin: 1rem 0;
+		}
+	}
+
+	.kt-calendar-configured {
+		text-align: left;
+		
+		p {
+			margin: 0.5rem 0;
+			
+			strong {
+				color: #135e96;
+			}
+		}
+
+		.kt-calendar-preview-grid {
+			margin-top: 1.5rem;
+			padding: 1rem;
+			background: #f9f9f9;
+			border-radius: 4px;
+
+			.kt-calendar-month {
+				h4 {
+					margin: 0 0 1rem 0;
+					color: #135e96;
+					text-align: center;
+				}
+
+				.kt-calendar-days {
+					display: grid;
+					grid-template-columns: repeat(4, 1fr);
+					gap: 0.5rem;
+
+					.kt-day {
+						padding: 0.5rem;
+						text-align: center;
+						border-radius: 4px;
+						font-size: 0.875rem;
+						color: #fff;
+						font-weight: 500;
+
+						&.available {
+							background: #22c55e;
+						}
+
+						&.booked {
+							background: #ef4444;
+						}
+
+						&.checkin.halfafter {
+							background: linear-gradient(135deg, #22c55e 50%, #3b82f6 50%);
+						}
+
+						&.checkout.halfbefore {
+							background: linear-gradient(-45deg, #3b82f6 50%, #22c55e 50%);
+						}
+					}
+				}
+			}
+		}
+	}
+} 
