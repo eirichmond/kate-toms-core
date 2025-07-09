@@ -1,1 +1,48 @@
-.wp-block-kate-toms-house-filter-houses-filter input[type=text]{background:inherit;border:0;color:inherit;font-size:1em}.houses-filter{background:#fff;border:1px solid #ddd;border-radius:4px;padding:20px}.houses-filter__field{margin-bottom:20px}.houses-filter__field:last-child{margin-bottom:0}.houses-filter__label{display:block;font-weight:600;margin-bottom:8px}.houses-filter .components-button-group{display:flex;flex-wrap:wrap;gap:8px}.houses-filter .components-button-group .components-button{flex:1;justify-content:center;margin:0;min-width:100px}.houses-filter .components-datetime__date{margin-bottom:0}
+/*!*********************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/houses-filter/editor.scss ***!
+  \*********************************************************************************************************************************************************************************************************************************************************/
+/**
+ * The following styles get applied inside the editor only.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+.wp-block-kate-toms-house-filter-houses-filter input[type=text] {
+  font-size: 1em;
+  color: inherit;
+  background: inherit;
+  border: 0;
+}
+
+.houses-filter {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.houses-filter__field {
+  margin-bottom: 20px;
+}
+.houses-filter__field:last-child {
+  margin-bottom: 0;
+}
+.houses-filter__label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+.houses-filter .components-button-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.houses-filter .components-button-group .components-button {
+  flex: 1;
+  justify-content: center;
+  min-width: 100px;
+  margin: 0;
+}
+.houses-filter .components-datetime__date {
+  margin-bottom: 0;
+}
+
+/*# sourceMappingURL=index.css.map*/

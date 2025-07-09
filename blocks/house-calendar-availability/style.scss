@@ -5,21 +5,16 @@
 	.calendar-container {
 		background: #fff;
 		border-radius: 8px;
-		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+		// box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		overflow: hidden;
 	}
 	
 	.kt-calendar-month {
 		.month-header {
-			padding: 1rem;
-			background: #f8f9fa;
-			border-bottom: 1px solid #e9ecef;
 			
-			h3 {
-				margin: 0;
-				font-size: 1.5rem;
-				font-weight: 600;
-				text-align: center;
+			h2 {
+				font-weight: normal;
+				color: #333;
 			}
 		}
 	}
@@ -27,20 +22,21 @@
 	.kt-calendar-table {
 		width: 100%;
 		border-collapse: collapse;
-		
-		th, td {
-			padding: 8px 4px;
+		th {
+			padding: 4px 0;
+			font-size: 0.7rem;
+		}
+		td {
 			text-align: center;
-			border: 1px solid #ddd;
-			font-size: 0.8rem;
+			font-size: 0.7rem;
 			position: relative;
 		}
 		
 		.day-headers th {
-			background: #e8f4f8;
+			background: #ddd;
 			font-weight: 600;
-			color: #2c3e50;
-			min-width: 35px;
+			color: #000;
+			min-width: 30px;
 		}
 		
 		.period-headers th {
@@ -54,9 +50,10 @@
 		}
 		
 		.calendar-day {
-			width: 35px;
-			height: 35px;
+			width: 30px;
+			height: 30px;
 			position: relative;
+			z-index: 0;
 			font-weight: 600;
 			
 			// Kate & Tom's availability states
@@ -79,31 +76,33 @@
 			&.halfafter::after {
 				content: '';
 				position: absolute;
+				z-index: -1;
 				bottom: 0;
 				right: 0;
 				width: 0;
 				height: 0;
 				border-style: solid;
-				border-width: 0 0 50px 50px;
+				border-width: 0 0 32px 32px;
 				border-color: transparent transparent #c5c951 transparent;
 			}
 			
-			&.halfbefore::before {
+			&.halfbefore::after {
 				content: '';
 				position: absolute;
+				z-index: -1;
 				bottom: 0;
 				left: 0;
 				width: 0;
 				height: 0;
 				border-style: solid;
-				border-width: 0 0 50px 50px;
+				border-width: 0 0 32px 32px;
 				border-color: transparent transparent #e3634b transparent;
 			}
 			
 			// Special styling for check-in days
-			&.checkin-day {
-				border-left: 3px solid #007bff;
-			}
+			// &.checkin-day {
+			// 	border-left: 3px solid #007bff;
+			// }
 			
 			// Special styling for checkout days
 			&.checkout-day {
@@ -127,21 +126,40 @@
 			vertical-align: middle;
 			min-width: 60px;
 			
-			.price {
+			// Rate type styling
+			&.price {
 				font-weight: 600;
 				color: #28a745;
 			}
 			
-			.special-offer {
+			&.from {
+				font-weight: 600;
+				color: #ffc107;
+				font-size: 0.7rem;
+			}
+			
+			&.special1, &.special2, &.special3 {
 				font-weight: 600;
 				color: #dc3545;
 				font-size: 0.7rem;
 			}
 			
-			.price-from {
-				font-weight: 600;
-				color: #ffc107;
-				font-size: 0.7rem;
+			&.no, &.unavailable {
+				color: #cdcdcd;
+			}
+			
+			&.previous {
+				color: #17a2b8;
+				font-style: italic;
+			}
+			
+			&.unknown {
+				color: #cdcdcd;
+				background: #f8f9fa;
+			}
+			
+			&.hidden {
+				display: none; // This shouldn't appear due to column hiding logic
 			}
 			
 			&:empty {
@@ -227,7 +245,7 @@
 				border-color: transparent #28a745 transparent transparent;
 			}
 			
-			&.checkout::before {
+			&.checkout::after {
 				content: '';
 				position: absolute;
 				top: 0;
@@ -286,14 +304,14 @@
 	// Responsive design
 	@media (max-width: 768px) {
 		.kt-calendar-table {
-			font-size: 0.7rem;
+			font-size: 0.8rem;
 			
 			th, td {
 				padding: 4px 2px;
 			}
 			
 			.period-headers th {
-				font-size: 0.6rem;
+				font-size: 0.8rem;
 			}
 		}
 		
