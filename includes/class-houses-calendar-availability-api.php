@@ -39,6 +39,10 @@ class House_Calendar_Manager {
 		// Add AJAX handlers
 		add_action( 'wp_ajax_fetch_calendar_data', array( $this, 'fetch_calendar_data_callback' ) );
 		add_action( 'wp_ajax_nopriv_fetch_calendar_data', array( $this, 'fetch_calendar_data_callback' ) );
+		
+		// Lightweight AJAX handler for just availability notes
+		add_action( 'wp_ajax_get_availability_notes', array( $this, 'get_availability_notes_callback' ) );
+		add_action( 'wp_ajax_nopriv_get_availability_notes', array( $this, 'get_availability_notes_callback' ) );
 	}
 	
 	/**
@@ -82,7 +86,7 @@ class House_Calendar_Manager {
 	 * @param bool   $force_refresh Force refresh of cached data.
 	 * @return array Processed calendar data.
 	 */
-	public function get_calendar_data( $house_id, $access_token, $force_refresh = false ) {
+	public function get_calendar_data( $house_id, $access_token, $force_refresh = true ) {
 		$transient_key = "kt_house_calendar_{$house_id}";
 		
 		if ( ! $force_refresh ) {
@@ -167,6 +171,11 @@ class House_Calendar_Manager {
 					}
 				}
 			}
+		}
+		
+		// Preserve AvailabilityNotes from raw rates data
+		if ( isset( $rates['AvailabilityNotes'] ) ) {
+			$processed_data['AvailabilityNotes'] = $rates['AvailabilityNotes'];
 		}
 		
 		// Process rates with Kate & Tom's pricing keys
@@ -664,5 +673,32 @@ class House_Calendar_Manager {
 		}
 		
 		wp_send_json_success( $data );
+	}
+	
+	/**
+	 * Lightweight AJAX callback for fetching just availability notes.
+	 */
+	public function get_availability_notes_callback() {
+		// Verify nonce
+		if ( ! wp_verify_nonce( wp_unslash( $_GET['nonce'] ?? '' ), 'calendar_data_nonce' ) ) {
+			wp_die( 'Security check failed' );
+		}
+
+		$house_id = sanitize_text_field( wp_unslash( $_GET['house_id'] ?? '' ) );
+		
+		if ( empty( $house_id ) ) {
+			wp_send_json_error( 'Missing house ID parameter' );
+		}
+
+		// Get availability notes directly from transient cache
+		$transient_key = '_transient_kt_house_calendar_' . $house_id;
+		$calendar_data = get_option( $transient_key );
+		
+		$availability_notes = '';
+		if ( $calendar_data && isset( $calendar_data['AvailabilityNotes'] ) ) {
+			$availability_notes = $calendar_data['AvailabilityNotes'];
+		}
+		
+		wp_send_json_success( array( 'AvailabilityNotes' => $availability_notes ) );
 	}
 }

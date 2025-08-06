@@ -2,13 +2,9 @@
  * House Calendar Availability Block Frontend Script
  */
 
-console.log('House Calendar view.js script loaded');
-
 document.addEventListener('DOMContentLoaded', function() {
-	console.log('DOM loaded, looking for calendar blocks');
 	// Initialize all calendar blocks on the page
 	const calendarBlocks = document.querySelectorAll('.house-calendar-availability');
-	console.log('Found calendar blocks:', calendarBlocks.length);
 	
 	calendarBlocks.forEach(initializeCalendar);
 });
@@ -17,20 +13,14 @@ function initializeCalendar(blockElement) {
 	const blockId = blockElement.id;
 	const dataVarName = 'houseCalendarData_' + blockId.replace(/-/g, '_');
 	
-	console.log('Initializing calendar for block:', blockId);
-	console.log('Looking for data variable:', dataVarName);
-	console.log('Available window variables:', Object.keys(window).filter(key => key.includes('houseCalendar')));
 	
 	// Get the localized data
 	if (!window[dataVarName]) {
-		console.error('Calendar data not found for block:', blockId);
-		console.error('Expected variable name:', dataVarName);
 		showError(blockElement, 'Configuration error');
 		return;
 	}
 	
 	const config = window[dataVarName];
-	console.log('Found config data:', config);
 	const calendar = new HouseCalendar(blockElement, config);
 	calendar.init();
 }
@@ -55,7 +45,6 @@ class HouseCalendar {
 	}
 	
 	init() {
-		console.log('Initializing calendar for house:', this.config.houseId);
 		this.fetchData();
 		
 		// Set up auto-refresh if enabled
@@ -86,11 +75,9 @@ class HouseCalendar {
 				this.renderCalendar();
 				this.showCalendar();
 			} else {
-				console.error('API Error:', data.data);
 				this.showError('Failed to load calendar data: ' + (data.data || 'Unknown error'));
 			}
 		} catch (error) {
-			console.error('Fetch Error:', error);
 			this.showError('Network error. Please check your connection.');
 		}
 	}
@@ -179,12 +166,9 @@ class HouseCalendar {
 		const daysToGoBack = (firstDayOfWeek + 2) % 7; // Formula to get to Friday: (day + 2) % 7
 		startDate.setDate(startDate.getDate() - daysToGoBack);
 		
-		// Debug: Check what we actually found
-		console.log(`Found Friday: ${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')}, day=${startDate.getDay()}`);
 		
 		// Verify this is actually a Friday by checking a known Friday
 		const verifyFriday = new Date(2025, 6, 4); // July 4, 2025 is definitely a Friday
-		console.log(`Verify Friday July 4, 2025: day=${verifyFriday.getDay()}, date=${verifyFriday.getFullYear()}-${String(verifyFriday.getMonth() + 1).padStart(2, '0')}-${String(verifyFriday.getDate()).padStart(2, '0')}`)
 		
 		let currentDay = new Date(startDate);
 		let weekCount = 0;
@@ -408,8 +392,6 @@ class HouseCalendar {
 
 		let html = '';
 		
-		// Debug: Check what weekFridayDate actually is
-		console.log(`generateWeekRates: weekFridayDate=${weekFridayDate.toISOString().split('T')[0]}, day=${weekFridayDate.getDay()}`);
 		
 		for (const rateKey of visibleRateColumns) {
 			// Get the correct checkin day for this rate type
@@ -427,11 +409,7 @@ class HouseCalendar {
 				"-" +
 				String(checkinDate.getDate()).padStart(2, "0");
 
-			console.log(weekDateKey); // "2025-07-04"
 
-			console.log(
-				`Rate ${rateKey}: checkinDate=${weekDateKey}, day=${checkinDate.getDay()}`
-			);
 
 			const rateData = this.getWeekRate(monthKey, weekDateKey, rateKey);
 			html += `<td class="rate-cell ${rateData.type}">${rateData.display}</td>`;
@@ -542,8 +520,6 @@ class HouseCalendar {
 		if (!monthRates || !monthRates.weeks) {
 			return { type: 'unavailable', display: 'n/a' };
 		}
-		console.log(`weekDateKey: ${weekDateKey}`);
-		console.log(`monthRates.weeks: ` + JSON.stringify(monthRates.weeks) );
 		// Try to get the rate for this week
 		const weekRates = monthRates.weeks[weekDateKey];
 		if (weekRates && weekRates[rateKey]) {

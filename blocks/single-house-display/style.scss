@@ -1,0 +1,23 @@
+/**
+ * Single House Display Block Styles
+ * 
+ * Frontend styles for the single-house-display block
+ */
+
+.wp-block-kate-toms-core-single-house-display {
+	.wp-block-group {
+		img {
+			width: 100%;
+			height: auto;
+			display: block;
+		}
+
+		.wp-block-post-title__link {
+			text-decoration: none;
+			
+			&:hover {
+				opacity: 0.9;
+			}
+		}
+	}
+}

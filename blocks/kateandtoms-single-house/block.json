@@ -1,0 +1,32 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "kate-toms-core/kateandtoms-single-house",
+	"version": "0.1.0",
+	"title": "Kate & Tom's Single House",
+	"category": "widgets",
+	"icon": "admin-home",
+	"description": "Display a single house with selectable style and house picker using typeahead search",
+	"example": {},
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"]
+	},
+	"usesContext": [],
+	"textdomain": "kate-toms-core",
+	"attributes": {
+		"selectedPostId": {
+			"type": "number",
+			"default": 0
+		},
+		"category": {
+			"type": "string",
+			"default": "cotswolds",
+			"enum": ["coast", "cotswolds", "country", "town"]
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+} 

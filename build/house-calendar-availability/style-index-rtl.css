@@ -27,6 +27,12 @@
   font-size: 0.7rem;
   position: relative;
 }
+.house-calendar-availability .kt-calendar-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+.house-calendar-availability .kt-calendar-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
 .house-calendar-availability .kt-calendar-table .day-headers th {
   background: #ddd;
   font-weight: 600;
@@ -97,6 +103,11 @@
   background: #f8f9fa;
   color: #6c757d;
 }
+.house-calendar-availability .kt-calendar-table .calendar-day.past {
+  opacity: 0.5;
+  background-color: #e9ecef !important;
+  color: #6c757d !important;
+}
 .house-calendar-availability .kt-calendar-table .rate-cell {
   font-size: 0.75rem;
   vertical-align: middle;
@@ -104,7 +115,7 @@
 }
 .house-calendar-availability .kt-calendar-table .rate-cell.price {
   font-weight: 600;
-  color: #28a745;
+  color: #333;
 }
 .house-calendar-availability .kt-calendar-table .rate-cell.from {
   font-weight: 600;

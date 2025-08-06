@@ -1,0 +1,76 @@
+/**
+ * Editor styles for Google Map block
+ */
+
+.wp-block-kate-toms-core-google-map {
+	.google-map-editor {
+		border: 1px solid #ddd;
+		border-radius: 8px;
+		overflow: hidden;
+		background: #fff;
+		
+		&__map-container {
+			border-radius: 8px;
+			overflow: hidden;
+			position: relative;
+		}
+		
+		&__map {
+			border-radius: 8px;
+		}
+		
+		&__loading {
+			height: 300px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background-color: #f8f9fa;
+			color: #6c757d;
+			font-style: italic;
+		}
+	}
+
+	// EVENT ISOLATION: Prevent map from capturing block drag events
+	&:not(.is-selected) .google-map-editor__map-container {
+		pointer-events: none;
+		
+		// Visual indicator that map is not interactive
+		&::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 100;
+			background: rgba(255, 255, 255, 0.01); // Barely visible overlay
+			cursor: grab; // Indicates block can be dragged
+		}
+	}
+	
+	// When block is selected, enable full map interaction
+	&.is-selected .google-map-editor__map-container {
+		pointer-events: auto;
+	}
+
+	// Visual feedback when block is selected
+	&.is-selected .google-map-editor {
+		box-shadow: 0 0 0 2px #0073aa;
+	}
+}
+
+// Inspector controls styling
+.components-panel__body {
+	.google-map-coordinates {
+		margin-top: 10px;
+		padding: 10px;
+		background: #f8f9fa;
+		border-radius: 4px;
+		font-size: 12px;
+		color: #666;
+		
+		strong {
+			color: #333;
+		}
+	}
+} 

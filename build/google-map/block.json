@@ -1,0 +1,38 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/google-map",
+  "version": "0.1.0",
+  "title": "House location",
+  "category": "widgets",
+  "icon": "location-alt",
+  "description": "to render a google map for house location",
+  "keywords": [
+    "Google",
+    "Map",
+    "House Location"
+  ],
+  "example": {},
+  "supports": {
+    "html": false
+  },
+  "textdomain": "kate-toms-core",
+  "attributes": {
+    "address": {
+      "type": "string",
+      "default": ""
+    },
+    "lat": {
+      "type": "string",
+      "default": ""
+    },
+    "lng": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "viewScript": "file:./view.js"
+}

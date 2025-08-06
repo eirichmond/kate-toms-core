@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/single-house-display",
+  "version": "0.1.0",
+  "title": "Single House Display",
+  "category": "widgets",
+  "icon": "admin-home",
+  "description": "Display a single house with selectable style and house picker",
+  "example": {},
+  "supports": {
+    "html": false
+  },
+  "usesContext": [],
+  "textdomain": "kate-toms-core",
+  "attributes": {
+    "selectedHouse": {
+      "type": "number",
+      "default": 0
+    },
+    "displayStyle": {
+      "type": "string",
+      "default": "coast",
+      "enum": [
+        "coast",
+        "cotswolds",
+        "country",
+        "town"
+      ]
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

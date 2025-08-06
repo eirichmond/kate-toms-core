@@ -1,0 +1,21 @@
+/*!***************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/single-house-display/style.scss ***!
+  \***************************************************************************************************************************************************************************************************************************************************************/
+/**
+ * Single House Display Block Styles
+ * 
+ * Frontend styles for the single-house-display block
+ */
+.wp-block-kate-toms-core-single-house-display .wp-block-group img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.wp-block-kate-toms-core-single-house-display .wp-block-group .wp-block-post-title__link {
+  text-decoration: none;
+}
+.wp-block-kate-toms-core-single-house-display .wp-block-group .wp-block-post-title__link:hover {
+  opacity: 0.9;
+}
+
+/*# sourceMappingURL=style-index.css.map*/

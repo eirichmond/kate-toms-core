@@ -1,0 +1,36 @@
+/*!*******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/kateandtoms-single-house/style.scss ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************/
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-kate-toms-core-kateandtoms-single-house-error {
+  padding: 20px;
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-kate-toms-core-kateandtoms-single-house-error strong {
+  font-weight: 600;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-group {
+  margin-bottom: 0;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-title {
+  margin-bottom: 0;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-title a {
+  text-decoration: none;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-title a:hover {
+  text-decoration: none;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-featured-image {
+  margin-bottom: 0;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-featured-image img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/*# sourceMappingURL=style-index.css.map*/

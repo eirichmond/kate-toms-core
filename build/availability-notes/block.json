@@ -1,0 +1,34 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/availability-notes",
+  "version": "1.0.0",
+  "title": "Availability Notes",
+  "category": "widgets",
+  "icon": "info",
+  "description": "Display availability notes and booking information for a house.",
+  "keywords": [
+    "availability",
+    "notes",
+    "booking",
+    "information"
+  ],
+  "textdomain": "kate-toms-core",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "attributes": {
+    "houseId": {
+      "type": "string",
+      "default": ""
+    }
+  },
+  "supports": {
+    "html": false,
+    "align": [
+      "wide",
+      "full"
+    ]
+  }
+}

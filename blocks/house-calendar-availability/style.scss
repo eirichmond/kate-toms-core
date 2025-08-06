@@ -32,6 +32,15 @@
 			position: relative;
 		}
 		
+		// Striped rows - alternating white and light gray
+		tr:nth-child(odd) {
+			background-color: #ffffff;
+		}
+		
+		tr:nth-child(even) {
+			background-color: #f9f9f9;
+		}
+		
 		.day-headers th {
 			background: #ddd;
 			font-weight: 600;
@@ -119,6 +128,12 @@
 				background: #f8f9fa;
 				color: #6c757d;
 			}
+			
+			&.past {
+				opacity: 0.5;
+				background-color: #e9ecef !important;
+				color: #6c757d !important;
+			}
 		}
 		
 		.rate-cell {
@@ -129,7 +144,7 @@
 			// Rate type styling
 			&.price {
 				font-weight: 600;
-				color: #28a745;
+				color: #333;
 			}
 			
 			&.from {

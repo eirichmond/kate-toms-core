@@ -119,7 +119,107 @@ class Kate_Toms_Core_Admin {
 			);
 
 			foreach ( $folders as $folder ) {
-				register_block_type( plugin_dir_path( __DIR__ ) . '/build/' . $folder );
+				$block_path = plugin_dir_path( __DIR__ ) . '/build/' . $folder;
+				error_log( 'Registering block: ' . $folder . ' from path: ' . $block_path );
+				
+				// Special handling for single-house-display
+				if ( $folder === 'single-house-display' ) {
+					$result = register_block_type( $block_path, array(
+						'render_callback' => function( $attributes ) {
+							// Early return if no house is selected
+							if (empty($attributes['selectedHouse'])) {
+								return '<div class="wp-block-kate-toms-core-single-house-display"><p>' . __('No house selected.', 'kate-toms-core') . '</p></div>';
+							}
+
+							$house_id = absint($attributes['selectedHouse']);
+							$display_style = sanitize_text_field($attributes['displayStyle'] ?? 'coast');
+
+							// Get the house post
+							$house_post = get_post($house_id);
+							if (!$house_post || $house_post->post_type !== 'houses') {
+								return '<div class="wp-block-kate-toms-core-single-house-display"><p>' . __('House not found.', 'kate-toms-core') . '</p></div>';
+							}
+
+							// Check if it's a parent house (not a child page)
+							if ($house_post->post_parent != 0) {
+								return '<div class="wp-block-kate-toms-core-single-house-display"><p>' . __('Please select a parent house.', 'kate-toms-core') . '</p></div>';
+							}
+
+							// Get house meta data
+							$brief_description = get_post_meta($house_id, 'brief_description', true);
+							$sleeps_min = get_post_meta($house_id, 'sleeps_min', true);
+							$sleeps_max = get_post_meta($house_id, 'sleeps_max', true);
+							$location_text = get_post_meta($house_id, 'location_text', true);
+
+							// Get featured image
+							$featured_image = get_the_post_thumbnail($house_id, 'full');
+							$house_url = get_permalink($house_id);
+
+							// Set background color based on display style
+							$background_colors = [
+								'coast' => 'coloreight',
+								'cotswolds' => 'colorfive',
+								'country' => 'titlecolorthree',
+								'town' => 'coloreight',
+							];
+
+							$background_color = $background_colors[$display_style] ?? 'coloreight';
+
+							// Build the HTML using the pattern structure
+							$html = '<div class="wp-block-kate-toms-core-single-house-display">';
+							$html .= '<div class="wp-block-group has-white-background-color has-background" style="min-height:365px">';
+
+							// Featured image with link
+							if ($featured_image) {
+								$html .= '<a href="' . esc_url($house_url) . '">' . $featured_image . '</a>';
+							}
+
+							// Title with link and background color
+							$html .= '<div class="wp-block-post-title has-text-align-center">';
+							$html .= '<h2 class="wp-block-post-title__link has-' . esc_attr($background_color) . '-background-color has-white-color has-background has-link-color" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);font-style:normal;font-weight:600;font-size:var(--wp--preset--font-size--small)">';
+							$html .= '<a href="' . esc_url($house_url) . '" style="color:var(--wp--preset--color--white)">' . esc_html($house_post->post_title) . '</a>';
+							$html .= '</h2>';
+							$html .= '</div>';
+
+							// Description section
+							$html .= '<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">';
+							$html .= '<p class="has-x-small-font-size">' . esc_html($brief_description) . '</p>';
+							$html .= '</div>';
+
+							// Footer section with sleeps and location
+							$html .= '<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--tertiary);border-top-width:1px;padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">';
+							$html .= '<div class="wp-block-group" style="display:flex;flex-wrap:nowrap;justify-content:space-between">';
+
+							// Sleeps section
+							$html .= '<div class="wp-block-group" style="display:flex;flex-wrap:nowrap;gap:0.2em">';
+							$html .= '<p class="has-x-small-font-size">Sleeps </p>';
+							$html .= '<p class="has-x-small-font-size">' . esc_html($sleeps_min) . '</p>';
+							$html .= '<p class="has-x-small-font-size"> to </p>';
+							$html .= '<p class="has-x-small-font-size">' . esc_html($sleeps_max) . '</p>';
+							$html .= '</div>';
+
+							// Location section
+							$html .= '<div class="wp-block-group" style="display:flex;flex-wrap:nowrap;justify-content:right">';
+							$html .= '<p class="has-text-align-right has-x-small-font-size">' . esc_html($location_text) . '</p>';
+							$html .= '</div>';
+
+							$html .= '</div>'; // Close flex container
+							$html .= '</div>'; // Close footer group
+							$html .= '</div>'; // Close main group
+							$html .= '</div>'; // Close wrapper
+
+							return $html;
+						}
+					) );
+				} else {
+					$result = register_block_type( $block_path );
+				}
+				
+				if ( ! $result ) {
+					error_log( 'Failed to register block: ' . $folder );
+				} else {
+					error_log( 'Successfully registered block: ' . $folder );
+				}
 			}
 		} else {
 			error_log( 'The specified path to block directory is not a valid of found directory.' );
@@ -513,6 +613,22 @@ class Kate_Toms_Core_Admin {
 				'description' => 'House card search patterns',
 			)
 		);
+		
+		register_block_pattern_category(
+			'calendar-booking',
+			array(
+				'label'       => 'Calendar & Booking',
+				'description' => 'Calendar and booking related patterns',
+			)
+		);
+
+		register_block_pattern_category(
+			'kate-and-toms',
+			array(
+				'label'       => 'Kate & Toms',
+				'description' => 'Kate & Toms related patterns',
+			)
+		);
 	}
 
 	/**
@@ -528,6 +644,18 @@ class Kate_Toms_Core_Admin {
 				'categories' => array( 'house-card-search' ),
 				'viewportWidth' => 1500,
 				'filePath' => plugin_dir_path( __FILE__ ) . 'partials/patterns/house-card-test.php',
+			)
+		);
+		
+		register_block_pattern(
+			'kate-toms-core/calendar-booking-setup',
+			array(
+				'title' => 'Calendar Booking Setup',
+				'description' => 'Complete calendar setup with heading and availability notes',
+				'categories' => array( 'calendar-booking' ),
+				'keywords' => array( 'calendar', 'booking', 'availability', 'dates' ),
+				'viewportWidth' => 1500,
+				'filePath' => plugin_dir_path( __FILE__ ) . 'partials/patterns/calendar-booking-setup.php',
 			)
 		);
 	}
