@@ -1,0 +1,95 @@
+
+  {
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "kate-and-toms/icon-button",
+	"version": "0.1.0",
+	"title": "Icon Button",
+	"category": "design",
+	"icon": "button",
+	"description": "A powerful button block that supports prepending or appending SVG icons from an internal icon library.",
+	"keywords": ["button", "icon", "cta", "link"],
+	"parent": ["core/navigation"],
+	"example": {
+		"attributes": {
+			"text": "Learn More",
+			"showIcon": true,
+			"selectedIcon": "speech-bubble",
+			"iconPosition": "prepend"
+		}
+	},
+	"supports": {
+		"anchor": true,
+		"align": true,
+		"alignWide": false,
+		"color": {
+			"gradients": true,
+			"background": true,
+			"text": true
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"padding": true,
+			"margin": true
+		},
+		"html": false
+	},
+	"attributes": {
+		"text": {
+			"type": "string",
+			"source": "html",
+			"selector": ".icon-button__text"
+		},
+		"selectedIcon": {
+			"type": "string",
+			"default": ""
+		},
+		"iconPosition": {
+			"type": "string",
+			"default": "prepend"
+		},
+		"iconSize": {
+			"type": "number",
+			"default": 20
+		},
+		"showIcon": {
+			"type": "boolean",
+			"default": false
+		},
+		"url": {
+			"type": "string",
+			"source": "attribute",
+			"selector": "a",
+			"attribute": "href"
+		},
+		"linkTarget": {
+			"type": "string",
+			"source": "attribute",
+			"selector": "a",
+			"attribute": "target"
+		},
+		"rel": {
+			"type": "string",
+			"source": "attribute",
+			"selector": "a",
+			"attribute": "rel"
+		},
+		"showForm": {
+			"type": "boolean",
+			"default": false
+		},
+		"formType": {
+			"type": "string",
+			"default": "contact"
+		}
+	},
+	"textdomain": "kate-toms-core",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"viewScript": "file:./view.js"
+}
+  

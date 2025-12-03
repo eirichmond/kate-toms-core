@@ -32,5 +32,31 @@
 .wp-block-create-block-kateandtoms-image-fader .slide.active img {
   transform: scale(1.1);
 }
+.wp-block-create-block-kateandtoms-image-fader .signature-collection-badge {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 1;
+  pointer-events: none;
+}
+.wp-block-create-block-kateandtoms-image-fader .signature-collection-badge img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 12vw;
+  -o-object-fit: contain;
+     object-fit: contain;
+}
+@media (max-width: 768px) {
+  .wp-block-create-block-kateandtoms-image-fader .signature-collection-badge img {
+    max-width: 30vw;
+  }
+}
+@media (max-width: 480px) {
+  .wp-block-create-block-kateandtoms-image-fader .signature-collection-badge img {
+    max-width: 80px;
+    max-height: 80px;
+  }
+}
 
 /*# sourceMappingURL=style-index.css.map*/

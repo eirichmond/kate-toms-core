@@ -6,6 +6,19 @@
  * House Calendar Availability Block Frontend Script
  */
 
+/**
+
+	Note on KT's period rates and days:
+
+	2 night weekend = check in on Friday(1) +1day checkout Sunday
+	3 night weekend = check in on Friday(1) +2day checkout Monday
+	Week = check in on Friday(1) +6day checkout Friday || Monday(1) +6day checkout Monday
+	Midweek = check in on Monday(1) +3day checkout Friday
+	2 night midweek = check in on Monday, Tues or Weds(1) +1day checkout +1day from checkin
+
+
+**/
+
 document.addEventListener('DOMContentLoaded', function () {
   // Initialize all calendar blocks on the page
   const calendarBlocks = document.querySelectorAll('.house-calendar-availability');
@@ -63,6 +76,7 @@ class HouseCalendar {
         body: formData
       });
       const data = await response.json();
+      // debugger;
       if (data.success) {
         this.calendarData = data.data;
         this.renderCalendar();
@@ -80,14 +94,28 @@ class HouseCalendar {
     }
     let html = '<div class="calendar-wrapper">';
 
-    // Generate months
-    const startMonth = new Date();
-    for (let i = 0; i < this.config.monthsToShow; i++) {
-      const month = new Date(startMonth.getFullYear(), startMonth.getMonth() + i, 1);
+    // Generate months from now through December of next year
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth(); // 0-indexed (0 = January, 11 = December)
+
+    // End date is December of next year
+    const endYear = currentYear + 1;
+    const endMonth = 11; // December (0-indexed)
+
+    // Calculate number of months to show
+    const monthsToShow = (endYear - currentYear) * 12 + (endMonth - currentMonth) + 1;
+
+    // Generate each month
+    for (let i = 0; i < monthsToShow; i++) {
+      const month = new Date(currentYear, currentMonth + i, 1);
       html += this.generateMonthHTML(month);
     }
     html += '</div>';
     this.containerEl.innerHTML = html;
+
+    // Add click handlers for bookable dates
+    this.addBookingEventHandlers();
   }
   generateMonthHTML(date) {
     const year = date.getFullYear();
@@ -142,9 +170,6 @@ class HouseCalendar {
 		`;
 
     // Generate calendar weeks starting from Friday
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-
     // Find the Friday of the week that contains the first day of the month
     // Use local timezone consistently to avoid date shifts
     let startDate = new Date(year, month, 1);
@@ -153,13 +178,25 @@ class HouseCalendar {
     const firstDayOfWeek = startDate.getDay();
     const daysToGoBack = (firstDayOfWeek + 2) % 7; // Formula to get to Friday: (day + 2) % 7
     startDate.setDate(startDate.getDate() - daysToGoBack);
-
-    // Verify this is actually a Friday by checking a known Friday
-    const verifyFriday = new Date(2025, 6, 4); // July 4, 2025 is definitely a Friday
-
     let currentDay = new Date(startDate);
     let weekCount = 0;
-    while (currentDay <= lastDay || weekCount < 5) {
+    while (true) {
+      // Check if this week will contain any days from the current month
+      let checkDate = new Date(currentDay);
+      let hasCurrentMonthDays = false;
+      for (let i = 0; i < 7; i++) {
+        if (checkDate.getMonth() === month) {
+          hasCurrentMonthDays = true;
+          break;
+        }
+        checkDate.setDate(checkDate.getDate() + 1);
+      }
+
+      // If no days from current month, stop before rendering this week
+      if (!hasCurrentMonthDays && weekCount > 0) {
+        break;
+      }
+
       // Store the actual Friday date for this week (currentDay should be Friday at start of each week)
       const weekFridayDate = new Date(currentDay);
       html += '<tr class="calendar-week">';
@@ -169,8 +206,12 @@ class HouseCalendar {
         const dayNum = currentDay.getDate();
         const isCurrentMonth = currentDay.getMonth() === month;
         if (isCurrentMonth) {
+          // change the currentDay variable to a specific date
+          // currentDay = new Date("2026-05-23");
+          // debugger;
+
           const dayData = this.getDayData(currentDay);
-          html += this.generateDayCell(dayNum, dayData);
+          html += this.generateDayCell(dayNum, dayData, currentDay);
         } else {
           html += '<td class="other-month"></td>';
         }
@@ -183,7 +224,6 @@ class HouseCalendar {
       }
       html += '</tr>';
       weekCount++;
-      if (weekCount >= 5) break;
     }
     html += `
 					</tbody>
@@ -248,11 +288,12 @@ class HouseCalendar {
     return null;
   }
   getDayData(date) {
-    const dateKey = date.toISOString().split('T')[0];
+    const dateKey = this.formatDateLocal(date);
 
     // Get day data directly using the date key (format: "YYYY-MM-DD")
     const dayData = this.calendarData.availability?.[dateKey];
 
+    // debugger;
     // If no data found, return default
     if (!dayData) {
       return {
@@ -268,21 +309,37 @@ class HouseCalendar {
 
     // Return the data with calculated diagonal style
     return {
-      status: dayData.status || 'unknown',
+      status: dayData.status || "unknown",
       diagonal_style: diagonalStyle,
       is_checkin: dayData.is_checkin || false,
-      is_checkout: dayData.is_checkout || false
+      is_checkout: dayData.is_checkout || false,
+      bk_avail: dayData.bk_avail || false
     };
   }
   calculateDiagonalStyle(date, dayData) {
-    // If diagonal style is already set in data, use it
+    // If diagonal style is already explicitly set in data, use it
+    // This handles explicit transition days set in the booking system
     if (dayData.diagonal_style && dayData.diagonal_style !== 'none') {
       return dayData.diagonal_style;
     }
 
     // Check for crossover days (checkout + checkin on same day)
+    // Only apply if it's a valid check-in/check-out day (Monday or Friday)
     if (dayData.is_checkin && dayData.is_checkout) {
-      return 'halfafter halfbefore'; // Both triangles for same-day changeover
+      const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, 5=Friday
+      if (dayOfWeek === 1 || dayOfWeek === 5) {
+        return 'halfafter halfbefore'; // Both triangles for same-day changeover
+      }
+    }
+
+    // Get day of week for validation (0=Sunday, 1=Monday, 5=Friday)
+    const dayOfWeek = date.getDay();
+
+    // Only Monday (1) and Friday (5) can be check-in/check-out days
+    // unless explicitly set in the data above
+    const isValidTransitionDay = dayOfWeek === 1 || dayOfWeek === 5;
+    if (!isValidTransitionDay) {
+      return 'none';
     }
     const prevDay = this.getAdjacentDayData(date, -1);
     const nextDay = this.getAdjacentDayData(date, 1);
@@ -290,8 +347,8 @@ class HouseCalendar {
     // For booked days, check if this is a checkout day
     if (dayData.status === 'booked') {
       // Check if this is a checkout day (this booked, next available)
-      if (nextDay?.status === 'available') {
-        return 'halfafter'; // Green triangle (checkout day)
+      if (nextDay?.status === "available" && dayData.is_checkin) {
+        return "halfafter"; // Green triangle (checkout day)
       }
     }
 
@@ -312,19 +369,42 @@ class HouseCalendar {
   getAdjacentDayData(date, dayOffset) {
     const adjacentDate = new Date(date);
     adjacentDate.setDate(adjacentDate.getDate() + dayOffset);
-    const adjacentDateKey = adjacentDate.toISOString().split('T')[0];
+    const adjacentDateKey = this.formatDateLocal(adjacentDate);
     return this.calendarData.availability?.[adjacentDateKey];
   }
-  generateDayCell(dayNum, dayData) {
+  generateDayCell(dayNum, dayData, currentDay) {
     const classes = ['calendar-day'];
+    let attributes = '';
 
+    // Format date as YYYY-MM-DD for data attribute
+    const dateString = currentDay ? `${currentDay.getFullYear()}-${String(currentDay.getMonth() + 1).padStart(2, '0')}-${String(currentDay.getDate()).padStart(2, '0')}` : '';
+
+    // Check if date is in the past (before today)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset to midnight for accurate date comparison
+    const checkDay = new Date(currentDay);
+    checkDay.setHours(0, 0, 0, 0);
+    const isPastDate = checkDay < today;
+
+    // If date is in the past, override status to unknown
+    const effectiveStatus = isPastDate ? 'unknown' : dayData.status;
+    // debugger;
     // Add status class
-    switch (dayData.status) {
+    switch (effectiveStatus) {
       case 'available':
         classes.push('bk_avail');
+        classes.push('bookable-date');
+        // Add data attributes for booking
+        attributes = ` data-date="${dateString}" data-day="${dayNum}" style="cursor: pointer;"`;
         break;
       case 'booked':
-        classes.push('bk_unav');
+        // Check if this booked day is part of a bookable period (checkout day)
+        // Use truthy check instead of strict equality (PHP sends 1 instead of true)
+        if (dayData.bk_avail || dayData.is_checkout) {
+          classes.push("bk_avail");
+        } else {
+          classes.push("bk_unav");
+        }
         break;
       case 'owner-blocked':
         classes.push('bk_blocked');
@@ -347,20 +427,27 @@ class HouseCalendar {
     if (dayData.is_checkout) {
       classes.push('checkout-day');
     }
-    return `<td class="${classes.join(' ')}">${dayNum}</td>`;
+    return `<td class="${classes.join(' ')}"${attributes}>${dayNum}</td>`;
   }
   generateWeekRates(monthKey, weekFridayDate, visibleRateColumns) {
-    //debugger;
+    // debugger;
 
     let html = '';
     for (const rateKey of visibleRateColumns) {
       // Get the correct checkin day for this rate type
       const checkinDate = this.getCheckinDateForRate(weekFridayDate, rateKey, monthKey);
       //const weekDateKey = checkinDate.toISOString().split("T")[0]; // YYYY-MM-DD format
-
       const weekDateKey = checkinDate.getFullYear() + "-" + String(checkinDate.getMonth() + 1).padStart(2, "0") + "-" + String(checkinDate.getDate()).padStart(2, "0");
+
+      // in the rateData, check if 'offer' is set and if so, append the offer indicator of the number of stars to the display as an asterisk,
+      // note that rateData is an object with a display property and an offer property is set already declared as a constant, so we need to use a different variable name
       const rateData = this.getWeekRate(monthKey, weekDateKey, rateKey);
-      html += `<td class="rate-cell ${rateData.type}">${rateData.display}</td>`;
+      let display = rateData.display; // this is the display property of the rateData object	
+      if (rateData.offer) {
+        // this is the offer property of the rateData object	
+        display += `*`.repeat(rateData.offer); // this is the number of stars to append to the display as an asterisk	
+      }
+      html += `<td class="rate-cell ${rateData.type}">${display}</td>`; // this is the display property of the rateData object		
     }
     return html;
   }
@@ -425,7 +512,7 @@ class HouseCalendar {
 
     // Check each possible date to see which has rate data
     for (const date of possibleDates) {
-      const dateKey = date.toISOString().split('T')[0];
+      const dateKey = this.formatDateLocal(date);
       const weekRates = monthRates.weeks[dateKey];
       if (weekRates && weekRates[rateKey]) {
         const rateData = weekRates[rateKey];
@@ -457,22 +544,56 @@ class HouseCalendar {
    * Handles recursive lookup for '0' values.
    */
   getWeekRate(monthKey, weekDateKey, rateKey) {
-    const monthRates = this.calendarData.rates?.[monthKey];
+    // Extract the month from weekDateKey (format: YYYY-MM-DD)
+    const weekMonth = weekDateKey.substring(0, 7); // Get YYYY-MM portion
 
-    // debugger;
+    // If weekDateKey is in a different month than monthKey, handle based on rate type
+    if (weekMonth !== monthKey) {
+      // For Monday checkin rates (Midweek and 2 night midweek), show empty space
+      // since there's no Monday at the end of this month (or it's in previous month at start)
+      if (rateKey === '80' || rateKey === '85') {
+        return {
+          type: "empty",
+          display: ""
+        };
+      }
+      // For Friday checkin rates (2 night weekend and 3 night weekend), show empty space
+      // since there's no Friday at the beginning of this month (or it's in next month at end)
+      if (rateKey === '50' || rateKey === '60') {
+        return {
+          type: "empty",
+          display: ""
+        };
+      }
+      // For other rates, show n/a
+      return {
+        type: "unavailable",
+        display: "n/a"
+      };
+    }
+    const monthRates = this.calendarData.rates?.[monthKey];
     if (!monthRates || !monthRates.weeks) {
       return {
-        type: 'unavailable',
-        display: 'n/a'
+        type: "unavailable",
+        display: "n/a"
       };
     }
     // Try to get the rate for this week
+
+    // note that the weekDateKey might be a Monday checkin date so it might not be in the monthRates.weeks object,
+    // so if that is the case we need to find the previous week date and use that as the weekDateKey and then get the rate data for that week and return it
+    if (!monthRates.weeks[weekDateKey]) {
+      const previousWeekDate = this.findPreviousWeekDate(monthKey, weekDateKey); // this is the previous week date in the monthRates.weeks object so create the function to do this and return the previous week date
+      if (previousWeekDate) {
+        weekDateKey = previousWeekDate;
+      }
+    }
     const weekRates = monthRates.weeks[weekDateKey];
     if (weekRates && weekRates[rateKey]) {
       const rateData = weekRates[rateKey];
 
       // If it's a '0' (previous week pricing), look backwards
-      if (rateData.type === 'previous') {
+      if (rateData.type === "previous") {
         return this.findPreviousWeekRate(monthKey, weekDateKey, rateKey);
       }
       return rateData;
@@ -480,9 +601,48 @@ class HouseCalendar {
 
     // No rate data found
     return {
-      type: 'unavailable',
-      display: 'n/a'
+      type: "unavailable",
+      display: "n/a"
     };
+  }
+
+  /**
+   * Find the previous week date that exists in monthRates.weeks.
+   * Used when a checkin date (e.g., Monday) doesn't exist as a week key,
+   * so we need to find the previous Friday week date that does exist.
+   * @param {string} monthKey - The month key (YYYY-MM format)
+   * @param {string} weekDateKey - The week date key to find the previous week for (YYYY-MM-DD format)
+   * @returns {string|null} The previous week date string, or null if not found
+   */
+  findPreviousWeekDate(monthKey, weekDateKey) {
+    const monthRates = this.calendarData.rates?.[monthKey];
+    if (!monthRates || !monthRates.weeks) {
+      return null;
+    }
+
+    // Get all week dates for this month and sort them chronologically
+    const weekDates = Object.keys(monthRates.weeks).sort();
+
+    // If no week dates exist, return null
+    if (weekDates.length === 0) {
+      return null;
+    }
+
+    // Find the week date that is just before the given weekDateKey
+    // Since dates are sorted, we can iterate backwards to find the first date that is less than weekDateKey
+    for (let i = weekDates.length - 1; i >= 0; i--) {
+      if (weekDates[i] < weekDateKey) {
+        // this doesn't work because they are both dates strings in the format of YYYY-MM-DD so we need to convert them to Date objects and then compare them
+        const previousWeekDate = new Date(weekDates[i]);
+        const currentWeekDate = new Date(weekDateKey);
+        if (previousWeekDate < currentWeekDate) {
+          return weekDates[i];
+        }
+      }
+    }
+
+    // If no previous week found (weekDateKey is before all existing weeks), return null
+    return null;
   }
 
   /**
@@ -542,6 +702,68 @@ class HouseCalendar {
     this.loadingEl.style.display = 'none';
     this.errorEl.style.display = 'none';
     this.containerEl.style.display = 'block';
+  }
+
+  /**
+   * Add click event handlers to bookable dates
+   */
+  addBookingEventHandlers() {
+    // Find all bookable date cells
+    const bookableDates = this.containerEl.querySelectorAll('.bookable-date');
+    bookableDates.forEach(dateCell => {
+      dateCell.addEventListener('click', async e => {
+        e.preventDefault();
+        const dateString = dateCell.dataset.date;
+        if (!dateString) {
+          console.error('No date data found on clicked element');
+          return;
+        }
+
+        // Show loading state on clicked cell
+        const originalContent = dateCell.innerHTML;
+        dateCell.innerHTML = '<div class="booking-loader">...</div>';
+        dateCell.style.pointerEvents = 'none';
+        try {
+          // Make AJAX request to get booking data
+          const response = await this.fetchBookingData(dateString);
+          if (response.success) {
+            // Redirect to booking page with appropriate parameters
+            window.location.href = response.data.booking_url;
+          } else {
+            console.error('Booking data error:', response.data);
+            alert('Sorry, there was an error processing your booking request. Please try again.');
+          }
+        } catch (error) {
+          console.error('Booking request failed:', error);
+          alert('Sorry, there was a network error. Please check your connection and try again.');
+        } finally {
+          // Restore original content and enable clicking
+          dateCell.innerHTML = originalContent;
+          dateCell.style.pointerEvents = 'auto';
+        }
+      });
+    });
+  }
+
+  /**
+   * Fetch booking data for a selected date
+   * @param {string} dateString Date in YYYY-MM-DD format
+   * @returns {Promise} AJAX response promise
+   */
+  async fetchBookingData(dateString) {
+    const formData = new FormData();
+    formData.append('action', 'get_house_booking_data');
+    formData.append('house_id', this.config.houseId);
+    formData.append('date', dateString);
+    formData.append('nonce', this.config.bookingNonce);
+    const response = await fetch(this.config.ajaxUrl, {
+      method: 'POST',
+      body: formData
+    });
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.json();
   }
 }
 

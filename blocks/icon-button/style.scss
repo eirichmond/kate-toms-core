@@ -1,0 +1,46 @@
+/**
+ * Minimal styles for the Icon Button block.
+ * Most styling should come from theme.json.
+ */
+
+.wp-block-kate-and-toms-icon-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+    justify-content: center;
+	&.icon-position-prepend {
+		flex-direction: row;
+
+		.icon-button__icon {
+			order: 1;
+		}
+
+		.icon-button__text {
+			order: 2;
+		}
+	}
+
+	&.icon-position-append {
+		flex-direction: row;
+
+		.icon-button__icon {
+			order: 2;
+		}
+
+		.icon-button__text {
+			order: 1;
+		}
+	}
+
+	.icon-button__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+
+		svg {
+			width: var(--icon-size, 20px);
+			height: var(--icon-size, 20px);
+		}
+	}
+}

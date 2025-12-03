@@ -1,0 +1,34 @@
+/*!**************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/house-booking-flow/editor.scss ***!
+  \**************************************************************************************************************************************************************************************************************************************************************/
+.house-booking-flow-editor .booking-flow-placeholder {
+  background: #f8f9fa;
+  border: 2px dashed #dee2e6;
+  border-radius: 8px;
+  padding: 30px;
+  text-align: center;
+}
+.house-booking-flow-editor .booking-flow-placeholder h3 {
+  color: #495057;
+  margin-top: 0;
+}
+.house-booking-flow-editor .booking-flow-placeholder .progress-preview {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 20px 0;
+}
+.house-booking-flow-editor .booking-flow-placeholder .progress-preview .step {
+  background: #e9ecef;
+  padding: 10px 15px;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+.house-booking-flow-editor .booking-flow-placeholder .progress-preview .step.active {
+  background: #007cba;
+  color: white;
+}
+.house-booking-flow-editor .booking-flow-placeholder p {
+  color: #6c757d;
+  margin-bottom: 0;
+}

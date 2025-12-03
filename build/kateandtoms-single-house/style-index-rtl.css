@@ -26,9 +26,18 @@
 }
 .wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-featured-image {
   margin-bottom: 0;
+  width: 100%;
+  overflow: hidden;
 }
 .wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-featured-image img {
   display: block;
-  max-width: 100%;
-  height: auto;
+  width: 100% !important;
+  height: auto !important;
+  aspect-ratio: 1/1;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .wp-block-post-featured-image a {
+  display: block;
+  width: 100%;
 }

@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/related-houses",
+  "version": "0.1.0",
+  "title": "Related Houses",
+  "category": "widgets",
+  "icon": "admin-home",
+  "description": "Display 4 related houses in a grid layout with option to save to sub pages",
+  "example": {},
+  "supports": {
+    "html": false,
+    "align": [
+      "wide",
+      "full"
+    ]
+  },
+  "attributes": {
+    "house1Id": {
+      "type": "number",
+      "default": 0
+    },
+    "house2Id": {
+      "type": "number",
+      "default": 0
+    },
+    "house3Id": {
+      "type": "number",
+      "default": 0
+    },
+    "house4Id": {
+      "type": "number",
+      "default": 0
+    },
+    "saveToSubPages": {
+      "type": "boolean",
+      "default": false
+    },
+    "align": {
+      "type": "string",
+      "default": "wide"
+    }
+  },
+  "textdomain": "kate-toms-core",
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php"
+}

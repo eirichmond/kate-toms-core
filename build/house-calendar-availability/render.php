@@ -41,6 +41,7 @@ $js_data = [
 	'refreshInterval' => $refresh_interval,
 	'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 	'nonce' => wp_create_nonce( 'calendar_data_nonce' ),
+	'bookingNonce' => wp_create_nonce( 'calendar_booking_nonce' ),
 	'blockId' => $block_id,
 ];
 

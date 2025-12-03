@@ -1,0 +1,26 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/group-link-extension",
+  "version": "1.0.0",
+  "title": "Group Link Extension",
+  "category": "widgets",
+  "description": "Extends core Group block with link functionality",
+  "supports": {
+    "html": false
+  },
+  "attributes": {
+    "href": {
+      "type": "string"
+    },
+    "linkTarget": {
+      "type": "string"
+    },
+    "linkDestination": {
+      "type": "string"
+    }
+  },
+  "textdomain": "kate-toms-core",
+  "editorScript": "file:./index.js",
+  "style": "file:./style.css"
+}

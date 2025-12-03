@@ -74,7 +74,7 @@ if ($featured_image) {
 
 // Title with link and background color
 $html .= '<div class="wp-block-post-title has-text-align-center">';
-$html .= '<h2 class="wp-block-post-title__link has-' . esc_attr($background_color) . '-background-color has-white-color has-background has-link-color" style="padding-top:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);font-style:normal;font-weight:600;font-size:var(--wp--preset--font-size--small)">';
+$html .= '<h2 class="wp-block-post-title__link has-' . esc_attr($background_color) . '-background-color has-white-color has-background has-link-color" style="padding-top:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);font-style:normal;font-weight:600;font-size:var(--wp--preset--font-size--small)">';
 $html .= '<a href="' . esc_url($house_url) . '" style="color:var(--wp--preset--color--white)">' . esc_html($house_post->post_title) . '</a>';
 $html .= '</h2>';
 $html .= '</div>';

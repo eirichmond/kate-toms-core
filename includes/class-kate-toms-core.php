@@ -134,11 +134,32 @@ class Kate_Toms_Core {
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-houses-calendar-availability-api.php';
 
+		/**
+		 * The class responsible for the Autocomplete Search API functionality
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-autocomplete-search-api.php';
+
+		/**
+		 * The class responsible for the Related Houses API functionality
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-related-houses-api.php';
+
+		/**
+		 * The class responsible for custom block bindings
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-custom-block-bindings.php';
+
 		$this->loader = new Kate_Toms_Core_Loader();
 
 		// Initialize the APIs
 		new Houses_Filter_API();
 		new House_Calendar_Manager();
+		new Autocomplete_Search_API();
+		new Related_Houses_API();
+
+		// Initialize custom block bindings
+		$custom_bindings = new Kate_Toms_Custom_Block_Bindings();
+		$custom_bindings->register_bindings();
 	}
 
 	/**
@@ -174,9 +195,15 @@ class Kate_Toms_Core {
 		$this->loader->add_action( 'init', $plugin_admin, 'register_kateandtoms_core_blocks' );
 		$this->loader->add_action( 'init', $plugin_admin, 'custom_post_types_taxonomies_callback' );
 		$this->loader->add_action( 'init', $plugin_admin, 'custom_meta_houses_callback' );
+		$this->loader->add_action( 'init', $plugin_admin, 'custom_meta_seasonal_callback' );
+		$this->loader->add_action( 'init', $plugin_admin, 'custom_meta_availability_callback' );
 		$this->loader->add_action( 'init', $plugin_admin, 'kate_toms_core_register_pattern_categories' );
 		$this->loader->add_action( 'init', $plugin_admin, 'kate_toms_core_register_patterns' );
 		$this->loader->add_action( 'init', $plugin_admin, 'remove_core_patterns' );
+		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_adverts_admin_menu' );
+		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_house_settings_menu' );
+		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_house_settings' );
+		$this->loader->add_filter( 'render_block', $plugin_admin, 'add_signature_collection_badge', 10, 2 );
 
 	}
 
@@ -192,9 +219,22 @@ class Kate_Toms_Core {
 		$plugin_public = new Kate_Toms_Core_Public( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_styles' );
-		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );			
-		$this->loader->add_action( 'wp_head', $plugin_public, 'bugherd_script' );
+		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
+
+		$this->loader->add_action( 'wp_head', $plugin_public, 'bugherd_script' ); // TODO: Remove this after development is complete
+
+		// to handle all third party scripts that need to be loaded in the head
+		$this->loader->add_action( 'wp_head', $plugin_public, 'trustpilot_script' );
+		$this->loader->add_action( 'wp_head', $plugin_public, 'tiktoc_script' );
+		$this->loader->add_action( 'wp_head', $plugin_public, 'kt_facebook_pixel_header_code' );
+		$this->loader->add_action( 'wp_head', $plugin_public, 'kt_hive_code_header_code' );
+		$this->loader->add_action( 'wp_head', $plugin_public, 'google_header_tag_manager_script' );
+		$this->loader->add_action( 'wp_footer', $plugin_public, 'google_footer_tag_manager_script' );
+		$this->loader->add_action( 'wp_footer', $plugin_public, 'linkedin_script' );
+
+
 		$this->loader->add_filter( 'wp_calculate_image_srcset', $plugin_public, 'kate_toms_replace_image_srcset_url', 10, 5 );
+		$this->loader->add_filter( 'get_terms', $plugin_public, 'filter_bedroom_terms', 10, 3 );
 
 	}
 

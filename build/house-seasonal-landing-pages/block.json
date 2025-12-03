@@ -1,0 +1,49 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/house-seasonal-landing-pages",
+  "version": "0.1.0",
+  "title": "House Seasonal Landing Pages",
+  "category": "widgets",
+  "icon": "calendar-alt",
+  "description": "Display houses filtered by seasonal offer dates and booking periods",
+  "keywords": [
+    "house",
+    "seasonal",
+    "availability",
+    "periods"
+  ],
+  "example": {},
+  "supports": {
+    "html": false,
+    "align": [
+      "wide",
+      "full"
+    ]
+  },
+  "attributes": {
+    "postsPerPage": {
+      "type": "number",
+      "default": -1
+    },
+    "orderBy": {
+      "type": "string",
+      "default": "meta_value_num"
+    },
+    "order": {
+      "type": "string",
+      "default": "desc"
+    },
+    "metaKey": {
+      "type": "string",
+      "default": "sleeps_max"
+    },
+    "patternStyle": {
+      "type": "string",
+      "default": "coast"
+    }
+  },
+  "textdomain": "kate-toms-core",
+  "editorScript": "file:./index.js",
+  "render": "file:./render.php"
+}

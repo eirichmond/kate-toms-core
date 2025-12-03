@@ -28,4 +28,32 @@
 			}
 		}
 	}
+
+	// Signature Collection Badge
+	.signature-collection-badge {
+		position: absolute;
+		bottom: 1rem;
+		right: 1rem;
+		z-index: 1;
+		pointer-events: none; // Badge is not clickable
+
+		img {
+			display: block;
+			width: auto;
+			height: auto;
+			max-width: 12vw; // Default size for desktop
+			object-fit: contain;
+
+			// Responsive sizing for tablets
+			@media (max-width: 768px) {
+				max-width: 30vw;
+			}
+
+			// Responsive sizing for mobile
+			@media (max-width: 480px) {
+				max-width: 80px;
+				max-height: 80px;
+			}
+		}
+	}
 }

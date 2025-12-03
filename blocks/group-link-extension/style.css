@@ -1,0 +1,49 @@
+/**
+ * Group Link Extension Styles
+ *
+ * Styles for linked group blocks on the frontend.
+ * Makes the entire group clickable with proper cursor and overlay.
+ *
+ * @package   KateTomsCore
+ * @author    Kate and Toms
+ * @copyright 2025 Kate and Toms
+ * @license   GPL-2.0-or-later
+ */
+
+/* Make linked groups indicate they're clickable */
+.wp-block-group.has-link {
+    position: relative;
+    cursor: pointer;
+}
+
+/* The overlay link that covers the entire group */
+.wp-block-group.has-link > .group-link-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1;
+    text-decoration: none;
+}
+
+/* Ensure inner links are still clickable */
+.wp-block-group.has-link a:not(.group-link-overlay) {
+    position: relative;
+    z-index: 2;
+}
+
+/* Ensure buttons and other interactive elements are still clickable */
+.wp-block-group.has-link button,
+.wp-block-group.has-link input,
+.wp-block-group.has-link select,
+.wp-block-group.has-link textarea {
+    position: relative;
+    z-index: 2;
+}
+
+/* Optional: Add a subtle hover effect */
+.wp-block-group.has-link:hover {
+    opacity: 0.95;
+    transition: opacity 0.2s ease-in-out;
+}

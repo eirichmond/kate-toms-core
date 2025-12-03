@@ -33,14 +33,22 @@
 		}
 	}
 	
-	// Featured image styling
+	// Featured image styling - fluid square thumbnail that fills container
 	.wp-block-post-featured-image {
 		margin-bottom: 0;
-		
+		width: 100%;
+		overflow: hidden;
 		img {
 			display: block;
-			max-width: 100%;
-			height: auto;
+			width: 100% !important;
+			height: auto !important;
+			aspect-ratio: 1 / 1;
+			object-fit: cover;
+		}
+
+		a {
+			display: block;
+			width: 100%;
 		}
 	}
 } 

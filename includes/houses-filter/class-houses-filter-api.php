@@ -233,8 +233,15 @@ class Houses_Filter_API {
 		ob_start();
 
 		if ( $query->have_posts() ) {
+			$house_count = 0;
 			while ( $query->have_posts() ) {
 				$query->the_post();
+				$house_count++;
+
+				// TODO: Pricing lookup disabled due to performance concerns
+				// Each house requires API call to booking system, causing timeouts
+				// Consider implementing client-side pricing fetch or caching strategy
+
 				// Use your custom pattern.
 				if( in_array( 604, $location_terms ) ) {
 					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
@@ -244,6 +251,44 @@ class Houses_Filter_API {
 					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-country"} /-->' );
 				} elseif ( in_array( 603, $location_terms )) {
 					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-town"} /-->' );
+				}
+			}
+
+			// Check if we need adverts to fill the row
+			$remainder = $house_count % 4;
+			if ( $remainder > 0 ) {
+				$adverts_needed = 4 - $remainder;
+
+				// Determine location key for adverts
+				$location_key = '';
+				if ( in_array( 604, $location_terms ) ) {
+					$location_key = 'cotswolds';
+				} elseif ( in_array( 810, $location_terms ) ) {
+					$location_key = 'coast';
+				} elseif ( in_array( 790, $location_terms ) ) {
+					$location_key = 'country';
+				} elseif ( in_array( 603, $location_terms ) ) {
+					$location_key = 'town';
+				}
+
+				// Get adverts if we have a location key
+				if ( ! empty( $location_key ) && class_exists( 'Kate_Toms_Core_Admin' ) ) {
+					$admin = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
+					$adverts = $admin->get_adverts_for_location( $location_key, $adverts_needed );
+
+					// Output advert placeholders
+					foreach ( $adverts as $advert ) {
+						?>
+						<!-- Advert Placeholder Card -->
+						<div class="house-card advert-placeholder">
+							<div class="house-card__image">
+								<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
+									alt="Advertisement"
+									style="width: 100%; height: 100%; object-fit: cover;">
+							</div>
+						</div>
+						<?php
+					}
 				}
 			}
 		} else {
@@ -259,6 +304,40 @@ class Houses_Filter_API {
 
 		header( 'Content-Type: application/json' );
 		return wp_send_json_success( $response );
+	}
+
+	/**
+	 * Get pricing periods for a house on a specific date.
+	 *
+	 * @param int                     $house_id WordPress house post ID.
+	 * @param DateTime                $checkin_date Checkin date.
+	 * @param House_Calendar_Manager  $calendar_manager Calendar manager instance.
+	 * @return array Pricing periods array.
+	 */
+	private function get_house_pricing_for_date( $house_id, $checkin_date, $calendar_manager ) {
+		try {
+			// Use reflection to access private methods
+			$reflection = new ReflectionClass( $calendar_manager );
+
+			// Get property ID from house post ID
+			$get_property_id_method = $reflection->getMethod( 'get_property_id_from_wp_house_id' );
+			$get_property_id_method->setAccessible( true );
+			$property_id = $get_property_id_method->invoke( $calendar_manager, $house_id );
+
+			if ( ! $property_id ) {
+				return array();
+			}
+
+			// Get booking periods for this date
+			$get_periods_method = $reflection->getMethod( 'get_booking_periods_for_date' );
+			$get_periods_method->setAccessible( true );
+			$periods = $get_periods_method->invoke( $calendar_manager, $property_id, $checkin_date );
+
+			return $periods;
+		} catch ( Exception $e ) {
+			error_log( 'Error getting house pricing: ' . $e->getMessage() );
+			return array();
+		}
 	}
 }
 

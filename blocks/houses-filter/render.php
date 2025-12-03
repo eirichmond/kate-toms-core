@@ -94,141 +94,182 @@ $duration_options = array(
 	data-wp-interactive="kate-toms-house-filter">
 	<form class="houses-filter" data-wp-on--submit="actions.handleSubmit"
 		data-wp-context='{ "regionId": "<?php echo esc_attr( $results_region ); ?>" }'>
-		<div class="houses-filter__grid">
-			<!-- Date Picker -->
-			<div class="houses-filter__field">
-				<label class="houses-filter__label screen-reader-only"
-					for="<?php echo esc_attr( "{$filter_id}-date" ); ?>">
-					<?php esc_html_e( 'Select Date', 'kate-and-toms-houses-filter-search' ); ?>
-				</label>
-                <div class="houses-filter__date-controls">
-            <input type="date" id="<?php echo esc_attr( "{$filter_id}-date" ); ?>" class="houses-filter__date"
-                data-wp-bind--value="state.date" data-wp-on--change="actions.updateDate" />
-            <div class="houses-filter__buttons">
-                <?php foreach ( $duration_options as $option ) : ?>
-                <button type="button" class="houses-filter__button"
-                    data-value="<?php echo esc_attr( $option['value'] ); ?>" data-wp-on--click="actions.updateDtype"
-                    data-wp-bind--aria-pressed="state.activeFilters.dtype.includes('<?php echo esc_js( $option['value'] ); ?>')">
-                    <?php echo esc_html( $option['label'] ); ?>
-                </button>
-                <?php endforeach; ?>
-            </div>
-                </div>
 
+		<!-- Main Filter Bar -->
+		<div class="houses-filter__row">
+			<!-- Date Picker -->
+			<div class="houses-filter__field houses-filter__field--date">
+				<svg class="houses-filter__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+					<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+				</svg>
+				<label class="houses-filter__label" for="<?php echo esc_attr( "{$filter_id}-date" ); ?>">
+					<?php esc_html_e( 'WHEN', 'kate-and-toms-houses-filter-search' ); ?>
+				</label>
+				<input type="date" id="<?php echo esc_attr( "{$filter_id}-date" ); ?>" class="houses-filter__input"
+					data-wp-bind--value="state.date" data-wp-on--change="actions.updateDate"
+					placeholder="<?php esc_attr_e( 'Select Date...', 'kate-and-toms-houses-filter-search' ); ?>" />
 			</div>
 
+			<!-- Only show on small screens -->
+ 			<div class="houses-filter__button-group houses-filter__button-group--date is-style-hide-navigation-desktop">
+				<?php foreach ( $duration_options as $option ) : ?>
+				<button type="button" class="houses-filter__button"
+					data-value="<?php echo esc_attr( $option['value'] ); ?>" data-wp-on--click="actions.updateDtype"
+					data-wp-bind--aria-pressed="state.activeFilters.dtype.includes('<?php echo esc_js( $option['value'] ); ?>')">
+					<?php echo esc_html( $option['label'] ); ?>
+				</button>
+				<?php endforeach; ?>
+			</div>
+
+
 			<!-- Size -->
-			<div class="houses-filter__field">
-				<label class="houses-filter__label screen-reader-only">
-					<?php esc_html_e( 'Size', 'kate-and-toms-houses-filter-search' ); ?>
+			<div class="houses-filter__field houses-filter__field--size">
+				<svg class="houses-filter__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+					<path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+				</svg>
+				<label class="houses-filter__label">
+					<?php esc_html_e( 'SLEEPS', 'kate-and-toms-houses-filter-search' ); ?>
 				</label>
-				<div class="houses-filter__size-controls">
-					<select class="houses-filter__select" data-wp-on--change="actions.updateSize"
-						data-wp-bind--value="state.activeFilters.size[0] || ''"
-						data-wp-bind--aria-pressed="state.activeFilters.size.includes(value)">
-						<option value=""><?php esc_html_e( 'Select a size', 'kate-and-toms-houses-filter-search' ); ?>
-						</option>
-						<?php foreach ( $size_options as $option ) : ?>
-						<option value="<?php echo esc_attr( $option['value'] ); ?>">
-							<?php echo esc_html( $option['label'] ); ?>
-						</option>
-						<?php endforeach; ?>
-					</select>
-					<div class="houses-filter__buttons">
-						<?php foreach ( $size_options as $option ) : ?>
-						<button type="button" class="houses-filter__button"
-							data-value="<?php echo esc_attr( $option['value'] ); ?>"
-							data-wp-on--click="actions.updateSize"
-							data-wp-bind--aria-pressed="state.activeFilters.size.includes('<?php echo esc_js( $option['value'] ); ?>')">
-							<?php echo esc_html( $option['label'] ); ?>
-						</button>
-						<?php endforeach; ?>
-					</div>
-				</div>
+				<select class="houses-filter__select" data-wp-on--change="actions.updateSize"
+					data-wp-bind--value="state.activeFilters.size[0] || ''"
+					data-wp-bind--aria-pressed="state.activeFilters.size.includes(value)">
+					<option value=""><?php esc_html_e( 'Any', 'kate-and-toms-houses-filter-search' ); ?></option>
+					<?php foreach ( $size_options as $option ) : ?>
+					<option value="<?php echo esc_attr( $option['value'] ); ?>">
+						<?php echo esc_html( $option['label'] ); ?>
+					</option>
+					<?php endforeach; ?>
+				</select>
 			</div>
 
 			<!-- Location -->
-			<div class="houses-filter__field">
-				<label class="houses-filter__label screen-reader-only">
-					<?php esc_html_e( 'Location', 'kate-and-toms-houses-filter-search' ); ?>
+			<div class="houses-filter__field houses-filter__field--location">
+				<svg class="houses-filter__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+					<path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+				</svg>
+				<label class="houses-filter__label">
+					<?php esc_html_e( 'WHERE', 'kate-and-toms-houses-filter-search' ); ?>
 				</label>
-				<div class="houses-filter__location-controls">
-					<select class="houses-filter__select" data-wp-on--change="actions.updateLocation"
-						data-wp-bind--value="state.activeFilters.local[0] || ''"
-						data-wp-bind--aria-pressed="state.activeFilters.local.includes(value)">
-						<option value="">
-							<?php esc_html_e( 'Select a location', 'kate-and-toms-houses-filter-search' ); ?></option>
-						<?php foreach ( $locations as $location ) : ?>
-						<option value="<?php echo esc_attr( $location->term_id ); ?>">
-							<?php echo esc_html( $location->name ); ?>
-						</option>
-						<?php endforeach; ?>
-					</select>
-
-					<div class="houses-filter__buttons">
-						<?php
-						$location_mappings = array(
-							'In the Cotswolds' => 'Cotswolds',
-							'By the Coast'     => 'Coast',
-							'In the Country'   => 'Country',
-						);
-						foreach ( $locations as $location ) :
-							if ( array_key_exists( $location->name, $location_mappings ) ) :
-								?>
-						<button type="button" class="houses-filter__button"
-							data-value="<?php echo esc_attr( $location->term_id ); ?>"
-							data-wp-on--click="actions.updateLocation"
-							data-wp-bind--aria-pressed="state.activeFilters.local.includes('<?php echo esc_js( $location->term_id ); ?>')">
-								<?php echo esc_html( $location_mappings[ $location->name ] ); ?>
-						</button>
-								<?php
-							endif;
-						endforeach;
-						?>
-					</div>
-				</div>
+				<select class="houses-filter__select" data-wp-on--change="actions.updateLocation"
+					data-wp-bind--value="state.activeFilters.local[0] || ''"
+					data-wp-bind--aria-pressed="state.activeFilters.local.includes(value)">
+					<option value=""><?php esc_html_e( 'Any', 'kate-and-toms-houses-filter-search' ); ?></option>
+					<?php foreach ( $locations as $location ) : ?>
+					<option value="<?php echo esc_attr( $location->term_id ); ?>">
+						<?php echo esc_html( $location->name ); ?>
+					</option>
+					<?php endforeach; ?>
+				</select>
 			</div>
 
 			<!-- Features -->
-			<div class="houses-filter__field">
-				<label class="houses-filter__label screen-reader-only">
-					<?php esc_html_e( 'Features', 'kate-and-toms-houses-filter-search' ); ?>
+			<div class="houses-filter__field houses-filter__field--features">
+				<svg class="houses-filter__icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+					<path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/>
+				</svg>
+				<label class="houses-filter__label">
+					<?php esc_html_e( 'FEATURES', 'kate-and-toms-houses-filter-search' ); ?>
 				</label>
-				<div class="houses-filter__feature-controls">
-					<select class="houses-filter__select" data-wp-on--change="actions.updateFeature"
-						data-wp-bind--value="state.activeFilters.feature[0] || ''"
-						data-wp-bind--aria-pressed="state.activeFilters.feature.includes(value)">
-						<option value="">
-							<?php esc_html_e( 'Select a feature', 'kate-and-toms-houses-filter-search' ); ?></option>
-						<?php foreach ( $features as $feature ) : ?>
-						<option value="<?php echo esc_attr( $feature->term_id ); ?>">
-							<?php echo esc_html( $feature->name ); ?>
-						</option>
-						<?php endforeach; ?>
-					</select>
+				<select class="houses-filter__select" data-wp-on--change="actions.updateFeature"
+					data-wp-bind--value="state.activeFilters.feature[0] || ''"
+					data-wp-bind--aria-pressed="state.activeFilters.feature.includes(value)">
+					<option value=""><?php esc_html_e( 'Any', 'kate-and-toms-houses-filter-search' ); ?></option>
+					<?php foreach ( $features as $feature ) : ?>
+					<option value="<?php echo esc_attr( $feature->term_id ); ?>">
+						<?php echo esc_html( $feature->name ); ?>
+					</option>
+					<?php endforeach; ?>
+				</select>
+			</div>
+		</div>
 
-					<div class="houses-filter__buttons">
-						<?php
-						$feature_mappings = array(
-							'Pool'           => 'Pool',
-							'With a Hot Tub' => 'Hot Tub',
-							'Beach'          => 'Beach',
-						);
-						foreach ( $features as $feature ) :
-							if ( array_key_exists( $feature->name, $feature_mappings ) ) :
-								?>
-						<button type="button" class="houses-filter__button"
-							data-value="<?php echo esc_attr( $feature->term_id ); ?>"
-							data-wp-on--click="actions.updateFeature"
-							data-wp-bind--aria-pressed="state.activeFilters.feature.includes('<?php echo esc_js( $feature->term_id ); ?>')">
-								<?php echo esc_html( $feature_mappings[ $feature->name ] ); ?>
-						</button>
-								<?php
-							endif;
-						endforeach;
+		<!-- Button Groups Row -->
+		<div class="houses-filter__buttons-row">
+			<!-- Date Type Buttons -->
+			<div class="houses-filter__button-group houses-filter__button-group--date is-style-hide-navigation-mobile">
+				<?php foreach ( $duration_options as $option ) : ?>
+				<button type="button" class="houses-filter__button"
+					data-value="<?php echo esc_attr( $option['value'] ); ?>" data-wp-on--click="actions.updateDtype"
+					data-wp-bind--aria-pressed="state.activeFilters.dtype.includes('<?php echo esc_js( $option['value'] ); ?>')">
+					<?php echo esc_html( $option['label'] ); ?>
+				</button>
+				<?php endforeach; ?>
+			</div>
+
+			<!-- Size Buttons -->
+			<div class="houses-filter__button-group houses-filter__button-group--size is-style-hide-navigation-mobile">
+				<?php foreach ( $size_options as $option ) : ?>
+				<button type="button" class="houses-filter__button"
+					data-value="<?php echo esc_attr( $option['value'] ); ?>"
+					data-wp-on--click="actions.updateSize"
+					data-wp-bind--aria-pressed="state.activeFilters.size.includes('<?php echo esc_js( $option['value'] ); ?>')">
+					<?php echo esc_html( $option['label'] ); ?>
+				</button>
+				<?php endforeach; ?>
+			</div>
+
+			<!-- Location Buttons -->
+			<div class="houses-filter__button-group houses-filter__button-group--location is-style-hide-navigation-mobile">
+				<?php
+				$location_mappings = array(
+					'In the Cotswolds' => 'Cotswolds',
+					'By the Coast'     => 'Coast',
+					'In the Country'   => 'Country',
+				);
+
+				foreach ( $location_mappings as $location_name => $button_label ) :
+					$matching_location = null;
+					foreach ( $locations as $location ) {
+						if ( $location->name === $location_name ) {
+							$matching_location = $location;
+							break;
+						}
+					}
+
+					if ( $matching_location ) :
 						?>
-					</div>
-				</div>
+				<button type="button" class="houses-filter__button"
+					data-value="<?php echo esc_attr( $matching_location->term_id ); ?>"
+					data-wp-on--click="actions.updateLocation"
+					data-wp-bind--aria-pressed="state.activeFilters.local.includes('<?php echo esc_js( $matching_location->term_id ); ?>')">
+					<?php echo esc_html( $button_label ); ?>
+				</button>
+						<?php
+					endif;
+				endforeach;
+				?>
+			</div>
+
+			<!-- Feature Buttons -->
+			<div class="houses-filter__button-group houses-filter__button-group--features is-style-hide-navigation-mobile">
+				<?php
+				$feature_mappings = array(
+					'Pool'           => 'Pool',
+					'With a Hot Tub' => 'Hot Tub',
+					'Beach'          => 'Beach',
+				);
+
+				foreach ( $feature_mappings as $feature_name => $button_label ) :
+					$matching_feature = null;
+					foreach ( $features as $feature ) {
+						if ( $feature->name === $feature_name ) {
+							$matching_feature = $feature;
+							break;
+						}
+					}
+
+					if ( $matching_feature ) :
+						?>
+				<button type="button" class="houses-filter__button"
+					data-value="<?php echo esc_attr( $matching_feature->term_id ); ?>"
+					data-wp-on--click="actions.updateFeature"
+					data-wp-bind--aria-pressed="state.activeFilters.feature.includes('<?php echo esc_js( $matching_feature->term_id ); ?>')">
+					<?php echo esc_html( $button_label ); ?>
+				</button>
+						<?php
+					endif;
+				endforeach;
+				?>
 			</div>
 		</div>
 

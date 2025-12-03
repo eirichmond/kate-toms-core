@@ -1,0 +1,43 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/autocomplete-search",
+  "version": "0.1.0",
+  "title": "Autocomplete Search",
+  "category": "design",
+  "icon": "search",
+  "description": "Dynamic autocomplete search block for houses, locations, and features",
+  "example": {},
+  "supports": {
+    "interactivity": true,
+    "html": false,
+    "align": [
+      "wide",
+      "full"
+    ],
+    "inserter": true
+  },
+  "parent": [
+    "core/navigation"
+  ],
+  "textdomain": "kate-toms-core",
+  "attributes": {
+    "placeholder": {
+      "type": "string",
+      "default": "Search houses, locations, and features..."
+    },
+    "showCategories": {
+      "type": "boolean",
+      "default": true
+    },
+    "maxResults": {
+      "type": "number",
+      "default": 8
+    }
+  },
+  "editorScript": "file:./index.js",
+  "editorStyle": "file:./index.css",
+  "style": "file:./style-index.css",
+  "render": "file:./render.php",
+  "viewScriptModule": "file:./view.js"
+}

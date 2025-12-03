@@ -82,11 +82,12 @@ run_kate_toms_core();
 
 // below are helper function that run globally
 
-function kate_toms_post_thumbnail_size_filter( $size, $post_id ) {
-	$size = 'square';
-	return $size;
-}
-add_filter( 'post_thumbnail_size', 'kate_toms_post_thumbnail_size_filter', 10, 2 );
+// Removed - was forcing all thumbnails to 'square' size
+// function kate_toms_post_thumbnail_size_filter( $size, $post_id ) {
+// 	$size = 'square';
+// 	return $size;
+// }
+// add_filter( 'post_thumbnail_size', 'kate_toms_post_thumbnail_size_filter', 10, 2 );
 
 
 /**
@@ -178,6 +179,86 @@ function register_button_form_extension() {
 }
 add_action( 'init', 'register_button_form_extension' );
 
+// Register group link extension
+function register_group_link_extension() {
+	register_block_type( __DIR__ . '/blocks/group-link-extension' );
+}
+add_action( 'init', 'register_group_link_extension' );
+
+/**
+ * Render linked group blocks with clickable overlay.
+ *
+ * Adds a clickable overlay link to group blocks that have an href attribute.
+ * This makes the entire group block clickable while still allowing inner
+ * interactive elements (links, buttons) to function independently.
+ *
+ * @param string $block_content The block content.
+ * @param array  $block         The full block, including name and attributes.
+ * @return string Modified block content with link overlay.
+ */
+function render_linked_group_block( $block_content, $block ) {
+	// Only process group blocks.
+	if ( 'core/group' !== $block['blockName'] ) {
+		return $block_content;
+	}
+
+	// Check if the block has a link.
+	if ( empty( $block['attrs']['href'] ) ) {
+		return $block_content;
+	}
+
+	$href = esc_url( $block['attrs']['href'] );
+	$target = ! empty( $block['attrs']['linkTarget'] ) ? esc_attr( $block['attrs']['linkTarget'] ) : '';
+	$rel = '_blank' === $target ? 'noopener noreferrer' : '';
+
+	// Add has-link class to the group wrapper.
+	$block_content = preg_replace(
+		'/class="([^"]*wp-block-group[^"]*)"/',
+		'class="$1 has-link"',
+		$block_content,
+		1
+	);
+
+	// Build the overlay link attributes.
+	$link_attrs = sprintf(
+		'href="%s"%s%s',
+		$href,
+		$target ? sprintf( ' target="%s"', $target ) : '',
+		$rel ? sprintf( ' rel="%s"', $rel ) : ''
+	);
+
+	// Insert the overlay link as the first child of the group.
+	$overlay_link = sprintf(
+		'<a %s class="group-link-overlay" aria-label="Link to %s"></a>',
+		$link_attrs,
+		esc_attr( $href )
+	);
+
+	// Find the opening tag and insert after it.
+	$block_content = preg_replace(
+		'/(<div[^>]*wp-block-group[^>]*>)/',
+		'$1' . $overlay_link,
+		$block_content,
+		1
+	);
+
+	return $block_content;
+}
+add_filter( 'render_block', 'render_linked_group_block', 10, 2 );
+
+/**
+ * Enqueue group link extension styles.
+ */
+function enqueue_group_link_styles() {
+	wp_enqueue_style(
+		'kate-toms-group-link-styles',
+		plugins_url( 'blocks/group-link-extension/style.css', __FILE__ ),
+		array(),
+		'1.0.0'
+	);
+}
+add_action( 'wp_enqueue_scripts', 'enqueue_group_link_styles' );
+
 // Handle frontend scripts
 function enqueue_button_form_scripts() {
 	// Only enqueue if we have a button block with form enabled
@@ -235,4 +316,82 @@ function load_booking_form_callback() {
 add_action( 'wp_ajax_load_booking_form', 'load_booking_form_callback' );
 add_action( 'wp_ajax_nopriv_load_booking_form', 'load_booking_form_callback' );
 
+// AJAX handler for debug logging from house-landing-pages block editor
+function house_landing_debug_log_callback() {
+	$query_data = sanitize_text_field( $_POST['query_data'] ?? '' );
+	if ( ! empty( $query_data ) ) {
+		error_log( 'House Landing Pages Editor Query: ' . $query_data );
+	}
+	wp_die(); // Always die in AJAX handlers
+}
+add_action( 'wp_ajax_house_landing_debug_log', 'house_landing_debug_log_callback' );
+add_action( 'wp_ajax_nopriv_house_landing_debug_log', 'house_landing_debug_log_callback' );
+
+/**
+ * Limit excerpt length to 6 words.
+ *
+ * @param string $excerpt The excerpt text.
+ * @return string The limited excerpt.
+ */
+function kate_toms_limit_excerpt_words( $excerpt ) {
+	$words = explode( ' ', $excerpt );
+	if ( count( $words ) > 6 ) {
+		$words = array_slice( $words, 0, 6 );
+		$excerpt = implode( ' ', $words ) . '... read more&nbsp;&raquo;';
+	}
+	return $excerpt;
+}
+add_filter( 'get_the_excerpt', 'kate_toms_limit_excerpt_words' );
+
+/**
+ * Register custom image sizes.
+ */
+function kate_toms_register_image_sizes() {
+	add_image_size( 'house_search', 280, 240, true );
+	add_image_size( 'cross_promo_wide', 880, 300, true );
+	add_image_size( 'cross_promo_wide_prev', 200, 100, true );
+	add_image_size( 'cross_promo_narrow', 280, 300, true );
+	add_image_size( 'cross_promo_narrow_prev', 100, 150, true );
+	add_image_size( 'huge', 1600, 900, true );
+	add_image_size( 'square', 580, 580, true );
+	add_image_size( 'matrix', 780, 780, true );
+	add_image_size( 'square-partners', 550, 450, true );
+	add_image_size( 'square-vendor-stats', 470, 365, array( 'center', 'center' ) );
+	add_image_size( 'large', 1180, 450, true );
+	add_image_size( 'thumbnail', 280, 280, true );
+	add_image_size( 'blog-wide', 770, 380, true );
+	add_image_size( 'blog-square', 380, 380, true );
+	add_image_size( 'blog-square-wide', 280, 188, true );
+	add_theme_support( 'post-thumbnails' );
+	set_post_thumbnail_size( 1200, 400, true );
+}
+add_action( 'plugins_loaded', 'kate_toms_register_image_sizes' );
+
+/**
+ * Make custom image sizes selectable in the block editor.
+ *
+ * @param array $sizes Array of image size labels.
+ * @return array Modified array of image size labels.
+ */
+function kate_toms_add_image_size_names( $sizes ) {
+	return array_merge(
+		$sizes,
+		array(
+			'house_search'            => __( 'House Search' ),
+			'cross_promo_wide'        => __( 'Cross Promo Wide' ),
+			'cross_promo_wide_prev'   => __( 'Cross Promo Wide Preview' ),
+			'cross_promo_narrow'      => __( 'Cross Promo Narrow' ),
+			'cross_promo_narrow_prev' => __( 'Cross Promo Narrow Preview' ),
+			'huge'                    => __( 'Huge' ),
+			'square'                  => __( 'Square' ),
+			'matrix'                  => __( 'Matrix' ),
+			'square-partners'         => __( 'Square Partners' ),
+			'square-vendor-stats'     => __( 'Square Vendor Stats' ),
+			'blog-wide'               => __( 'Blog Wide' ),
+			'blog-square'             => __( 'Blog Square' ),
+			'blog-square-wide'        => __( 'Blog Square Wide' ),
+		)
+	);
+}
+add_filter( 'image_size_names_choose', 'kate_toms_add_image_size_names' );
 

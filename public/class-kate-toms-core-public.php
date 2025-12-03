@@ -96,7 +96,36 @@ class Kate_Toms_Core_Public {
 
 		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/kate-toms-core-public.js', array( 'jquery' ), $this->version, false );
 	}
-	
+
+	/**
+	 * Filter out bedroom-related terms from the feature taxonomy.
+	 * Only applies on /houses/ pages.
+	 *
+	 * @since    1.0.0
+	 * @param    array  $terms       Array of term objects.
+	 * @param    array  $taxonomies  Array of taxonomy names.
+	 * @param    array  $args        Array of get_terms() arguments.
+	 * @return   array  Filtered array of term objects.
+	 */
+	public function filter_bedroom_terms( $terms, $taxonomies, $args ) {
+		// Only apply filter on /houses/ pages
+		if ( strpos( $_SERVER['REQUEST_URI'], '/houses/' ) === false ) {
+			return $terms;
+		}
+
+		// Only filter the feature taxonomy
+		if ( in_array( 'feature', $taxonomies ) ) {
+			$terms = array_filter(
+				$terms,
+				function( $term ) {
+					return stripos( $term->name, 'bedroom' ) === false;
+				}
+			);
+		}
+
+		return $terms;
+	}
+
 
 
 	
@@ -122,6 +151,119 @@ class Kate_Toms_Core_Public {
 	 */
 	public function bugherd_script() {
 		echo '<script type="text/javascript" src="https://www.bugherd.com/sidebarv2.js?apikey=8je1j3guc7qdsjlkvgxhyq" async="true"></script>';
+	}
+
+	/**
+	 * Outputs the Trustpilot bootstrap script in the head.
+	 *
+	 * Required for Trustpilot widgets to render properly on the frontend.
+	 * The script must be loaded in the head before widget divs are rendered.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function trustpilot_script() {
+		echo "<!-- TrustBox script -->\n";
+		echo "<script type='text/javascript' src='//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js' async></script>\n";
+		echo "<!-- End TrustBox script -->";
+	}
+
+	/**
+	 * Outputs the TikTok tracking script in the head.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function tiktoc_script() {
+		echo "<!-- TikTok tracking script -->\n";
+		echo '<script>
+	!function (w, d, t) {
+	  w.TiktokAnalyticsObject=t;var ttq=w[t]=w[t]||[];ttq.methods=["page","track","identify","instances","debug","on","off","once","ready","alias","group","enableCookie","disableCookie"],ttq.setAndDefer=function(t,e){t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}};for(var i=0;i<ttq.methods.length;i++)ttq.setAndDefer(ttq,ttq.methods[i]);ttq.instance=function(t){for(var e=ttq._i[t]||[],n=0;n<ttq.methods.length;n++)ttq.setAndDefer(e,ttq.methods[n]);return e},ttq.load=function(e,n){var i="https://analytics.tiktok.com/i18n/pixel/events.js";ttq._i=ttq._i||{},ttq._i[e]=[],ttq._i[e]._u=i,ttq._t=ttq._t||{},ttq._t[e]=+new Date,ttq._o=ttq._o||{},ttq._o[e]=n||{};var o=document.createElement("script");o.type="text/javascript",o.async=!0,o.src=i+"?sdkid="+e+"&lib="+t;var a=document.getElementsByTagName("script")[0];a.parentNode.insertBefore(o,a)};
+
+	  ttq.load("COL543JC77U8K5AP3PPG");
+	  ttq.page();
+	}(window, document, "ttq");
+	</script>';
+		echo "<!-- End TikTok tracking script -->";
+	}
+
+	/**
+	 * Outputs the Facebook Pixel code in the head.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function kt_facebook_pixel_header_code() {
+		echo "<!-- Facebook Pixel Code -->
+		<script>
+		!function(f,b,e,v,n,t,s)
+		{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+		n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+		if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+		n.queue=[];t=b.createElement(e);t.async=!0;
+		t.src=v;s=b.getElementsByTagName(e)[0];
+		s.parentNode.insertBefore(t,s)}(window, document,'script',
+		'https://connect.facebook.net/en_US/fbevents.js');
+		fbq('init', '868590816927957');
+		fbq('track', 'PageView');
+		</script>
+		<noscript><img height='1' width='1' style='display:none'
+		src='https://www.facebook.com/tr?id=868590816927957&ev=PageView&noscript=1'
+		/></noscript>
+		<!-- End Facebook Pixel Code -->";
+	}
+
+	/**
+	 * Outputs the Hive code in the head.
+	 *
+	 * @return void
+	 */
+	public function kt_hive_code_header_code() {
+		echo "<script>!function () { var a = document.createElement('script'); a.type = 'text/javascript', a.async = !0, a.src = 'https://tracking.hivecloud.net/client-scripts/kateandtoms.min.js'; var b = document.getElementsByTagName('script')[0]; b.parentNode.insertBefore(a, b) }();</script>";
+	}
+
+	/**
+	 * Outputs the LinkedIn tracking script in the footer.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function linkedin_script() {
+		$output = '<!-- Begin LinkedIn -->
+		<script type="text/javascript"> _linkedin_partner_id = "5415716"; window._linkedin_data_partner_ids = window._linkedin_data_partner_ids || []; window._linkedin_data_partner_ids.push(_linkedin_partner_id); </script><script type="text/javascript"> (function(l) { if (!l){window.lintrk = function(a,b){window.lintrk.q.push([a,b])}; window.lintrk.q=[]} var s = document.getElementsByTagName("script")[0]; var b = document.createElement("script"); b.type = "text/javascript";b.async = true; b.src = "https://snap.licdn.com/li.lms-analytics/insight.min.js"; s.parentNode.insertBefore(b, s);})(window.lintrk); </script> <noscript> <img height="1" width="1" style="display:none;" alt="" src="https://px.ads.linkedin.com/collect/?pid=5415716&fmt=gif" /> </noscript>
+		<!-- End LinkedIn -->';
+		echo $output;
+	}
+
+	/**
+	 * Outputs the Google Tag Manager script in the head.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function google_header_tag_manager_script() {
+		$gtm_code  = "<!-- Google Tag Manager -->
+		<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+		new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+		j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+		'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+		})(window,document,'script','dataLayer','GTM-WNT2MLS');</script>
+		<!-- End Google Tag Manager -->";
+		$gtm_code .= "<!-- Google tag (gtag.js) --> <script async src='https://www.googletagmanager.com/gtag/js?id=AW-1068089463'></script> <script> window.dataLayer = window.dataLayer || []; function gtag(){dataLayer.push(arguments);} gtag('js', new Date()); gtag('config', 'AW-1068089463'); </script>";
+		echo $gtm_code;
+	}
+
+	/**
+	 * Outputs the Google Tag Manager (noscript) script in the footer.
+	 *
+	 * @since 1.0.0
+	 * @return void
+	 */
+	public function google_footer_tag_manager_script() {
+		echo '<!-- Google Tag Manager (noscript) -->
+		<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-WNT2MLS"
+		height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+		<!-- End Google Tag Manager (noscript) -->';
 	}
 
 	/**

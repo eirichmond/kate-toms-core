@@ -56,8 +56,10 @@ $context = wp_json_encode(
 	<div class="houses-grid">
 		<?php
 		if ( $query->have_posts() ) {
+			$house_count = 0;
 			while ( $query->have_posts() ) {
 				$query->the_post();
+				$house_count++;
 				?>
 
 				<?php
@@ -74,6 +76,44 @@ $context = wp_json_encode(
 				?>
 
 				<?php
+			}
+
+			// Check if we need adverts to fill the row
+			$remainder = $house_count % 4;
+			if ( $remainder > 0 ) {
+				$adverts_needed = 4 - $remainder;
+
+				// Determine location key for adverts
+				$location_key = '';
+				if ( 604 == $attributes['defaultLocation'] ) {
+					$location_key = 'cotswolds';
+				} elseif ( 810 == $attributes['defaultLocation'] ) {
+					$location_key = 'coast';
+				} elseif ( 790 == $attributes['defaultLocation'] ) {
+					$location_key = 'country';
+				} elseif ( 603 == $attributes['defaultLocation'] ) {
+					$location_key = 'town';
+				}
+
+				// Get adverts if we have a location key
+				if ( ! empty( $location_key ) && class_exists( 'Kate_Toms_Core_Admin' ) ) {
+					$admin = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
+					$adverts = $admin->get_adverts_for_location( $location_key, $adverts_needed );
+
+					// Output advert placeholders
+					foreach ( $adverts as $advert ) {
+						?>
+						<!-- Advert Placeholder Card -->
+						<div class="house-card advert-placeholder">
+							<div class="house-card__image">
+								<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
+									alt="Advertisement"
+									style="width: 100%; height: 100%; object-fit: cover;">
+							</div>
+						</div>
+						<?php
+					}
+				}
 			}
 		} else {
 			?>

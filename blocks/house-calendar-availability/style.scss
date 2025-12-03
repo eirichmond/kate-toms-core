@@ -7,6 +7,13 @@
 		border-radius: 8px;
 		// box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 		overflow: hidden;
+		.kt-calendar-month {
+			margin: 2.5rem 0;
+			overflow-x: auto;
+			&:not(:first-child) {
+				border-top: 1px solid #dfdfdf;
+			}
+		}
 	}
 	
 	.kt-calendar-month {
@@ -22,6 +29,7 @@
 	.kt-calendar-table {
 		width: 100%;
 		border-collapse: collapse;
+		border: 1px solid #dfdfdf;
 		th {
 			padding: 4px 0;
 			font-size: 0.7rem;
@@ -64,11 +72,37 @@
 			position: relative;
 			z-index: 0;
 			font-weight: 600;
-			
+			&.bk_unknown {
+				color: #cdcdcd;
+				background: #f9f9f9;
+			}			
 			// Kate & Tom's availability states
 			&.bk_avail {
 				background: #c5c951;
 				color: #fff;
+				
+				// Booking interaction styles
+				&.bookable-date {
+					transition: all 0.2s ease;
+					
+					&:hover {
+						background: #a8a540;
+						transform: scale(1.1);
+						box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+						cursor: pointer;
+					}
+					&.halfafter {
+						&.checkin-day {
+							background: #e3634b;
+							color: #fff;
+						}
+					}
+					
+					.booking-loader {
+						font-size: 0.6rem;
+						color: #fff;
+					}
+				}
 			}
 			
 			&.bk_unav {
@@ -114,9 +148,6 @@
 			// }
 			
 			// Special styling for checkout days
-			&.checkout-day {
-				border-right: 3px solid #6c757d;
-			}
 			
 			&.today {
 				background: #007bff !important;
@@ -139,7 +170,7 @@
 		.rate-cell {
 			font-size: 0.75rem;
 			vertical-align: middle;
-			min-width: 60px;
+			min-width: 90px;
 			
 			// Rate type styling
 			&.price {
@@ -185,18 +216,12 @@
 	
 	// Month notes styling
 	.month-notes {
-		padding: 1rem;
-		background: #f8f9fa;
-		border-top: 1px solid #e9ecef;
-		margin-top: 0.5rem;
-		
+		padding: 2rem 0 0;
 		p {
 			margin: 0;
 			font-size: 0.8rem;
 			color: #6c757d;
 			line-height: 1.4;
-			text-align: center;
-			font-style: italic;
 		}
 	}
 	
@@ -320,7 +345,6 @@
 	@media (max-width: 768px) {
 		.kt-calendar-table {
 			font-size: 0.8rem;
-			
 			th, td {
 				padding: 4px 2px;
 			}

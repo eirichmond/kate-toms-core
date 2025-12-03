@@ -10,6 +10,13 @@
   border-radius: 8px;
   overflow: hidden;
 }
+.house-calendar-availability .calendar-container .kt-calendar-month {
+  margin: 2.5rem 0;
+  overflow-x: auto;
+}
+.house-calendar-availability .calendar-container .kt-calendar-month:not(:first-child) {
+  border-top: 1px solid #dfdfdf;
+}
 .house-calendar-availability .kt-calendar-month .month-header h2 {
   font-weight: normal;
   color: #333;
@@ -17,6 +24,7 @@
 .house-calendar-availability .kt-calendar-table {
   width: 100%;
   border-collapse: collapse;
+  border: 1px solid #dfdfdf;
 }
 .house-calendar-availability .kt-calendar-table th {
   padding: 4px 0;
@@ -55,8 +63,29 @@
   z-index: 0;
   font-weight: 600;
 }
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_unknown {
+  color: #cdcdcd;
+  background: #f9f9f9;
+}
 .house-calendar-availability .kt-calendar-table .calendar-day.bk_avail {
   background: #c5c951;
+  color: #fff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date {
+  transition: all 0.2s ease;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date:hover {
+  background: #a8a540;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date.halfafter.checkin-day {
+  background: #e3634b;
+  color: #fff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date .booking-loader {
+  font-size: 0.6rem;
   color: #fff;
 }
 .house-calendar-availability .kt-calendar-table .calendar-day.bk_unav {
@@ -91,9 +120,6 @@
   border-width: 0 0 32px 32px;
   border-color: transparent transparent #e3634b transparent;
 }
-.house-calendar-availability .kt-calendar-table .calendar-day.checkout-day {
-  border-right: 3px solid #6c757d;
-}
 .house-calendar-availability .kt-calendar-table .calendar-day.today {
   background: #007bff !important;
   color: white !important;
@@ -111,7 +137,7 @@
 .house-calendar-availability .kt-calendar-table .rate-cell {
   font-size: 0.75rem;
   vertical-align: middle;
-  min-width: 60px;
+  min-width: 90px;
 }
 .house-calendar-availability .kt-calendar-table .rate-cell.price {
   font-weight: 600;
@@ -145,18 +171,13 @@
   background: #f8f9fa;
 }
 .house-calendar-availability .month-notes {
-  padding: 1rem;
-  background: #f8f9fa;
-  border-top: 1px solid #e9ecef;
-  margin-top: 0.5rem;
+  padding: 2rem 0 0;
 }
 .house-calendar-availability .month-notes p {
   margin: 0;
   font-size: 0.8rem;
   color: #6c757d;
   line-height: 1.4;
-  text-align: center;
-  font-style: italic;
 }
 .house-calendar-availability .calendar-legend {
   padding: 1rem;

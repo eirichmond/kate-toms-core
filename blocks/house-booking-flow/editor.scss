@@ -1,0 +1,38 @@
+.house-booking-flow-editor {
+	.booking-flow-placeholder {
+		background: #f8f9fa;
+		border: 2px dashed #dee2e6;
+		border-radius: 8px;
+		padding: 30px;
+		text-align: center;
+		
+		h3 {
+			color: #495057;
+			margin-top: 0;
+		}
+		
+		.progress-preview {
+			display: flex;
+			gap: 10px;
+			justify-content: center;
+			margin: 20px 0;
+			
+			.step {
+				background: #e9ecef;
+				padding: 10px 15px;
+				border-radius: 4px;
+				font-size: 0.9em;
+				
+				&.active {
+					background: #007cba;
+					color: white;
+				}
+			}
+		}
+		
+		p {
+			color: #6c757d;
+			margin-bottom: 0;
+		}
+	}
+}
