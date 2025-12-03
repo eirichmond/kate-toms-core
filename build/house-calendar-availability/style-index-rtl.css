@@ -167,9 +167,6 @@
 .house-calendar-availability .kt-calendar-table .rate-cell.hidden {
   display: none;
 }
-.house-calendar-availability .kt-calendar-table .rate-cell:empty {
-  background: #f8f9fa;
-}
 .house-calendar-availability .month-notes {
   padding: 2rem 0 0;
 }

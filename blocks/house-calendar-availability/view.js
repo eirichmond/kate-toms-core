@@ -211,33 +211,48 @@ class HouseCalendar {
 				break;
 			}
 
-			// Store the actual Friday date for this week (currentDay should be Friday at start of each week)
-			const weekFridayDate = new Date(currentDay);
-			html += '<tr class="calendar-week">';
+		// Store the actual Friday date for this week (currentDay should be Friday at start of each week)
+		const weekFridayDate = new Date(currentDay);
+		
+		// Find the first day in this week that belongs to the current month
+		// This will be used as the reference date for rate lookups
+		let weekReferenceDate = null;
+		let tempDate = new Date(currentDay);
+		for (let i = 0; i < 7; i++) {
+			if (tempDate.getMonth() === month) {
+				weekReferenceDate = new Date(tempDate);
+				break;
+			}
+			tempDate.setDate(tempDate.getDate() + 1);
+		}
+		
+		html += '<tr class="calendar-week">';
 
-			// Generate 7 day cells (Fri-Thu)
-			for (let i = 0; i < 7; i++) {
-				const dayNum = currentDay.getDate();
-				const isCurrentMonth = currentDay.getMonth() === month;
+		// Generate 7 day cells (Fri-Thu)
+		for (let i = 0; i < 7; i++) {
+			const dayNum = currentDay.getDate();
+			const isCurrentMonth = currentDay.getMonth() === month;
 
-				if (isCurrentMonth) {
-					// change the currentDay variable to a specific date
-					// currentDay = new Date("2026-05-23");
-					// debugger;
+			if (isCurrentMonth) {
+				// change the currentDay variable to a specific date
+				// currentDay = new Date("2026-05-23");
+				// debugger;
 
-					const dayData = this.getDayData(currentDay);
-					html += this.generateDayCell(dayNum, dayData, currentDay);
-				} else {
-					html += '<td class="other-month"></td>';
-				}
-
-				currentDay.setDate(currentDay.getDate() + 1);
+				const dayData = this.getDayData(currentDay);
+				html += this.generateDayCell(dayNum, dayData, currentDay);
+			} else {
+				html += '<td class="other-month"></td>';
 			}
 
-			// Add rate columns if enabled
-			if (this.config.showRates) {
-				html += this.generateWeekRates(monthKey, weekFridayDate, visibleRateColumns);
-			}
+			currentDay.setDate(currentDay.getDate() + 1);
+		}
+		debugger;
+		// Add rate columns if enabled
+		if (this.config.showRates) {
+			// Use the reference date (first day of week in current month) if Friday is in previous month
+			const rateReferenceDate = weekFridayDate.getMonth() === month ? weekFridayDate : weekReferenceDate;
+			html += this.generateWeekRates(monthKey, rateReferenceDate, visibleRateColumns);
+		}
 
 			html += '</tr>';
 			weekCount++;
@@ -471,17 +486,27 @@ class HouseCalendar {
 		return `<td class="${classes.join(' ')}"${attributes}>${dayNum}</td>`;
 	}
 	
-	generateWeekRates(monthKey, weekFridayDate, visibleRateColumns) {
+	generateWeekRates(monthKey, weekReferenceDate, visibleRateColumns) {
 
-		// debugger;
+		let html = "";
+		
+		// Calculate the Friday of this week - API data is keyed by Friday's date
+		const refDate = new Date(weekReferenceDate);
+		const dayOfWeek = refDate.getDay();
+		const daysBackToFriday = (dayOfWeek + 2) % 7;
+		const weekFriday = new Date(refDate);
+		weekFriday.setDate(refDate.getDate() - daysBackToFriday);
+		
+		// Get the month key based on Friday's date (where the API data is stored)
+		const fridayMonthKey = 
+			weekFriday.getFullYear() +
+			"-" +
+			String(weekFriday.getMonth() + 1).padStart(2, "0");
 
-		let html = '';
-		
-		
 		for (const rateKey of visibleRateColumns) {
 			// Get the correct checkin day for this rate type
 			const checkinDate = this.getCheckinDateForRate(
-				weekFridayDate,
+				weekReferenceDate,
 				rateKey,
 				monthKey
 			);
@@ -495,26 +520,49 @@ class HouseCalendar {
 
 			// in the rateData, check if 'offer' is set and if so, append the offer indicator of the number of stars to the display as an asterisk,
 			// note that rateData is an object with a display property and an offer property is set already declared as a constant, so we need to use a different variable name
-			const rateData = this.getWeekRate(monthKey, weekDateKey, rateKey);
-			let display = rateData.display; // this is the display property of the rateData object	
-			if (rateData.offer) { // this is the offer property of the rateData object	
-				display += `*`.repeat(rateData.offer); // this is the number of stars to append to the display as an asterisk	
+
+			if (weekDateKey === "2026-02-02") {
+				debugger;
 			}
-			html += `<td class="rate-cell ${rateData.type}">${display}</td>`; // this is the display property of the rateData object		
+			// Use Friday's month key to look up rate data, since API data is organized by Friday's date
+			const rateData = this.getWeekRate(fridayMonthKey, weekDateKey, rateKey);
+
+			let display = rateData.display; // this is the display property of the rateData object
+			if (rateData.offer) {
+				// this is the offer property of the rateData object
+				display += `*`.repeat(rateData.offer); // this is the number of stars to append to the display as an asterisk
+			}
+			html += `<td class="rate-cell ${rateData.type}">${display}</td>`; // this is the display property of the rateData object
 		}
-		
+
 		return html;
 	}
 	
 	/**
 	 * Get the correct checkin date for a rate type based on the week.
-	 * @param {Date} weekFridayDate - The Friday date of the current week
+	 * @param {Date} weekReferenceDate - A reference date within the current week
 	 * @param {string} rateKey - The rate key (50, 60, 70, 80, 85, 90)
 	 * @param {string} monthKey - The month key (YYYY-MM format)
 	 * @returns {Date} The correct checkin date for this rate type
 	 */
-	getCheckinDateForRate(weekFridayDate, rateKey, monthKey) {
-		const friday = new Date(weekFridayDate);
+	getCheckinDateForRate(weekReferenceDate, rateKey, monthKey) {
+		debugger;
+		// Calculate the Friday that started this week (week runs Fri-Thu)
+		// Day of week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
+		const refDate = new Date(weekReferenceDate);
+		const dayOfWeek = refDate.getDay();
+		
+		// Calculate days back to Friday
+		// If Fri(5): 0 days back
+		// If Sat(6): 1 day back
+		// If Sun(0): 2 days back
+		// If Mon(1): 3 days back
+		// If Tue(2): 4 days back
+		// If Wed(3): 5 days back
+		// If Thu(4): 6 days back
+		const daysBackToFriday = (dayOfWeek + 2) % 7;
+		const friday = new Date(refDate);
+		friday.setDate(refDate.getDate() - daysBackToFriday);
 		
 		switch (rateKey) {
 			case '50': // 2 night weekend - Friday checkin
@@ -599,45 +647,55 @@ class HouseCalendar {
 	/**
 	 * Get rate data for a specific week and rate type.
 	 * Handles recursive lookup for '0' values.
+	 * 
 	 */
 	getWeekRate(monthKey, weekDateKey, rateKey) {
 		// Extract the month from weekDateKey (format: YYYY-MM-DD)
 		const weekMonth = weekDateKey.substring(0, 7); // Get YYYY-MM portion
-
+		// debugger;
 		// If weekDateKey is in a different month than monthKey, handle based on rate type
 		if (weekMonth !== monthKey) {
 			// For Monday checkin rates (Midweek and 2 night midweek), show empty space
 			// since there's no Monday at the end of this month (or it's in previous month at start)
-			if (rateKey === '80' || rateKey === '85') {
+			if (rateKey === "80" || rateKey === "85") {
 				return { type: "empty", display: "" };
 			}
 			// For Friday checkin rates (2 night weekend and 3 night weekend), show empty space
 			// since there's no Friday at the beginning of this month (or it's in next month at end)
-			if (rateKey === '50' || rateKey === '60') {
+			if (rateKey === "50" || rateKey === "60") {
 				return { type: "empty", display: "" };
 			}
 			// For other rates, show n/a
-			return { type: "unavailable", display: "n/a" };
+			return { type: "unavailable", display: "" };
 		}
 
 		const monthRates = this.calendarData.rates?.[monthKey];
 
 		if (!monthRates || !monthRates.weeks) {
-			return { type: "unavailable", display: "n/a" };
+			return { type: "unavailable", display: "" };
 		}
 		// Try to get the rate for this week
 
 		// note that the weekDateKey might be a Monday checkin date so it might not be in the monthRates.weeks object,
-		// so if that is the case we need to find the previous week date and use that as the weekDateKey and then get the rate data for that week and return it
+		// so if that is the case we need to find the previous week date and use that as the weekDateKey and then get
+		// the rate data for that week and return it
+
 		if (!monthRates.weeks[weekDateKey]) {
+			// Early return if weekDateKey is after all available weeks - no need to look for previous week
+			const weekDates = Object.keys(monthRates.weeks);
+			if (weekDates.length === 0 || weekDateKey > Math.max(...weekDates)) {
+				return { type: "unavailable", display: "" };
+			}
+
 			const previousWeekDate = this.findPreviousWeekDate(
 				monthKey,
 				weekDateKey
-			); // this is the previous week date in the monthRates.weeks object so create the function to do this and return the previous week date
+			);
 			if (previousWeekDate) {
 				weekDateKey = previousWeekDate;
 			}
 		}
+		
 		const weekRates = monthRates.weeks[weekDateKey];
 		if (weekRates && weekRates[rateKey]) {
 			const rateData = weekRates[rateKey];
@@ -655,7 +713,7 @@ class HouseCalendar {
 		}
 
 		// No rate data found
-		return { type: "unavailable", display: "n/a" };
+		return { type: "unavailable", display: "" };
 	}
 	
 	/**
