@@ -1,0 +1,28 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "kate-toms-core/house-load-search",
+	"version": "0.1.0",
+	"title": "House Load Search",
+	"category": "widgets",
+	"icon": "search",
+	"description": "Display houses with infinite scroll loading, ordered by sleeps_max",
+	"keywords": ["house", "property", "search", "infinite", "scroll", "load"],
+	"example": {},
+	"supports": {
+		"html": false,
+		"align": ["wide", "full"],
+		"interactivity": true
+	},
+	"attributes": {
+		"postsPerPage": {
+			"type": "number",
+			"default": 20
+		}
+	},
+	"textdomain": "kate-toms-core",
+	"editorScript": "file:./index.js",
+	"viewScriptModule": "file:./view.js",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}

@@ -56,6 +56,29 @@ class Houses_Filter_API {
 				),
 			)
 		);
+
+		// Register paginated houses endpoint for infinite scroll.
+		register_rest_route(
+			'kate-toms/v1',
+			'/houses-load',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_paginated_houses' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'page'     => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+					'per_page' => array(
+						'type'              => 'integer',
+						'default'           => 20,
+						'sanitize_callback' => 'absint',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -303,6 +326,164 @@ class Houses_Filter_API {
 		);
 
 		header( 'Content-Type: application/json' );
+		return wp_send_json_success( $response );
+	}
+
+	/**
+	 * Get paginated houses for infinite scroll loading.
+	 *
+	 * Returns houses ordered by sleeps_max descending with pagination support.
+	 * Used by the house-load-search block for infinite scroll functionality.
+	 *
+	 * @param WP_REST_Request $request The request object containing:
+	 *                                - page: Current page number (default 1)
+	 *                                - per_page: Houses per page (default 20).
+	 * @return WP_REST_Response The response containing HTML and pagination info.
+	 */
+	public function get_paginated_houses( $request ) {
+		$page     = $request->get_param( 'page' ) ?? 1;
+		$per_page = $request->get_param( 'per_page' ) ?? 20;
+
+		// Cotswolds style configuration.
+		$title_bg_color = 'colorfive';
+
+		// Build query arguments.
+		$args = array(
+			'post_type'      => 'houses',
+			'post_status'    => 'publish',
+			'posts_per_page' => $per_page,
+			'paged'          => $page,
+			'orderby'        => 'meta_value_num',
+			'order'          => 'DESC',
+			'meta_key'       => 'sleeps_max',
+			'meta_query'     => array(
+				array(
+					'key'     => 'sleeps_max',
+					'compare' => 'EXISTS',
+					'type'    => 'NUMERIC',
+				),
+			),
+		);
+
+		// Execute the query.
+		$query        = new WP_Query( $args );
+		$total_houses = $query->found_posts;
+		$total_pages  = $query->max_num_pages;
+		$has_more     = $page < $total_pages;
+
+		// Build the response HTML.
+		ob_start();
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				?>
+				<!-- House Card using theme pattern structure -->
+				<div class="wp-block-group has-white-background-color has-background house-card" style="min-height:365px">
+
+					<a href="<?php the_permalink(); ?>">
+						<!-- Featured Image -->
+						<?php if ( has_post_thumbnail() ) : ?>
+							<?php the_post_thumbnail( 'house_search', array( 'style' => 'width: 100%; height: auto; display: block;' ) ); ?>
+						<?php endif; ?>
+
+						<!-- Post Title with styling from pattern -->
+						<h3 class="wp-block-heading has-text-align-center has-small-font-size has-white-color has-<?php echo esc_attr( $title_bg_color ); ?>-background-color"
+						style="margin-top:0;margin-bottom:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40);font-style:normal;font-weight:600;font-size:var(--wp--preset--font-size--small)">
+							<?php the_title(); ?>
+						</h3>
+
+						<!-- Brief Description -->
+						<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+							<?php
+							$brief_description = get_post_meta( get_the_ID(), 'brief_description', true );
+							if ( $brief_description ) :
+								?>
+								<p class="has-x-small-font-size"><?php echo esc_html( $brief_description ); ?></p>
+							<?php endif; ?>
+						</div>
+
+						<!-- Sleeps and Location Info -->
+						<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--tertiary);border-top-width:1px;padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+							<div class="wp-block-group" style="display: flex; justify-content: space-between; align-items: center;">
+								<!-- Sleeps Info -->
+								<div class="wp-block-group" style="display: flex; align-items: center; gap: 0.2em;">
+									<?php
+									$sleeps_min = get_post_meta( get_the_ID(), 'sleeps_min', true );
+									$sleeps_max = get_post_meta( get_the_ID(), 'sleeps_max', true );
+									if ( $sleeps_max ) :
+										?>
+										<p class="has-x-small-font-size" style="margin: 0;">Sleeps </p>
+										<?php if ( $sleeps_min ) : ?>
+											<p class="has-x-small-font-size" style="margin: 0;"><?php echo esc_html( $sleeps_min ); ?></p>
+											<p class="has-x-small-font-size" style="margin: 0;"> to </p>
+										<?php endif; ?>
+										<p class="has-x-small-font-size" style="margin: 0;"><?php echo esc_html( $sleeps_max ); ?></p>
+									<?php endif; ?>
+								</div>
+
+								<!-- Location Info -->
+								<div class="wp-block-group">
+									<?php
+									$location_text = get_post_meta( get_the_ID(), 'location_text', true );
+									if ( $location_text ) :
+										?>
+										<p class="has-text-align-right has-x-small-font-size" style="margin: 0;"><?php echo esc_html( $location_text ); ?></p>
+									<?php endif; ?>
+								</div>
+							</div>
+						</div>
+
+					</a>
+				</div>
+				<?php
+			}
+		}
+
+		$html = ob_get_clean();
+
+		// Generate adverts HTML if this is the last page.
+		$adverts_html = '';
+		if ( ! $has_more ) {
+			// Calculate total houses loaded so far.
+			$total_loaded = $total_houses;
+			$remainder    = $total_loaded % 4;
+
+			if ( $remainder > 0 ) {
+				$adverts_needed = 4 - $remainder;
+
+				// Get adverts for cotswolds location.
+				if ( class_exists( 'Kate_Toms_Core_Admin' ) ) {
+					$admin   = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
+					$adverts = $admin->get_adverts_for_location( 'cotswolds', $adverts_needed );
+
+					ob_start();
+					foreach ( $adverts as $advert ) {
+						?>
+						<!-- Advert Placeholder Card -->
+						<div class="wp-block-group has-white-background-color has-background advert-placeholder" style="min-height:365px">
+							<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
+								style="width: 100%; height: 368px; display: block; object-fit: cover;"
+								alt="Advertisement">
+						</div>
+						<?php
+					}
+					$adverts_html = ob_get_clean();
+				}
+			}
+		}
+
+		wp_reset_postdata();
+
+		$response = array(
+			'html'        => $html,
+			'adverts'     => $adverts_html,
+			'page'        => $page,
+			'totalPages'  => $total_pages,
+			'totalHouses' => $total_houses,
+			'hasMore'     => $has_more,
+		);
+
 		return wp_send_json_success( $response );
 	}
 
