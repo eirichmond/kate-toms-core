@@ -246,8 +246,8 @@ class HouseCalendar {
 
 			currentDay.setDate(currentDay.getDate() + 1);
 		}
-		debugger;
-		// Add rate columns if enabled
+
+			// Add rate columns if enabled
 		if (this.config.showRates) {
 			// Use the reference date (first day of week in current month) if Friday is in previous month
 			const rateReferenceDate = weekFridayDate.getMonth() === month ? weekFridayDate : weekReferenceDate;
@@ -489,7 +489,7 @@ class HouseCalendar {
 	generateWeekRates(monthKey, weekReferenceDate, visibleRateColumns) {
 
 		let html = "";
-		
+		debugger;
 		// Calculate the Friday of this week - API data is keyed by Friday's date
 		const refDate = new Date(weekReferenceDate);
 		const dayOfWeek = refDate.getDay();
@@ -497,35 +497,37 @@ class HouseCalendar {
 		const weekFriday = new Date(refDate);
 		weekFriday.setDate(refDate.getDate() - daysBackToFriday);
 		
-		// Get the month key based on Friday's date (where the API data is stored)
-		const fridayMonthKey = 
-			weekFriday.getFullYear() +
+	// Get the month key based on Friday's date (where the API data is stored)
+	const fridayMonthKey = 
+		weekFriday.getFullYear() +
+		"-" +
+		String(weekFriday.getMonth() + 1).padStart(2, "0");
+	
+	// Get Friday's date as the week key - API data is always keyed by Friday
+	const fridayDateKey = 
+		weekFriday.getFullYear() +
+		"-" +
+		String(weekFriday.getMonth() + 1).padStart(2, "0") +
+		"-" +
+		String(weekFriday.getDate()).padStart(2, "0");
+
+	for (const rateKey of visibleRateColumns) {
+		// Get the correct checkin day for this rate type (for display purposes and validation)
+		const checkinDate = this.getCheckinDateForRate(
+			weekReferenceDate,
+			rateKey,
+			monthKey
+		);
+		
+		const checkinDateKey =
+			checkinDate.getFullYear() +
 			"-" +
-			String(weekFriday.getMonth() + 1).padStart(2, "0");
+			String(checkinDate.getMonth() + 1).padStart(2, "0") +
+			"-" +
+			String(checkinDate.getDate()).padStart(2, "0");
 
-		for (const rateKey of visibleRateColumns) {
-			// Get the correct checkin day for this rate type
-			const checkinDate = this.getCheckinDateForRate(
-				weekReferenceDate,
-				rateKey,
-				monthKey
-			);
-			//const weekDateKey = checkinDate.toISOString().split("T")[0]; // YYYY-MM-DD format
-			const weekDateKey =
-				checkinDate.getFullYear() +
-				"-" +
-				String(checkinDate.getMonth() + 1).padStart(2, "0") +
-				"-" +
-				String(checkinDate.getDate()).padStart(2, "0");
-
-			// in the rateData, check if 'offer' is set and if so, append the offer indicator of the number of stars to the display as an asterisk,
-			// note that rateData is an object with a display property and an offer property is set already declared as a constant, so we need to use a different variable name
-
-			if (weekDateKey === "2026-02-02") {
-				debugger;
-			}
-			// Use Friday's month key to look up rate data, since API data is organized by Friday's date
-			const rateData = this.getWeekRate(fridayMonthKey, weekDateKey, rateKey);
+		// Pass both the calendar month (for display decisions) and Friday's month/date (for data lookup)
+		const rateData = this.getWeekRate(monthKey, fridayMonthKey, fridayDateKey, rateKey, checkinDateKey);
 
 			let display = rateData.display; // this is the display property of the rateData object
 			if (rateData.offer) {
@@ -546,7 +548,6 @@ class HouseCalendar {
 	 * @returns {Date} The correct checkin date for this rate type
 	 */
 	getCheckinDateForRate(weekReferenceDate, rateKey, monthKey) {
-		debugger;
 		// Calculate the Friday that started this week (week runs Fri-Thu)
 		// Day of week: 0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat
 		const refDate = new Date(weekReferenceDate);
@@ -564,6 +565,12 @@ class HouseCalendar {
 		const friday = new Date(refDate);
 		friday.setDate(refDate.getDate() - daysBackToFriday);
 		
+		// Get Friday's month key (where rate data is stored)
+		const fridayMonthKey = 
+			friday.getFullYear() +
+			"-" +
+			String(friday.getMonth() + 1).padStart(2, "0");
+		
 		switch (rateKey) {
 			case '50': // 2 night weekend - Friday checkin
 			case '60': // 3 night weekend - Friday checkin
@@ -571,9 +578,10 @@ class HouseCalendar {
 				
 			case '70': // Week - Friday OR Monday checkin
 				// Check both Friday and Monday, return the first one with data
+				// Prefer the checkin date that's in the calendar month being viewed
 				const monday70 = new Date(friday);
 				monday70.setDate(friday.getDate() + 3); // Friday + 3 days = Monday
-				return this.findBestCheckinDate([friday, monday70], rateKey, monthKey);
+				return this.findBestCheckinDate([friday, monday70], rateKey, fridayMonthKey, monthKey);
 				
 			case '80': // Midweek - Monday checkin
 				const monday80 = new Date(friday);
@@ -590,7 +598,7 @@ class HouseCalendar {
 				const wednesday85 = new Date(friday);
 				wednesday85.setDate(friday.getDate() + 5); // Friday + 5 days = Wednesday
 				
-				return this.findBestCheckinDate([monday85, tuesday85, wednesday85], rateKey, monthKey);
+				return this.findBestCheckinDate([monday85, tuesday85, wednesday85], rateKey, fridayMonthKey, monthKey);
 				
 			case '90': // 5 nights - assume Friday for now
 				return friday;
@@ -602,19 +610,42 @@ class HouseCalendar {
 	
 	/**
 	 * Find the best checkin date from multiple options by checking which has rate data.
+	 * Prefers dates that fall within the calendar month being viewed.
 	 * @param {Date[]} possibleDates - Array of possible checkin dates
 	 * @param {string} rateKey - The rate key being looked up
-	 * @param {string} monthKey - The month key (YYYY-MM format)
-	 * @returns {Date} The best checkin date (first one with data, or first option)
+	 * @param {string} storageMonthKey - The month key where data is stored (YYYY-MM format)
+	 * @param {string} calendarMonthKey - The month key being viewed in the calendar (YYYY-MM format)
+	 * @returns {Date} The best checkin date (prioritizes dates in calendar month, or first option)
 	 */
-	findBestCheckinDate(possibleDates, rateKey, monthKey) {
-		const monthRates = this.calendarData.rates?.[monthKey];
+	findBestCheckinDate(possibleDates, rateKey, storageMonthKey, calendarMonthKey) {
+		const monthRates = this.calendarData.rates?.[storageMonthKey];
 		
 		if (!monthRates || !monthRates.weeks) {
 			return possibleDates[0];
 		}
 		
-		// Check each possible date to see which has rate data
+		// First, try to find a date that's in the calendar month being viewed AND has data
+		for (const date of possibleDates) {
+			const dateKey = this.formatDateLocal(date);
+			const dateMonth = dateKey.substring(0, 7);
+			
+			// Prefer dates in the calendar month
+			if (dateMonth === calendarMonthKey) {
+				// Check if this date has rate data (data is keyed by Friday, but we check all dates)
+				// For rate data lookup, we always use the Friday's date as the key
+				const weekRates = monthRates.weeks[dateKey] || this.getWeekRatesForDate(monthRates.weeks, date);
+				
+				if (weekRates && weekRates[rateKey]) {
+					const rateData = weekRates[rateKey];
+					// Return this date if it has actual rate data (not just 'unavailable' or 'hidden')
+					if (rateData.type && !['unavailable', 'hidden'].includes(rateData.type)) {
+						return date;
+					}
+				}
+			}
+		}
+		
+		// If no date in calendar month has data, check all dates for any with data
 		for (const date of possibleDates) {
 			const dateKey = this.formatDateLocal(date);
 			const weekRates = monthRates.weeks[dateKey];
@@ -628,8 +659,34 @@ class HouseCalendar {
 			}
 		}
 		
-		// If no date has rate data, return the first option
+		// If no date has rate data, prefer dates in the calendar month
+		for (const date of possibleDates) {
+			const dateKey = this.formatDateLocal(date);
+			const dateMonth = dateKey.substring(0, 7);
+			if (dateMonth === calendarMonthKey) {
+				return date;
+			}
+		}
+		
+		// Otherwise return the first option
 		return possibleDates[0];
+	}
+	
+	/**
+	 * Helper to find week rates for any date by looking for the Friday of that week
+	 * @param {Object} weeks - The weeks object from rate data
+	 * @param {Date} date - The date to find rates for
+	 * @returns {Object|null} The week rates or null
+	 */
+	getWeekRatesForDate(weeks, date) {
+		// Calculate the Friday for this date's week
+		const dayOfWeek = date.getDay();
+		const daysBackToFriday = (dayOfWeek + 2) % 7;
+		const friday = new Date(date);
+		friday.setDate(date.getDate() - daysBackToFriday);
+		
+		const fridayKey = this.formatDateLocal(friday);
+		return weeks[fridayKey] || null;
 	}
 
 	/**
@@ -647,14 +704,18 @@ class HouseCalendar {
 	/**
 	 * Get rate data for a specific week and rate type.
 	 * Handles recursive lookup for '0' values.
-	 * 
+	 * @param {string} calendarMonthKey - The month being displayed in the calendar (YYYY-MM)
+	 * @param {string} storageMonthKey - The month key where data is stored (Friday's month, YYYY-MM)
+	 * @param {string} weekDateKey - The Friday date key (YYYY-MM-DD) - API lookup key
+	 * @param {string} rateKey - The rate key (50, 60, 70, 80, 85, 90)
+	 * @param {string} checkinDateKey - The actual checkin date (YYYY-MM-DD) - for validation
 	 */
-	getWeekRate(monthKey, weekDateKey, rateKey) {
-		// Extract the month from weekDateKey (format: YYYY-MM-DD)
-		const weekMonth = weekDateKey.substring(0, 7); // Get YYYY-MM portion
-		// debugger;
-		// If weekDateKey is in a different month than monthKey, handle based on rate type
-		if (weekMonth !== monthKey) {
+	getWeekRate(calendarMonthKey, storageMonthKey, weekDateKey, rateKey, checkinDateKey) {
+		// Extract month from checkin date
+		const checkinMonth = checkinDateKey.substring(0, 7); // Get YYYY-MM portion
+		
+		// If checkin date is in a different month than the calendar being viewed, handle based on rate type
+		if (checkinMonth !== calendarMonthKey) {
 			// For Monday checkin rates (Midweek and 2 night midweek), show empty space
 			// since there's no Monday at the end of this month (or it's in previous month at start)
 			if (rateKey === "80" || rateKey === "85") {
@@ -665,11 +726,17 @@ class HouseCalendar {
 			if (rateKey === "50" || rateKey === "60") {
 				return { type: "empty", display: "" };
 			}
+			// For WEEK rate (70), it depends on which checkin day has data
+			// If checkin is not in the calendar month, don't show it
+			if (rateKey === "70") {
+				return { type: "empty", display: "" };
+			}
 			// For other rates, show n/a
 			return { type: "unavailable", display: "" };
 		}
-
-		const monthRates = this.calendarData.rates?.[monthKey];
+		
+		// Use storage month (Friday's month) to look up the actual rate data
+		const monthRates = this.calendarData.rates?.[storageMonthKey];
 
 		if (!monthRates || !monthRates.weeks) {
 			return { type: "unavailable", display: "" };
@@ -679,23 +746,37 @@ class HouseCalendar {
 		// note that the weekDateKey might be a Monday checkin date so it might not be in the monthRates.weeks object,
 		// so if that is the case we need to find the previous week date and use that as the weekDateKey and then get
 		// the rate data for that week and return it
-
 		if (!monthRates.weeks[weekDateKey]) {
 			// Early return if weekDateKey is after all available weeks - no need to look for previous week
 			const weekDates = Object.keys(monthRates.weeks);
-			if (weekDates.length === 0 || weekDateKey > Math.max(...weekDates)) {
+			if (
+				weekDates.length === 0 ||
+				weekDateKey > Math.max(...weekDates)
+			) {
 				return { type: "unavailable", display: "" };
 			}
 
 			const previousWeekDate = this.findPreviousWeekDate(
-				monthKey,
+				storageMonthKey,
 				weekDateKey
 			);
+
+			// ****** if rateKey === 70 and fridayDateKey === 'not available' then check rates for checkinDateKey
 			if (previousWeekDate) {
-				weekDateKey = previousWeekDate;
+
+				if (rateKey === "70") {
+					let monthKey = previousWeekDate.substring(0, 7);
+					if (monthKey !== calendarMonthKey) { 
+						debugger;
+						const rateData = this.calendarData.rates[calendarMonthKey].weeks[calendarMonthKey + "-01"][rateKey];
+						return rateData;
+					}
+				} else {
+					weekDateKey = previousWeekDate;
+				}
 			}
 		}
-		
+
 		const weekRates = monthRates.weeks[weekDateKey];
 		if (weekRates && weekRates[rateKey]) {
 			const rateData = weekRates[rateKey];
@@ -703,7 +784,7 @@ class HouseCalendar {
 			// If it's a '0' (previous week pricing), look backwards
 			if (rateData.type === "previous") {
 				return this.findPreviousWeekRate(
-					monthKey,
+					storageMonthKey,
 					weekDateKey,
 					rateKey
 				);

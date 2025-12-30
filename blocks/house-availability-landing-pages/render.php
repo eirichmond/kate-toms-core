@@ -204,7 +204,7 @@ if ( $remainder > 0 ) {
 				<!-- Featured Image -->
 				<?php if ( has_post_thumbnail( $house->ID ) ) : ?>
 					<a href="<?php echo esc_url( get_permalink( $house->ID ) ); ?>">
-						<?php echo get_the_post_thumbnail( $house->ID, 'large', array( 'style' => 'width: 100%; height: auto; display: block;' ) ); ?>
+						<?php echo get_the_post_thumbnail( $house->ID, 'thumbnail', array( 'style' => 'width: 100%; height: auto; display: block;' ) ); ?>
 					</a>
 				<?php endif; ?>
 

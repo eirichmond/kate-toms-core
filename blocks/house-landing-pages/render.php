@@ -140,10 +140,10 @@ if ($remainder > 0) {
 					<?php endif; ?>
 
 					<!-- Post Title with styling from pattern -->
-					<h2 class="wp-block-heading has-text-align-center has-small-font-size has-white-color has-<?php echo esc_attr($title_bg_color); ?>-background-color" 
+					<h3 class="wp-block-heading has-text-align-center has-small-font-size has-white-color has-<?php echo esc_attr($title_bg_color); ?>-background-color" 
 					style="margin-top:0;margin-bottom:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40);font-style:normal;font-weight:600;font-size:var(--wp--preset--font-size--small)">
 						<?php the_title(); ?>
-					</h2>
+					</h3>
 
 					<!-- Brief Description -->
 					<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">

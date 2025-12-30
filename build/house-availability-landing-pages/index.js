@@ -167,6 +167,18 @@ function Edit({
             label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Ascending (Low to High)', 'kate-toms-core'),
             value: 'asc'
           }]
+        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Posts Per Page', 'kate-toms-core'),
+          value: postsPerPage,
+          onChange: value => {
+            // Convert to number, default to -1 if empty
+            const numValue = value === '' || value === '-1' ? -1 : parseInt(value, 10);
+            setAttributes({
+              postsPerPage: numValue
+            });
+          },
+          type: "number",
+          help: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Number of houses to display. Use -1 to show all matching houses.', 'kate-toms-core')
         })]
       }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelBody, {
         title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Card Style', 'kate-toms-core'),
@@ -241,6 +253,8 @@ function Edit({
               children: orderBy === 'meta_value_num' ? 'Sleeps (Meta Value)' : orderBy
             }), " -", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsxs)("strong", {
               children: [" ", order === 'desc' ? 'High to Low' : 'Low to High']
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("br", {}), (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Posts Per Page:', 'kate-toms-core'), " ", /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("strong", {
+              children: postsPerPage === -1 ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('All', 'kate-toms-core') : postsPerPage
             })]
           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_6__.jsx)("div", {
             style: {

@@ -3,7 +3,7 @@
  */
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, SelectControl } from '@wordpress/components';
+import { PanelBody, SelectControl, TextControl } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { store as editorStore } from '@wordpress/editor';
@@ -106,6 +106,17 @@ export default function Edit({ attributes, setAttributes, context }) {
                             { label: __('Ascending (Low to High)', 'kate-toms-core'), value: 'asc' }
                         ]}
                     />
+                    <TextControl
+                        label={__('Posts Per Page', 'kate-toms-core')}
+                        value={postsPerPage}
+                        onChange={(value) => {
+                            // Convert to number, default to -1 if empty
+                            const numValue = value === '' || value === '-1' ? -1 : parseInt(value, 10);
+                            setAttributes({ postsPerPage: numValue });
+                        }}
+                        type="number"
+                        help={__('Number of houses to display. Use -1 to show all matching houses.', 'kate-toms-core')}
+                    />
                 </PanelBody>
                 <PanelBody title={__('Card Style', 'kate-toms-core')}>
                     <SelectControl
@@ -145,7 +156,8 @@ export default function Edit({ attributes, setAttributes, context }) {
                             <p>
                                 {__('Location:', 'kate-toms-core')} <strong>{locationConfig.name}</strong><br />
                                 {__('Ordering by:', 'kate-toms-core')} <strong>{orderBy === 'meta_value_num' ? 'Sleeps (Meta Value)' : orderBy}</strong> -
-                                <strong> {order === 'desc' ? 'High to Low' : 'Low to High'}</strong>
+                                <strong> {order === 'desc' ? 'High to Low' : 'Low to High'}</strong><br />
+                                {__('Posts Per Page:', 'kate-toms-core')} <strong>{postsPerPage === -1 ? __('All', 'kate-toms-core') : postsPerPage}</strong>
                             </p>
 
                             <div style={{ padding: '15px', background: '#e7f5ff', border: '1px solid #339af0', borderRadius: '4px' }}>

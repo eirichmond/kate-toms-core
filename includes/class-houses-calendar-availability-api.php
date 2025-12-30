@@ -1,4 +1,4 @@
-<?php 
+<?php
 
 /**
  * House Calendar Manager with Kate & Tom's specific business logic.
@@ -18,12 +18,33 @@ class House_Calendar_Manager {
 	 */
 	private $api_base_url = 'https://booking.kateandtoms.com/apis/property';
 
-    /**
+	/**
+	 * OAuth token endpoint URL.
+	 *
+	 * @var string
+	 */
+	private $oauth_token_url = 'https://booking.kateandtoms.com/oauth/2.0/token';
+
+	/**
+	 * OAuth authorization header (Base64 encoded client credentials).
+	 *
+	 * @var string
+	 */
+	private $oauth_auth_header = 'Basic MTAwMTo2NDNmNjc5NTA1NTA0ZDE3OTY1NDQ2NDdkMTFjNWIwMA==';
+
+	/**
 	 * API access token for booking system.
 	 *
 	 * @var string
 	 */
-	private $api_access_token = 'AAIAAJrQJtf4qdUOsmg7PDL8HA98mNZykDNVkm1R6HUSU76SOMzCdub_9YsLGRC0Gr-nuCXxLnlW6VR7abHcDaD9w4Uiy0XXaSH87uPdF_1Y3w76PHmvt6lu7n_R9WHDqQf7qFcWRVp1MbsVhssAkc4HFM8L4pE_w9tKj3pbKqbMw_WtxXcoR62So53M7x57uh2XPVHLY_qZ3ILtDB3VFi1kUBR0zeIOjYs3987MTWGwJHtCFEU2a-0jsj3VSL7pVuGJAHnxbjVD3wFF1Z_vFvD5YZ4EeWuME3SVyva-c7p7II2KR3UWSqI0A3w2oOqdluWCSM3S_fb6CUQKRhVW-cIWtElLvAyrYx6snEkWGYMLv0Rhe6ZZ_2JnUAtgqITZciuYqLuGAfTIewCUzGWileFJV0_mCQ0Ip2Nva1rfNPOFrfR4iW4rRXtDPRcRABxzOl248G0nNDNNs-VCVjYTag0-YCvIN3aFUEPIJwVAn0eq2RI-Qki8B5pN68tFt6C6h-J4g55mGToaEB1Z36YXNlMCV8q2jTYJz5akSMZ3g0OmearC4XXNmdWOjbN9WDa2kWj05GQkILBuRl6Ed6c0wolTd7t9QczD_zZg4qUa7l0V5EvfUKK7MXR3TyQ_sWyQLYaVrrLqRMfnikFduaKhzvmNQJ4tjd-QbRSmKLITW2dLRxqqZAIAAAACAAApZffqcFQvb6G1B8QxHcx5j45a2qHsoV0ZG7tToZbJnVKMJ2sbt06aZYm2s7NU_yWBNaO_a2hHBqWrXK0VBGB5tY3VGA5ioP1XrKKi60ytRxETVpFiRVeWAJ0mUow-IKg6jb57kgQEQwmHggi1cCUB6WbONTJn7Jl6UkyRSerzK43GNUPY0wQ7M1vh9-uvBeb-lYy47J3UdrkBXzoiq1NvEh_wwZbOUdZnRrlaVtX08N4YMbRWVv_ibxHoEdHbpQ8Ma4-P_p866uKwG0D_mYW37z8tW8ZBPdvuPoZAjGUR6gOLItkLWTfZyttbGZfM-iLFTcvg4dNwQiud6mApLQUepLhixTAJU9BgmSsTRhI9luI5B_pt7wEQ96wCWnG6ndWCKSkHddCBFQpXOdfRtw3y-7J67R99ujUCTMCc71pLBrBx3ebUvDaThfcvPLXwvlJr6Aq2lIY6BJ3y1Vs1auRIRnaT1veOxDUZIDtW5nWeiKspYqYFiDHvM3oP9eE7gUGkOzh_mQGjNre4RSU_IRlcV2NP8R_ofaxBMg-7rHOt22TWH29wy5frV1ZgPu5uA-YynAMu2B-hB6M6ZqU9eJIqdtbvHWgdftgc5IGHlXG0RYILQJ-NRxmI8iWmX4LaE05F0qlHHy4JTzhEjLdfAL9x_rL8ju9J_h2XKZGHZs_pJu26adOwZoetIZkeLg3e-KD-CyvbPeTzdaZ3CP5UK6hfzdLhxqvEBCCSdaeK4CMSJ0NK1vtD_QO88x0jcc449F9YdA82Ebnu-_AZNnGOQk2NxYdp-rvAe8u1RQsfuS7yFQ';
+	private $api_access_token = '';
+
+	/**
+	 * Transient key for storing the access token.
+	 *
+	 * @var string
+	 */
+	private $token_transient_key = 'kt_booking_api_access_token';
 
 	/**
 	 * Cache duration for API data (20 minutes as requested).
@@ -44,27 +65,135 @@ class House_Calendar_Manager {
 	 * Constructor.
 	 */
 	public function __construct() {
+		// Initialize access token on construction
+		$this->api_access_token = $this->get_access_token();
+
 		// Add AJAX handlers
 		add_action( 'wp_ajax_fetch_calendar_data', array( $this, 'fetch_calendar_data_callback' ) );
 		add_action( 'wp_ajax_nopriv_fetch_calendar_data', array( $this, 'fetch_calendar_data_callback' ) );
-		
+
 		// Lightweight AJAX handler for just availability notes
 		add_action( 'wp_ajax_get_availability_notes', array( $this, 'get_availability_notes_callback' ) );
 		add_action( 'wp_ajax_nopriv_get_availability_notes', array( $this, 'get_availability_notes_callback' ) );
-		
+
 		// AJAX handler for booking date selection
 		add_action( 'wp_ajax_get_house_booking_data', array( $this, 'get_house_booking_data_callback' ) );
 		add_action( 'wp_ajax_nopriv_get_house_booking_data', array( $this, 'get_house_booking_data_callback' ) );
-		
+
 		// AJAX handler for booking periods
 		add_action( 'wp_ajax_get_booking_periods', array( $this, 'get_booking_periods_callback' ) );
 		add_action( 'wp_ajax_nopriv_get_booking_periods', array( $this, 'get_booking_periods_callback' ) );
-		
+
 		// AJAX handler for booking enquiry submission
 		add_action( 'wp_ajax_submit_booking_enquiry', array( $this, 'submit_booking_enquiry_callback' ) );
 		add_action( 'wp_ajax_nopriv_submit_booking_enquiry', array( $this, 'submit_booking_enquiry_callback' ) );
 	}
-	
+
+	/**
+	 * Get access token, refreshing if necessary.
+	 *
+	 * Checks transient cache first, then refreshes if expired or missing.
+	 *
+	 * @return string Access token.
+	 */
+	private function get_access_token() {
+		// Try to get cached token
+		$cached_token = get_transient( $this->token_transient_key );
+
+		if ( false !== $cached_token && ! empty( $cached_token ) ) {
+			$this->api_access_token = $cached_token;
+			return $cached_token;
+		}
+
+		// Token expired or missing, refresh it
+		return $this->refresh_access_token();
+	}
+
+	/**
+	 * Refresh the OAuth access token.
+	 *
+	 * Makes a request to the OAuth token endpoint and stores the token.
+	 * Uses cURL as requested, but could be converted to wp_remote_post() for WordPress best practices.
+	 *
+	 * @return string|false Access token on success, false on failure.
+	 */
+	private function refresh_access_token() {
+		// Use cURL as provided in user's request
+		$curl = curl_init();
+
+		curl_setopt_array(
+			$curl,
+			array(
+				CURLOPT_URL            => $this->oauth_token_url,
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_ENCODING       => '',
+				CURLOPT_MAXREDIRS      => 10,
+				CURLOPT_TIMEOUT        => 30,
+				CURLOPT_FOLLOWLOCATION => true,
+				CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+				CURLOPT_CUSTOMREQUEST  => 'POST',
+				CURLOPT_POSTFIELDS     => 'grant_type=client_credentials',
+				CURLOPT_HTTPHEADER     => array(
+					'Authorization: ' . $this->oauth_auth_header,
+					'Content-Type: application/x-www-form-urlencoded',
+				),
+			)
+		);
+
+		$response   = curl_exec( $curl );
+		$http_code  = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
+		$curl_error = curl_error( $curl );
+
+		curl_close( $curl );
+
+		// Check for cURL errors.
+		if ( false === $response || ! empty( $curl_error ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'OAuth token refresh cURL error: ' . $curl_error );
+			}
+			return false;
+		}
+
+		// Check HTTP status code.
+		if ( 200 !== $http_code ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'OAuth token refresh failed with HTTP code: ' . $http_code );
+				error_log( 'Response: ' . $response );
+			}
+			return false;
+		}
+
+		// Parse JSON response.
+		$data = json_decode( $response, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() || ! isset( $data['access_token'] ) ) {
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'OAuth token refresh failed to parse response: ' . json_last_error_msg() );
+				error_log( 'Response: ' . $response );
+			}
+			return false;
+		}
+
+		$token = $data['access_token'];
+
+		// Calculate expiry time (default to 1 hour if not provided, with 5 minute buffer).
+		$expires_in   = isset( $data['expires_in'] ) ? (int) $data['expires_in'] : 3600;
+		$expiry_time  = $expires_in - 300; // Subtract 5 minutes as buffer.
+
+		// Store token in transient (convert to seconds, ensure minimum 1 minute).
+		$transient_expiry = max( MINUTE_IN_SECONDS, $expiry_time );
+		set_transient( $this->token_transient_key, $token, $transient_expiry );
+
+		// Update class property.
+		$this->api_access_token = $token;
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'OAuth token refreshed successfully. Expires in: ' . $expires_in . ' seconds' );
+		}
+
+		return $token;
+	}
+
 	/**
 	 * Kate & Tom's stay duration definitions.
 	 *
@@ -72,32 +201,32 @@ class House_Calendar_Manager {
 	 */
 	private $stay_durations = array(
 		'2-night-weekend' => array(
-			'start_day' => 5, // Friday (1=Monday, 5=Friday)
-			'nights' => 2,
-			'checkout_day' => 0 // Sunday
+			'start_day'    => 5, // Friday (1=Monday, 5=Friday)
+			'nights'       => 2,
+			'checkout_day' => 0, // Sunday
 		),
 		'3-night-weekend' => array(
-			'start_day' => 5, // Friday 
-			'nights' => 3,
-			'checkout_day' => 1 // Monday
+			'start_day'    => 5, // Friday
+			'nights'       => 3,
+			'checkout_day' => 1, // Monday
 		),
-		'week' => array(
-			'start_day' => array(5, 1), // Friday OR Monday
-			'nights' => 7,
-			'checkout_day' => array(5, 1) // Friday OR Monday
+		'week'            => array(
+			'start_day'    => array( 5, 1 ), // Friday OR Monday
+			'nights'       => 7,
+			'checkout_day' => array( 5, 1 ), // Friday OR Monday
 		),
-		'midweek' => array(
-			'start_day' => 1, // Monday
-			'nights' => 4,
-			'checkout_day' => 5 // Friday
+		'midweek'         => array(
+			'start_day'    => 1, // Monday
+			'nights'       => 4,
+			'checkout_day' => 5, // Friday
 		),
 		'2-night-midweek' => array(
-			'start_day' => array(1, 2, 3), // Monday, Tuesday, or Wednesday
-			'nights' => 2,
-			'checkout_day' => 'variable' // +1 day from checkin
-		)
+			'start_day'    => array( 1, 2, 3 ), // Monday, Tuesday, or Wednesday
+			'nights'       => 2,
+			'checkout_day' => 'variable', // +1 day from checkin
+		),
 	);
-	
+
 	/**
 	 * Get calendar data for a specific house.
 	 *
@@ -108,24 +237,24 @@ class House_Calendar_Manager {
 	 */
 	public function get_calendar_data( $house_id, $access_token, $force_refresh = true ) {
 		$transient_key = "kt_house_calendar_{$house_id}";
-		
+
 		if ( ! $force_refresh ) {
 			$cached_data = get_transient( $transient_key );
 			if ( false !== $cached_data ) {
 				return $cached_data;
 			}
 		}
-		
+
 		// Fetch availability and rates data
 		$availability_data = $this->fetch_availability_data( $house_id, $access_token );
-		$rates_data = $this->fetch_rates_data( $house_id, $access_token );
-		
+		$rates_data        = $this->fetch_rates_data( $house_id, $access_token );
+
 		// Debug: Log raw API responses
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( 'Raw availability data: ' . print_r( $availability_data, true ) );
 			error_log( 'Raw rates data: ' . print_r( $rates_data, true ) );
 		}
-		
+
 		if ( is_wp_error( $availability_data ) || is_wp_error( $rates_data ) ) {
 			$error_msg = 'Failed to fetch calendar data';
 			if ( is_wp_error( $availability_data ) ) {
@@ -136,22 +265,22 @@ class House_Calendar_Manager {
 			}
 			return array( 'error' => $error_msg );
 		}
-		
+
 		// Process data with Kate & Tom's logic
 		$calendar_data = $this->process_kt_calendar_data( $availability_data, $rates_data );
-		
+
 		// TEMPORARY DEBUG: Return raw data to see what we're getting
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			$calendar_data['debug_raw_availability'] = $availability_data;
-			$calendar_data['debug_raw_rates'] = $rates_data;
+			$calendar_data['debug_raw_rates']        = $rates_data;
 		}
-		
+
 		// Cache the processed data
 		set_transient( $transient_key, $calendar_data, $this->cache_duration );
-		
+
 		return $calendar_data;
 	}
-	
+
 	/**
 	 * Process Kate & Tom's calendar data with business logic.
 	 *
@@ -162,15 +291,15 @@ class House_Calendar_Manager {
 	private function process_kt_calendar_data( $availability, $rates ) {
 		// Initialize temporary storage for raw availability statuses
 		// Build a flat array of all raw statuses BEFORE processing
-		// This allows us to check adjacent day statuses during processing
+		// This allows us to check adjacent day statuses during processing.
 		$this->processed_availability = array();
 
 		$processed_data = array(
 			'availability' => array(),
-			'rates' => array(),
-			'periods' => array(),
+			'rates'        => array(),
+			'periods'      => array(),
 			'processed_at' => current_time( 'timestamp' ),
-			'stay_types' => $this->stay_durations
+			'stay_types'   => $this->stay_durations,
 		);
 
 		// Debug: Log what we're processing
@@ -192,7 +321,7 @@ class House_Calendar_Manager {
 							foreach ( $days as $day => $status ) {
 								$date = sprintf( '%04d-%02d-%02d', $year, $month, $day );
 								// Store raw status with normalized values
-								$status_map = array(
+								$status_map                            = array(
 									'A'  => 'available',
 									'B'  => 'booked',
 									'P'  => 'booked',
@@ -219,11 +348,11 @@ class House_Calendar_Manager {
 							$days = $this->clean_raw_availability_data( $days );
 
 							foreach ( $days as $day => $status ) {
-								$date = sprintf( '%04d-%02d-%02d', $year, $month, $day );
+								$date          = sprintf( '%04d-%02d-%02d', $year, $month, $day );
 								$processed_day = $this->process_day_availability( $date, $status );
 
 								// Store in the return array
-								$processed_data['availability'][$date] = $processed_day;
+								$processed_data['availability'][ $date ] = $processed_day;
 							}
 						}
 					}
@@ -234,34 +363,34 @@ class House_Calendar_Manager {
 		// THIRD PASS: Track bookable periods and apply checkout day classes
 		// This handles cases where a booked Mon/Fri is the end of an available period
 		$this->apply_bookable_period_logic( $processed_data['availability'] );
-		
+
 		// Preserve AvailabilityNotes from raw rates data
 		if ( isset( $rates['AvailabilityNotes'] ) ) {
 			$processed_data['AvailabilityNotes'] = $rates['AvailabilityNotes'];
 		}
-		
+
 		// Process rates with Kate & Tom's pricing keys
 		if ( isset( $rates['Rates'] ) && is_array( $rates['Rates'] ) ) {
 			foreach ( $rates['Rates'] as $rate_period ) {
-				$month_key = $rate_period['Month'];
+				$month_key             = $rate_period['Month'];
 				$processed_month_rates = $this->process_kt_rates( $rate_period, $processed_data['availability'] );
-				
+
 				// Only store if not null (i.e., not a past month)
 				if ( null !== $processed_month_rates ) {
-					$processed_data['rates'][$month_key] = $processed_month_rates;
+					$processed_data['rates'][ $month_key ] = $processed_month_rates;
 				}
 			}
 		}
-		
+
 		// Debug: Log final processed counts
 		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( 'Processed availability days: ' . count( $processed_data['availability'] ) );
 			error_log( 'Processed rate periods: ' . count( $processed_data['rates'] ) );
 		}
-		
+
 		return $processed_data;
 	}
-	
+
 	/**
 	 * Process individual day availability.
 	 *
@@ -271,17 +400,17 @@ class House_Calendar_Manager {
 	 */
 	private function process_day_availability( $date, $api_status ) {
 		$day_of_week = gmdate( 'N', strtotime( $date ) ); // 1=Monday, 7=Sunday
-		
+
 		// Convert API status to internal status
 		$status_map = array(
-			'A' => 'available',
-			'B' => 'booked',
-			'P' => 'booked',
+			'A'  => 'available',
+			'B'  => 'booked',
+			'P'  => 'booked',
 			'OB' => 'owner_blocked',
-			'U' => 'booked',
+			'U'  => 'booked',
 		);
-		$status = $status_map[$api_status] ?? 'unknown';
-		
+		$status     = $status_map[ $api_status ] ?? 'unknown';
+
 		$processed_day = array(
 			'status'         => $status,
 			'api_status'     => $api_status === 'P' ? 'B' : $api_status,
@@ -292,13 +421,13 @@ class House_Calendar_Manager {
 			'bk_avail'       => false,
 			'bookable_from'  => null,
 		);
-		
+
 		// Determine if this day is a check-in or checkout based on Kate & Tom's logic
 		$processed_day = $this->determine_checkin_checkout( $date, $processed_day, $api_status );
-		
+
 		return $processed_day;
 	}
-	
+
 	/**
 	 * Determine check-in/checkout status for a day.
 	 *
@@ -309,22 +438,22 @@ class House_Calendar_Manager {
 	 */
 	private function determine_checkin_checkout( $date, $processed_day, $api_status ) {
 		// if ( $date != '2026-05-04' ) {
-		// 	return $processed_day;
+		// return $processed_day;
 		// }
 
 		$day_of_week = (int) $processed_day['day_of_week'];
-		$status = $processed_day['status'];
-		
+		$status      = $processed_day['status'];
+
 		// Get adjacent day statuses
 		$prev_day_status = $this->get_previous_day_status( $date );
 		$next_day_status = $this->get_next_day_status( $date );
 
 		// Only Monday (1) and Friday (5) can be check-in/check-out days
-		if ( ! in_array( $day_of_week, array( 1,2,3, 5 ), true ) ) {
+		if ( ! in_array( $day_of_week, array( 1, 2, 3, 5 ), true ) ) {
 
-			if( $status == 'available' ) {
-				if( $prev_day_status == 'booked' && $next_day_status == 'available' ) {
-					$processed_day['is_checkin']   = true; // Note: Using "checkout" flag for UI purposes
+			if ( $status == 'available' ) {
+				if ( $prev_day_status == 'booked' && $next_day_status == 'available' ) {
+					$processed_day['is_checkin']     = true; // Note: Using "checkout" flag for UI purposes
 					$processed_day['diagonal_style'] = 'halfafter';
 				}
 			}
@@ -338,15 +467,13 @@ class House_Calendar_Manager {
 
 		// if the previous day is available and this day is booked then it is a checkout day
 		if ( 'available' === $prev_day_status && 'booked' === $status ) {
-			$processed_day['is_checkout']   = true; // Note: Using "checkout" flag for UI purposes
+			$processed_day['is_checkout']    = true; // Note: Using "checkout" flag for UI purposes
 			$processed_day['diagonal_style'] = 'halfbefore';
-			$processed_day['bk_avail'] = true;
+			$processed_day['bk_avail']       = true;
 			return $processed_day;
 		}
 
-		//return $processed_day;
-
-
+		// return $processed_day;
 
 		// Helper: Check if a status represents "not available for booking"
 		$is_prev_unavailable = in_array( $prev_day_status, array( 'booked' ), true );
@@ -362,15 +489,15 @@ class House_Calendar_Manager {
 			// Check for transition from NOT AVAILABLE to AVAILABLE (check-in day)
 			// Previous day was booked/blocked, this day is available → guests can check in today
 			if ( $is_prev_unavailable ) {
-				$has_checkin_transition         = true;
-				$processed_day['is_checkin']    = true;
+				$has_checkin_transition      = true;
+				$processed_day['is_checkin'] = true;
 			}
 
 			// Check for transition from AVAILABLE to NOT AVAILABLE (day before check-in)
 			// This day is available, next day is booked/blocked → last available day before booking starts
 			if ( $is_next_unavailable ) {
-				$has_checkout_transition        = true;
-				$processed_day['is_checkout']   = true; // Note: Using "checkout" flag for UI purposes
+				$has_checkout_transition      = true;
+				$processed_day['is_checkout'] = true; // Note: Using "checkout" flag for UI purposes
 			}
 
 			// Set diagonal style based on detected transitions
@@ -400,16 +527,16 @@ class House_Calendar_Manager {
 
 		return $processed_day;
 	}
-	
+
 	/**
 	 * Process Kate & Tom's rates data.
-	 * 
+	 *
 	 * note:
-	 * 	2 night weekend = Friday(checkin day) +1day checkout Sunday
-	 * 	3 night weekend = Friday(checkin day) +2day checkout Monday
-	 * 	Week = Friday(checkin day) +6day checkout Friday || Monday(also checkin day) +6day checkout Monday
-	 * 	Midweek = Monday(checkin day) +3day checkout Friday
-	 * 	2 night midweek = Monday, Tues or Weds(checkin days) +1day checkout +1day from checkin
+	 *  2 night weekend = Friday(checkin day) +1day checkout Sunday
+	 *  3 night weekend = Friday(checkin day) +2day checkout Monday
+	 *  Week = Friday(checkin day) +6day checkout Friday || Monday(also checkin day) +6day checkout Monday
+	 *  Midweek = Monday(checkin day) +3day checkout Friday
+	 *  2 night midweek = Monday, Tues or Weds(checkin days) +1day checkout +1day from checkin
 	 *
 	 * @param array $rate_period Rate data for a specific month.
 	 * @param array $availability_data Processed availability data for validation.
@@ -417,14 +544,14 @@ class House_Calendar_Manager {
 	 */
 	private function process_kt_rates( $rate_period, $availability_data = array() ) {
 		// Skip processing if entire month is in the past
-		$month_key = $rate_period['Month'];
-		$month_timestamp = strtotime( $month_key . '-01' ); // Add day to make it a valid date
+		$month_key               = $rate_period['Month'];
+		$month_timestamp         = strtotime( $month_key . '-01' ); // Add day to make it a valid date
 		$current_month_timestamp = strtotime( gmdate( 'Y-m-01' ) ); // First day of current month
-		
+
 		if ( $month_timestamp < $current_month_timestamp ) {
 			return null; // Don't process past months
 		}
-		
+
 		$processed_rates = array(
 			'month' => $rate_period['Month'],
 			'notes' => $rate_period['Notes'] ?? '',
@@ -454,32 +581,31 @@ class House_Calendar_Manager {
 				}
 			}
 
-
-			$processed_rates['weeks'][$week_commencing] = array();	
+			$processed_rates['weeks'][ $week_commencing ] = array();
 
 			foreach ( $week_data['Amount'] as $stay_code => $rate ) {
 				$processed_rate = $this->process_single_rate( $rate );
-				
+
 				// Only validate rates that have actual pricing data
 				$should_validate = in_array( $processed_rate['type'], array( 'price', 'from', 'special1', 'special2', 'special3', 'previous' ), true );
-				
+
 				if ( $should_validate && ! empty( $availability_data ) ) {
 					// Validate rate against availability data
 					if ( $this->is_booking_period_available( $week_commencing, $stay_code, $availability_data ) ) {
-						$processed_rates['weeks'][$week_commencing][$stay_code] = $processed_rate;
-						
+						$processed_rates['weeks'][ $week_commencing ][ $stay_code ] = $processed_rate;
+
 						// Debug logging
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 							error_log( "Rate validation PASSED: Week {$week_commencing}, Stay {$stay_code}, Type {$processed_rate['type']}" );
 						}
 					} else {
 						// Override with unavailable if booking period isn't free
-						$processed_rates['weeks'][$week_commencing][$stay_code] = array(
-							'type' => 'unavailable',
+						$processed_rates['weeks'][ $week_commencing ][ $stay_code ] = array(
+							'type'    => 'unavailable',
 							'display' => 'Booked',
-							'value' => null,
+							'value'   => null,
 						);
-						
+
 						// Debug logging
 						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 							error_log( "Rate validation FAILED: Week {$week_commencing}, Stay {$stay_code}, Original type {$processed_rate['type']} -> Marked as Booked" );
@@ -487,8 +613,8 @@ class House_Calendar_Manager {
 					}
 				} else {
 					// Keep original processed rate (already unavailable, hidden, etc. or no availability data)
-					$processed_rates['weeks'][$week_commencing][$stay_code] = $processed_rate;
-					
+					$processed_rates['weeks'][ $week_commencing ][ $stay_code ] = $processed_rate;
+
 					// Debug logging
 					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 						$reason = $should_validate ? 'no availability data' : 'rate already unavailable/hidden';
@@ -497,10 +623,10 @@ class House_Calendar_Manager {
 				}
 			}
 		}
-		
+
 		return $processed_rates;
 	}
-	
+
 	/**
 	 * Get all dates remaining in the month from a given week commencing date.
 	 *
@@ -513,8 +639,8 @@ class House_Calendar_Manager {
 
 		try {
 			$current_date = new DateTime( $week_commencing );
-			$month = (int) $current_date->format( 'm' );
-			$year = (int) $current_date->format( 'Y' );
+			$month        = (int) $current_date->format( 'm' );
+			$year         = (int) $current_date->format( 'Y' );
 
 			// Get the last day of this month.
 			$last_day_of_month = new DateTime( $year . '-' . $month . '-01' );
@@ -553,56 +679,92 @@ class House_Calendar_Manager {
 			// Check for rates with special offers (contains * but is numeric)
 			if ( preg_match( '/^(\d+)\s*(\*+)?$/', trim( $rate ), $matches ) ) {
 				$numeric_value = intval( $matches[1] );
-				$offer_stars = $matches[2] ?? '';
+				$offer_stars   = $matches[2] ?? '';
 				return array(
-					'type' => 'price',
+					'type'    => 'price',
 					'display' => '£' . number_format( $numeric_value ),
-					'value' => $numeric_value,
-					'offer' => strlen( $offer_stars ),
+					'value'   => $numeric_value,
+					'offer'   => strlen( $offer_stars ),
 				);
 			}
 
 			switch ( trim( $rate ) ) {
 				case '+':
-					return array( 'type' => 'from', 'display' => 'Prices From', 'value' => null );
+					return array(
+						'type'    => 'from',
+						'display' => 'Prices From',
+						'value'   => null,
+					);
 				case '-2':
-					return array( 'type' => 'hidden', 'display' => '', 'value' => null );
+					return array(
+						'type'    => 'hidden',
+						'display' => '',
+						'value'   => null,
+					);
 				case '*':
-					return array( 'type' => 'special1', 'display' => 'Special Offer*', 'value' => null );
+					return array(
+						'type'    => 'special1',
+						'display' => 'Special Offer*',
+						'value'   => null,
+					);
 				case '**':
-					return array( 'type' => 'special2', 'display' => 'Special Offer**', 'value' => null );
+					return array(
+						'type'    => 'special2',
+						'display' => 'Special Offer**',
+						'value'   => null,
+					);
 				case '***':
-					return array( 'type' => 'special3', 'display' => 'Special Offer***', 'value' => null );
+					return array(
+						'type'    => 'special3',
+						'display' => 'Special Offer***',
+						'value'   => null,
+					);
 				case '-1':
-					return array( 'type' => 'no', 'display' => 'Booked', 'value' => null );
+					return array(
+						'type'    => 'no',
+						'display' => 'n/a',
+						'value'   => null,
+					);
 				case '0':
-					return array( 'type' => 'previous', 'display' => 'See Previous Week', 'value' => 0 );
+					return array(
+						'type'    => 'previous',
+						'display' => 'See Previous Week',
+						'value'   => 0,
+					);
 				default:
 					// Try to parse as numeric
 					if ( is_numeric( $rate ) ) {
 						$numeric_value = floatval( $rate );
 						return array(
-							'type' => 'price',
+							'type'    => 'price',
 							'display' => '£' . number_format( $numeric_value ),
-							'value' => $numeric_value,
+							'value'   => $numeric_value,
 						);
 					}
 					return array(
-						'type' => 'unknown',
+						'type'    => 'unknown',
 						'display' => esc_html( $rate ),
-						'value' => null,
+						'value'   => null,
 					);
 			}
 		}
-		
+
 		// Numeric rate
 		if ( is_numeric( $rate ) && $rate > 0 ) {
-			return array( 'type' => 'price', 'display' => '£' . number_format( $rate ), 'value' => $rate );
+			return array(
+				'type'    => 'price',
+				'display' => '£' . number_format( $rate ),
+				'value'   => $rate,
+			);
 		}
-		
-		return array( 'type' => 'unavailable', 'display' => 'Booked', 'value' => null );
+
+		return array(
+			'type'    => 'unavailable',
+			'display' => 'Booked',
+			'value'   => null,
+		);
 	}
-	
+
 	/**
 	 * Get next day status for checkout determination.
 	 *
@@ -677,10 +839,10 @@ class House_Calendar_Manager {
 					if ( null !== $bookable_period_start ) {
 						// This booked day is the END of the bookable period (checkout day).
 						// Apply classes from the bookable period start.
-						$day_data['bk_avail']        = true;
-						$day_data['diagonal_style']  = 'halfbefore';
-						$day_data['is_checkout']     = true;
-						$day_data['bookable_from']   = $bookable_period_start['date'];
+						$day_data['bk_avail']       = true;
+						$day_data['diagonal_style'] = 'halfbefore';
+						$day_data['is_checkout']    = true;
+						$day_data['bookable_from']  = $bookable_period_start['date'];
 
 						// Reset the bookable period tracker.
 						$bookable_period_start = null;
@@ -703,21 +865,21 @@ class House_Calendar_Manager {
 	 */
 	private function is_booking_period_available( $week_commencing, $stay_code, $availability_data ) {
 		$stay_details = $this->get_stay_details_for_code( $stay_code );
-		
+
 		if ( ! $stay_details ) {
 			return false; // Unknown stay code
 		}
 
 		// Get possible checkin dates for this stay type
 		$possible_checkin_dates = $this->get_checkin_dates_for_week( $week_commencing, $stay_details );
-		
+
 		// Check if any of the possible checkin scenarios work
 		foreach ( $possible_checkin_dates as $checkin_date ) {
 			if ( $this->validate_booking_period( $checkin_date, $stay_details['nights'], $availability_data ) ) {
 				return true; // At least one scenario works
 			}
 		}
-		
+
 		return false; // No valid booking scenarios found
 	}
 
@@ -729,12 +891,30 @@ class House_Calendar_Manager {
 	 */
 	private function get_stay_details_for_code( $stay_code ) {
 		$stay_map = array(
-			'50' => array( 'nights' => 2, 'checkin_days' => array( 5 ) ),         // 2-night weekend: Friday
-			'60' => array( 'nights' => 3, 'checkin_days' => array( 5 ) ),         // 3-night weekend: Friday
-			'70' => array( 'nights' => 7, 'checkin_days' => array( 5, 1 ) ),      // Week: Friday OR Monday
-			'80' => array( 'nights' => 4, 'checkin_days' => array( 1 ) ),         // Midweek: Monday
-			'85' => array( 'nights' => 2, 'checkin_days' => array( 1, 2, 3 ) ),   // 2-night midweek: Monday, Tuesday, Wednesday
-			'90' => array( 'nights' => 5, 'checkin_days' => array( 5 ) ),         // 5 nights: Friday
+			'50' => array(
+				'nights'       => 2,
+				'checkin_days' => array( 5 ),
+			),         // 2-night weekend: Friday
+			'60' => array(
+				'nights'       => 3,
+				'checkin_days' => array( 5 ),
+			),         // 3-night weekend: Friday
+			'70' => array(
+				'nights'       => 7,
+				'checkin_days' => array( 5, 1 ),
+			),      // Week: Friday OR Monday
+			'80' => array(
+				'nights'       => 4,
+				'checkin_days' => array( 1 ),
+			),         // Midweek: Monday
+			'85' => array(
+				'nights'       => 2,
+				'checkin_days' => array( 1, 2, 3 ),
+			),   // 2-night midweek: Monday, Tuesday, Wednesday
+			'90' => array(
+				'nights'       => 5,
+				'checkin_days' => array( 5 ),
+			),         // 5 nights: Friday
 		);
 
 		return $stay_map[ $stay_code ] ?? false;
@@ -748,14 +928,14 @@ class House_Calendar_Manager {
 	 * @return array Array of possible checkin dates.
 	 */
 	private function get_checkin_dates_for_week( $week_commencing, $stay_details ) {
-		$week_friday = strtotime( $week_commencing );
+		$week_friday   = strtotime( $week_commencing );
 		$checkin_dates = array();
 
 		foreach ( $stay_details['checkin_days'] as $target_day ) {
 			// Calculate offset from Friday (5) to target day
 			// Friday = 5, Saturday = 6, Sunday = 0, Monday = 1, Tuesday = 2, Wednesday = 3, Thursday = 4
 			$friday_day = 5;
-			
+
 			if ( $target_day >= $friday_day ) {
 				// Same week: Saturday (6) = +1 day from Friday
 				$offset = $target_day - $friday_day;
@@ -763,8 +943,8 @@ class House_Calendar_Manager {
 				// Next week: Sunday (0) = +2, Monday (1) = +3, Tuesday (2) = +4, Wednesday (3) = +5
 				$offset = ( 7 - $friday_day ) + $target_day;
 			}
-			
-			$checkin_date = gmdate( 'Y-m-d', $week_friday + ( $offset * DAY_IN_SECONDS ) );
+
+			$checkin_date    = gmdate( 'Y-m-d', $week_friday + ( $offset * DAY_IN_SECONDS ) );
 			$checkin_dates[] = $checkin_date;
 		}
 
@@ -781,20 +961,20 @@ class House_Calendar_Manager {
 	 */
 	private function validate_booking_period( $checkin_date, $nights, $availability_data ) {
 		$checkin_timestamp = strtotime( $checkin_date );
-		
+
 		// Check each day from checkin through the stay period
 		for ( $i = 0; $i < $nights; $i++ ) {
 			$check_date = gmdate( 'Y-m-d', $checkin_timestamp + ( $i * DAY_IN_SECONDS ) );
-			
+
 			// Get availability for this date
 			$day_data = $availability_data[ $check_date ] ?? null;
-			
+
 			if ( ! $day_data || 'available' !== $day_data['status'] ) {
 				// Day is not available - booking period fails validation
 				return false;
 			}
 		}
-		
+
 		return true; // All days are available
 	}
 
@@ -845,23 +1025,22 @@ class House_Calendar_Manager {
 			return $days;
 		}
 
-		$day_keys = array_keys( $days );
+		$day_keys             = array_keys( $days );
 		$unavailable_statuses = array( 'B', 'OB', 'U' );
 
 		// Loop through days looking for sandwiched "A" values
 		for ( $i = 1; $i < count( $day_keys ) - 1; $i++ ) {
-			$prev_key = $day_keys[ $i - 1 ];
+			$prev_key    = $day_keys[ $i - 1 ];
 			$current_key = $day_keys[ $i ];
-			$next_key = $day_keys[ $i + 1 ];
+			$next_key    = $day_keys[ $i + 1 ];
 
 			// Check if current day is "A" and surrounded by unavailable days
-			if ( 
-				'A' === $days[ $current_key ] &&
+			if ( 'A' === $days[ $current_key ] &&
 				in_array( $days[ $prev_key ], $unavailable_statuses, true ) &&
 				in_array( $days[ $next_key ], $unavailable_statuses, true )
 			) {
 				$days[ $current_key ] = 'B';
-				
+
 				// Debug log if enabled
 				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 					error_log( "Fixed sandwiched available day: Day {$current_key} changed from A to B" );
@@ -871,7 +1050,7 @@ class House_Calendar_Manager {
 
 		return $days;
 	}
-	
+
 	/**
 	 * Fetch availability data from API.
 	 *
@@ -880,7 +1059,7 @@ class House_Calendar_Manager {
 	 * @return array|WP_Error Availability data or error.
 	 */
 	private function fetch_availability_data( $house_id, $access_token ) {
-		$url = $this->api_base_url . "/{$house_id}/dayavailability?access_token={$access_token}";
+		$url      = $this->api_base_url . "/{$house_id}/dayavailability?access_token={$access_token}";
 		$response = wp_remote_get(
 			$url,
 			array(
@@ -890,21 +1069,21 @@ class House_Calendar_Manager {
 				),
 			)
 		);
-		
+
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
-		
+
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
-		
+
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			return new WP_Error( 'json_decode_error', 'Failed to decode JSON response' );
 		}
-		
+
 		return $data;
 	}
-	
+
 	/**
 	 * Fetch rates data from API.
 	 *
@@ -913,7 +1092,7 @@ class House_Calendar_Manager {
 	 * @return array|WP_Error Rates data or error.
 	 */
 	private function fetch_rates_data( $house_id, $access_token ) {
-		$url = $this->api_base_url . "/{$house_id}/customrates?access_token={$access_token}";
+		$url      = $this->api_base_url . "/{$house_id}/customrates?access_token={$access_token}";
 		$response = wp_remote_get(
 			$url,
 			array(
@@ -923,18 +1102,18 @@ class House_Calendar_Manager {
 				),
 			)
 		);
-		
+
 		if ( is_wp_error( $response ) ) {
 			return $response;
 		}
-		
+
 		$body = wp_remote_retrieve_body( $response );
 		$data = json_decode( $body, true );
-		
+
 		if ( JSON_ERROR_NONE !== json_last_error() ) {
 			return new WP_Error( 'json_decode_error', 'Failed to decode JSON response' );
 		}
-		
+
 		return $data;
 	}
 
@@ -962,7 +1141,7 @@ class House_Calendar_Manager {
 
 		wp_send_json_success( $data );
 	}
-	
+
 	/**
 	 * Lightweight AJAX callback for fetching just availability notes.
 	 */
@@ -973,7 +1152,7 @@ class House_Calendar_Manager {
 		}
 
 		$house_id = sanitize_text_field( wp_unslash( $_GET['house_id'] ?? '' ) );
-		
+
 		if ( empty( $house_id ) ) {
 			wp_send_json_error( 'Missing house ID parameter' );
 		}
@@ -981,19 +1160,19 @@ class House_Calendar_Manager {
 		// Get availability notes directly from transient cache
 		$transient_key = '_transient_kt_house_calendar_' . $house_id;
 		$calendar_data = get_option( $transient_key );
-		
+
 		$availability_notes = '';
 		if ( $calendar_data && isset( $calendar_data['AvailabilityNotes'] ) ) {
 			$availability_notes = $calendar_data['AvailabilityNotes'];
 		}
-		
+
 		wp_send_json_success( array( 'AvailabilityNotes' => $availability_notes ) );
 	}
 
 	/**
 	 * AJAX callback to get booking data for a specific house and date.
 	 * Used when a user clicks on an available date in the calendar.
-	 * 
+	 *
 	 * @return void
 	 */
 	public function get_house_booking_data_callback() {
@@ -1003,8 +1182,8 @@ class House_Calendar_Manager {
 		}
 
 		$house_id = sanitize_text_field( wp_unslash( $_POST['house_id'] ?? '' ) );
-		$date = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) );
-		
+		$date     = sanitize_text_field( wp_unslash( $_POST['date'] ?? '' ) );
+
 		if ( empty( $house_id ) || empty( $date ) ) {
 			wp_send_json_error( 'Missing required parameters' );
 		}
@@ -1016,7 +1195,7 @@ class House_Calendar_Manager {
 
 		// Get the WordPress house post ID from the PropertyId (house_id)
 		$wp_house_id = $this->get_wp_house_id_from_property_id( $house_id );
-		
+
 		if ( ! $wp_house_id ) {
 			wp_send_json_error( 'House not found' );
 		}
@@ -1037,17 +1216,19 @@ class House_Calendar_Manager {
 
 		// Format response data
 		$response_data = array(
-			'house_id' => $wp_house_id,
-			'property_id' => $house_id,
-			'house_name' => $house_post->post_title,
-			'house_slug' => $house_post->post_name,
-			'date' => $date,
-			'week' => $week_of_month,
+			'house_id'       => $wp_house_id,
+			'property_id'    => $house_id,
+			'house_name'     => $house_post->post_title,
+			'house_slug'     => $house_post->post_name,
+			'date'           => $date,
+			'week'           => $week_of_month,
 			'formatted_date' => $date_obj->format( 'l, j F Y' ),
-			'booking_url' => home_url( "/houses/{$house_post->post_name}/book/" ) . '?' . http_build_query( array(
-				'd' => $date_obj->format( 'd-m-Y' ),
-				'week' => $week_of_month
-			) )
+			'booking_url'    => home_url( "/houses/{$house_post->post_name}/book/" ) . '?' . http_build_query(
+				array(
+					'd'    => $date_obj->format( 'd-m-Y' ),
+					'week' => $week_of_month,
+				)
+			),
 		);
 
 		wp_send_json_success( $response_data );
@@ -1055,17 +1236,17 @@ class House_Calendar_Manager {
 
 	/**
 	 * Get WordPress house post ID from PropertyId using the property mapping.
-	 * 
+	 *
 	 * @param string $property_id The PropertyId from the API
 	 * @return int|false WordPress post ID or false if not found
 	 */
 	private function get_wp_house_id_from_property_id( $property_id ) {
 		// Get property mapping from transient or fetch from API
 		$property_mapping = get_transient( 'kt_property_mapping' );
-		
+
 		if ( false === $property_mapping ) {
 			$property_mapping = $this->fetch_property_mapping();
-			
+
 			if ( $property_mapping ) {
 				// Cache for 1 hour
 				set_transient( 'kt_property_mapping', $property_mapping, HOUR_IN_SECONDS );
@@ -1091,18 +1272,21 @@ class House_Calendar_Manager {
 
 	/**
 	 * Fetch property mapping from the booking API.
-	 * 
+	 *
 	 * @return array|false Property mapping array or false on failure
 	 */
 	private function fetch_property_mapping() {
 		$url = 'http://booking.kateandtoms.com/apis/properties/reflookup?access_token=' . urlencode( $this->api_access_token );
 
-		$response = wp_remote_get( $url, array(
-			'timeout' => 30,
-			'headers' => array(
-				'User-Agent' => 'Kate-Toms-Booking/1.0',
-			),
-		) );
+		$response = wp_remote_get(
+			$url,
+			array(
+				'timeout' => 30,
+				'headers' => array(
+					'User-Agent' => 'Kate-Toms-Booking/1.0',
+				),
+			)
+		);
 
 		if ( is_wp_error( $response ) ) {
 			error_log( 'Failed to fetch property mapping: ' . $response->get_error_message() );
@@ -1128,7 +1312,7 @@ class House_Calendar_Manager {
 
 	/**
 	 * Calculate the week number within a month for a given date.
-	 * 
+	 *
 	 * @param DateTime $date The date object
 	 * @return int Week number (1-5)
 	 */
@@ -1140,13 +1324,13 @@ class House_Calendar_Manager {
 	/**
 	 * Get available booking periods for a specific date and house.
 	 *
-	 * @param string $property_id The iPro Property ID
+	 * @param string   $property_id The iPro Property ID
 	 * @param DateTime $checkin_date The desired check-in date
 	 * @return array Available booking periods with pricing
 	 */
 	public function get_booking_periods_for_date( $property_id, $checkin_date ) {
-		$periods = array();
-		$checkin_day_of_week = (int) $checkin_date->format('N'); // 1=Monday, 7=Sunday
+		$periods             = array();
+		$checkin_day_of_week = (int) $checkin_date->format( 'N' ); // 1=Monday, 7=Sunday
 
 		// Get calendar data using the correct transient key
 		$transient_key = "kt_house_calendar_{$property_id}";
@@ -1177,13 +1361,13 @@ class House_Calendar_Manager {
 
 					if ( $period_price > 0 ) {
 						$periods[] = array(
-							'id' => $period_key,
-							'name' => $this->get_period_display_name( $period_key ),
-							'description' => $this->get_period_description( $period_key, $checkin_date, $checkout_date ),
-							'checkin_date' => $checkin_date->format( 'Y-m-d' ),
-							'checkout_date' => $checkout_date->format( 'Y-m-d' ),
-							'nights' => $period_config['nights'],
-							'price' => $period_price,
+							'id'              => $period_key,
+							'name'            => $this->get_period_display_name( $period_key ),
+							'description'     => $this->get_period_description( $period_key, $checkin_date, $checkout_date ),
+							'checkin_date'    => $checkin_date->format( 'Y-m-d' ),
+							'checkout_date'   => $checkout_date->format( 'Y-m-d' ),
+							'nights'          => $period_config['nights'],
+							'price'           => $period_price,
 							'formatted_price' => '£' . number_format( $period_price ),
 						);
 					}
@@ -1203,13 +1387,13 @@ class House_Calendar_Manager {
 	 * Find closest available booking periods when the selected date is not a valid checkin day.
 	 * Searches up to 7 days before and after the selected date.
 	 *
-	 * @param string $property_id The iPro Property ID
+	 * @param string   $property_id The iPro Property ID
 	 * @param DateTime $selected_date The date the user clicked on
-	 * @param array $calendar_data Calendar data with availability and rates
+	 * @param array    $calendar_data Calendar data with availability and rates
 	 * @return array Available booking periods from nearby checkin dates
 	 */
 	private function find_closest_booking_periods( $property_id, $selected_date, $calendar_data ) {
-		$all_periods = array();
+		$all_periods   = array();
 		$checked_dates = array();
 
 		// Search up to 7 days before and after the selected date
@@ -1222,11 +1406,11 @@ class House_Calendar_Manager {
 
 				foreach ( $before_periods as $period ) {
 					$date_key = $period['checkin_date'];
-					if ( ! isset( $checked_dates[$date_key] ) ) {
-						$period['is_alternate'] = true;
-						$period['days_difference'] = -$days_offset;
-						$all_periods[] = $period;
-						$checked_dates[$date_key] = true;
+					if ( ! isset( $checked_dates[ $date_key ] ) ) {
+						$period['is_alternate']     = true;
+						$period['days_difference']  = -$days_offset;
+						$all_periods[]              = $period;
+						$checked_dates[ $date_key ] = true;
 					}
 				}
 			}
@@ -1238,11 +1422,11 @@ class House_Calendar_Manager {
 
 			foreach ( $after_periods as $period ) {
 				$date_key = $period['checkin_date'];
-				if ( ! isset( $checked_dates[$date_key] ) ) {
-					$period['is_alternate'] = ( $days_offset > 0 );
-					$period['days_difference'] = $days_offset;
-					$all_periods[] = $period;
-					$checked_dates[$date_key] = true;
+				if ( ! isset( $checked_dates[ $date_key ] ) ) {
+					$period['is_alternate']     = ( $days_offset > 0 );
+					$period['days_difference']  = $days_offset;
+					$all_periods[]              = $period;
+					$checked_dates[ $date_key ] = true;
 				}
 			}
 
@@ -1259,12 +1443,12 @@ class House_Calendar_Manager {
 	 * Get booking periods for a specific date without fallback searching.
 	 *
 	 * @param DateTime $checkin_date The checkin date to check
-	 * @param array $calendar_data Calendar data with availability and rates
+	 * @param array    $calendar_data Calendar data with availability and rates
 	 * @return array Available booking periods for this specific date
 	 */
 	private function get_periods_for_specific_date( $checkin_date, $calendar_data ) {
-		$periods = array();
-		$checkin_day_of_week = (int) $checkin_date->format('N'); // 1=Monday, 7=Sunday
+		$periods             = array();
+		$checkin_day_of_week = (int) $checkin_date->format( 'N' ); // 1=Monday, 7=Sunday
 
 		// Check each stay duration to see if it's valid for this date
 		foreach ( $this->stay_durations as $period_key => $period_config ) {
@@ -1283,13 +1467,13 @@ class House_Calendar_Manager {
 
 					if ( $period_price > 0 ) {
 						$periods[] = array(
-							'id' => $period_key,
-							'name' => $this->get_period_display_name( $period_key ),
-							'description' => $this->get_period_description( $period_key, $checkin_date, $checkout_date ),
-							'checkin_date' => $checkin_date->format( 'Y-m-d' ),
-							'checkout_date' => $checkout_date->format( 'Y-m-d' ),
-							'nights' => $period_config['nights'],
-							'price' => $period_price,
+							'id'              => $period_key,
+							'name'            => $this->get_period_display_name( $period_key ),
+							'description'     => $this->get_period_description( $period_key, $checkin_date, $checkout_date ),
+							'checkin_date'    => $checkin_date->format( 'Y-m-d' ),
+							'checkout_date'   => $checkout_date->format( 'Y-m-d' ),
+							'nights'          => $period_config['nights'],
+							'price'           => $period_price,
 							'formatted_price' => '£' . number_format( $period_price ),
 						);
 					}
@@ -1305,101 +1489,101 @@ class House_Calendar_Manager {
 	 *
 	 * @param DateTime $checkin_date Start date
 	 * @param DateTime $checkout_date End date
-	 * @param array $calendar_data Calendar data from API
+	 * @param array    $calendar_data Calendar data from API
 	 * @return bool True if period is available
 	 */
 	private function is_period_available( $checkin_date, $checkout_date, $calendar_data ) {
 		$current_date = clone $checkin_date;
-		
+
 		while ( $current_date < $checkout_date ) {
 			$date_key = $current_date->format( 'Y-n-j' );
-			
+
 			// Check each month's data
 			foreach ( $calendar_data['months'] as $month_data ) {
-				if ( isset( $month_data['days'][$date_key] ) ) {
-					$day_data = $month_data['days'][$date_key];
-					
+				if ( isset( $month_data['days'][ $date_key ] ) ) {
+					$day_data = $month_data['days'][ $date_key ];
+
 					// Check if day is available (not booked and not blocked)
 					if ( isset( $day_data['status'] ) && $day_data['status'] !== 'available' ) {
 						return false;
 					}
 				}
 			}
-			
+
 			$current_date->add( new DateInterval( 'P1D' ) );
 		}
-		
+
 		return true;
 	}
 
 	/**
 	 * Check if a period (range of dates) is available for booking using new data structure.
-	 * 
+	 *
 	 * @param DateTime $checkin_date Start date
-	 * @param DateTime $checkout_date End date  
-	 * @param array $availability_data Availability data indexed by Y-m-d
+	 * @param DateTime $checkout_date End date
+	 * @param array    $availability_data Availability data indexed by Y-m-d
 	 * @return bool True if period is available
 	 */
 	private function is_period_available_new( $checkin_date, $checkout_date, $availability_data ) {
 		$current_date = clone $checkin_date;
-		
+
 		while ( $current_date < $checkout_date ) {
 			$date_key = $current_date->format( 'Y-m-d' );
-			
+
 			// Check if this date exists in availability data
-			if ( ! isset( $availability_data[$date_key] ) ) {
+			if ( ! isset( $availability_data[ $date_key ] ) ) {
 				// No data for this date - consider unavailable
 				return false;
 			}
-			
-			$day_data = $availability_data[$date_key];
-			
+
+			$day_data = $availability_data[ $date_key ];
+
 			// Check if day is available (not booked and not blocked)
 			if ( isset( $day_data['status'] ) && $day_data['status'] !== 'available' ) {
 				return false;
 			}
-			
+
 			$current_date->add( new DateInterval( 'P1D' ) );
 		}
-		
+
 		return true;
 	}
 
 	/**
 	 * Calculate the total price for a booking period.
-	 * 
+	 *
 	 * @param DateTime $checkin_date Start date
 	 * @param DateTime $checkout_date End date
-	 * @param array $calendar_data Calendar data with pricing
+	 * @param array    $calendar_data Calendar data with pricing
 	 * @return int Total price in pounds
 	 */
 	private function calculate_period_price( $checkin_date, $checkout_date, $calendar_data ) {
-		$total_price = 0;
+		$total_price  = 0;
 		$current_date = clone $checkin_date;
-		
+
 		while ( $current_date < $checkout_date ) {
 			$date_key = $current_date->format( 'Y-n-j' );
-			
+
 			// Find price for this date in the calendar data
 			foreach ( $calendar_data['months'] as $month_data ) {
-				if ( isset( $month_data['days'][$date_key]['rates']['week'] ) ) {
-					$total_price += (int) $month_data['days'][$date_key]['rates']['week'];
+				if ( isset( $month_data['days'][ $date_key ]['rates']['week'] ) ) {
+					$total_price += (int) $month_data['days'][ $date_key ]['rates']['week'];
 					break;
 				}
 			}
-			
+
 			$current_date->add( new DateInterval( 'P1D' ) );
 		}
-		
+
 		return $total_price;
 	}
 
 	/**
 	 * Calculate the total price for a booking period using new data structure.
-	 * 
-	 * @param string $period_key Stay type (2-night-weekend, 3-night-weekend, week, etc.)
+	 *
+	 * @param string   $period_key Stay type (2-night-weekend, 3-night-weekend, week, etc.)
 	 * @param DateTime $checkin_date Start date
-	 * @param array $calendar_data Calendar data with rates structure
+	 * @param array    $calendar_data Calendar data with rates structure
 	 * @return int Total price in pounds
 	 */
 	private function calculate_period_price_new( $period_key, $checkin_date, $calendar_data ) {
@@ -1411,41 +1595,41 @@ class House_Calendar_Manager {
 		$stay_code_map = array(
 			'2-night-weekend' => '50',
 			'3-night-weekend' => '60',
-			'week' => '70',
-			'midweek' => '80',
+			'week'            => '70',
+			'midweek'         => '80',
 			'2-night-midweek' => '85',
 		);
 
-		$stay_code = $stay_code_map[$period_key] ?? null;
+		$stay_code = $stay_code_map[ $period_key ] ?? null;
 		if ( ! $stay_code ) {
 			return 0;
 		}
 
 		// Find the correct week commencing date
 		// For K&T, weeks commence on Friday, so we need to find the Friday that starts the week containing our checkin date
-		$checkin_day_of_week = (int) $checkin_date->format('N'); // 1=Monday, 7=Sunday
-		
+		$checkin_day_of_week = (int) $checkin_date->format( 'N' ); // 1=Monday, 7=Sunday
+
 		// Calculate days back to Friday (5)
 		if ( $checkin_day_of_week >= 5 ) {
 			// Same week Friday
 			$days_back = $checkin_day_of_week - 5;
 		} else {
-			// Previous week Friday  
+			// Previous week Friday
 			$days_back = $checkin_day_of_week + 2; // Mon=3, Tue=4, Wed=5, Thu=6
 		}
-		
+
 		$week_commencing = clone $checkin_date;
 		$week_commencing->sub( new DateInterval( 'P' . $days_back . 'D' ) );
 		$week_commencing_key = $week_commencing->format( 'Y-m-d' );
 
 		// Search through rates data for this week and stay code
 		foreach ( $calendar_data['rates'] as $month_rates ) {
-			if ( isset( $month_rates['weeks'][$week_commencing_key] ) ) {
-				$week_rates = $month_rates['weeks'][$week_commencing_key];
-				
-				if ( isset( $week_rates[$stay_code] ) ) {
-					$rate_data = $week_rates[$stay_code];
-					
+			if ( isset( $month_rates['weeks'][ $week_commencing_key ] ) ) {
+				$week_rates = $month_rates['weeks'][ $week_commencing_key ];
+
+				if ( isset( $week_rates[ $stay_code ] ) ) {
+					$rate_data = $week_rates[ $stay_code ];
+
 					// Return the price if it's available
 					if ( isset( $rate_data['value'] ) && $rate_data['value'] > 0 && $rate_data['type'] === 'price' ) {
 						return (int) $rate_data['value'];
@@ -1459,26 +1643,26 @@ class House_Calendar_Manager {
 
 	/**
 	 * Get display name for a booking period.
-	 * 
+	 *
 	 * @param string $period_key Period key
 	 * @return string Display name
 	 */
 	private function get_period_display_name( $period_key ) {
 		$names = array(
 			'2-night-weekend' => '2 Night Weekend',
-			'3-night-weekend' => '3 Night Weekend', 
-			'week' => 'Week',
-			'midweek' => 'Midweek',
-			'2-night-midweek' => '2 Night Midweek'
+			'3-night-weekend' => '3 Night Weekend',
+			'week'            => 'Week',
+			'midweek'         => 'Midweek',
+			'2-night-midweek' => '2 Night Midweek',
 		);
-		
-		return isset( $names[$period_key] ) ? $names[$period_key] : ucwords( str_replace( '-', ' ', $period_key ) );
+
+		return isset( $names[ $period_key ] ) ? $names[ $period_key ] : ucwords( str_replace( '-', ' ', $period_key ) );
 	}
 
 	/**
 	 * Get period description including days of week.
-	 * 
-	 * @param string $period_key Period key
+	 *
+	 * @param string   $period_key Period key
 	 * @param DateTime $checkin_date Check-in date
 	 * @param DateTime $checkout_date Check-out date
 	 * @return string Period description
@@ -1487,20 +1671,20 @@ class House_Calendar_Manager {
 		$descriptions = array(
 			'2-night-weekend' => 'Friday to Sunday',
 			'3-night-weekend' => 'Friday to Monday',
-			'week' => '7 nights',
-			'midweek' => 'Monday to Friday',
-			'2-night-midweek' => 'Midweek break'
+			'week'            => '7 nights',
+			'midweek'         => 'Monday to Friday',
+			'2-night-midweek' => 'Midweek break',
 		);
-		
-		if ( isset( $descriptions[$period_key] ) ) {
-			return $descriptions[$period_key];
+
+		if ( isset( $descriptions[ $period_key ] ) ) {
+			return $descriptions[ $period_key ];
 		}
-		
+
 		// Generate dynamic description
-		$checkin_day = $checkin_date->format( 'l' );
+		$checkin_day  = $checkin_date->format( 'l' );
 		$checkout_day = $checkout_date->format( 'l' );
-		$nights = $this->stay_durations[$period_key]['nights'];
-		
+		$nights       = $this->stay_durations[ $period_key ]['nights'];
+
 		return "{$checkin_day} to {$checkout_day} ({$nights} nights)";
 	}
 
@@ -1514,7 +1698,7 @@ class House_Calendar_Manager {
 		}
 
 		$house_post_id = sanitize_text_field( $_POST['house_id'] ?? '' );
-		$date_param = sanitize_text_field( $_POST['date'] ?? '' );
+		$date_param    = sanitize_text_field( $_POST['date'] ?? '' );
 
 		if ( ! $house_post_id || ! $date_param ) {
 			wp_send_json_error( 'Missing required parameters' );
@@ -1545,18 +1729,20 @@ class House_Calendar_Manager {
 
 		$periods = $this->get_booking_periods_for_date( $property_id, $checkin_date );
 
-		wp_send_json_success( array(
-			'periods' => $periods,
-			'checkin_date' => $checkin_date->format( 'Y-m-d' ),
-			'date_formatted' => $checkin_date->format( 'l, j F Y' ),
-			'property_id' => $property_id,
-			'house_id' => $house_post_id
-		) );
+		wp_send_json_success(
+			array(
+				'periods'        => $periods,
+				'checkin_date'   => $checkin_date->format( 'Y-m-d' ),
+				'date_formatted' => $checkin_date->format( 'l, j F Y' ),
+				'property_id'    => $property_id,
+				'house_id'       => $house_post_id,
+			)
+		);
 	}
 
 	/**
 	 * Get iPro PropertyId from WordPress house post ID using the reflookup API.
-	 * 
+	 *
 	 * @param int $wp_house_id WordPress post ID
 	 * @return string|false iPro PropertyId or false if not found
 	 */
@@ -1569,9 +1755,9 @@ class House_Calendar_Manager {
 
 		// Search for PropertyReference matching the WordPress post ID
 		foreach ( $property_mapping as $property ) {
-			if ( isset( $property['PropertyReference'] ) && 
-				 (int) $property['PropertyReference'] === $wp_house_id ) {
-				
+			if ( isset( $property['PropertyReference'] ) &&
+				(int) $property['PropertyReference'] === $wp_house_id ) {
+
 				return isset( $property['PropertyId'] ) ? (string) $property['PropertyId'] : false;
 			}
 		}
@@ -1582,12 +1768,12 @@ class House_Calendar_Manager {
 
 	/**
 	 * Get cached property mapping, fetch if not available.
-	 * 
+	 *
 	 * @return array|false Property mapping array or false on failure
 	 */
 	private function get_cached_property_mapping() {
 		$transient_key = 'kt_property_mapping';
-		
+
 		// Try to get from cache first
 		$cached_mapping = get_transient( $transient_key );
 		if ( false !== $cached_mapping ) {
@@ -1617,68 +1803,68 @@ class House_Calendar_Manager {
 		// Sanitize all form fields using the field names expected by the iPro API
 		$sanitized_data = array(
 			// Basic guest information
-			'first-name' => sanitize_text_field( $_POST['first-name'] ?? '' ),
-			'last-name' => sanitize_text_field( $_POST['last-name'] ?? '' ),
-			'email' => sanitize_email( $_POST['email'] ?? '' ),
-			'mobile' => sanitize_text_field( $_POST['mobile'] ?? '' ),
-			
+			'first-name'         => sanitize_text_field( $_POST['first-name'] ?? '' ),
+			'last-name'          => sanitize_text_field( $_POST['last-name'] ?? '' ),
+			'email'              => sanitize_email( $_POST['email'] ?? '' ),
+			'mobile'             => sanitize_text_field( $_POST['mobile'] ?? '' ),
+
 			// Address fields
-			'address-1' => sanitize_text_field( $_POST['address-1'] ?? '' ),
-			'address-2' => sanitize_text_field( $_POST['address-2'] ?? '' ),
-			'address-3' => sanitize_text_field( $_POST['address-3'] ?? '' ),
-			'address-4' => sanitize_text_field( $_POST['address-4'] ?? '' ),
-			'address-5' => sanitize_text_field( $_POST['address-5'] ?? '' ),
-			
+			'address-1'          => sanitize_text_field( $_POST['address-1'] ?? '' ),
+			'address-2'          => sanitize_text_field( $_POST['address-2'] ?? '' ),
+			'address-3'          => sanitize_text_field( $_POST['address-3'] ?? '' ),
+			'address-4'          => sanitize_text_field( $_POST['address-4'] ?? '' ),
+			'address-5'          => sanitize_text_field( $_POST['address-5'] ?? '' ),
+
 			// Guest counts
-			'number-of-adults' => sanitize_text_field( $_POST['number-of-adults'] ?? '' ),
+			'number-of-adults'   => sanitize_text_field( $_POST['number-of-adults'] ?? '' ),
 			'number-of-children' => sanitize_text_field( $_POST['number-of-children'] ?? '' ),
-			'number-of-infants' => sanitize_text_field( $_POST['number-of-infants'] ?? '' ),
-			'number-of-pets' => sanitize_text_field( $_POST['number-of-pets'] ?? '' ),
-			
+			'number-of-infants'  => sanitize_text_field( $_POST['number-of-infants'] ?? '' ),
+			'number-of-pets'     => sanitize_text_field( $_POST['number-of-pets'] ?? '' ),
+
 			// Pet details
-			'breed-of-pets' => sanitize_text_field( $_POST['breed-of-pets'] ?? '' ),
-			'age-of-pets' => sanitize_text_field( $_POST['age-of-pets'] ?? '' ),
-			
+			'breed-of-pets'      => sanitize_text_field( $_POST['breed-of-pets'] ?? '' ),
+			'age-of-pets'        => sanitize_text_field( $_POST['age-of-pets'] ?? '' ),
+
 			// Booking details
-			'nature-of-stay' => sanitize_text_field( $_POST['nature-of-stay'] ?? '' ),
-			'age-range-from' => sanitize_text_field( $_POST['age-range-from'] ?? '' ),
-			'age-range-to' => sanitize_text_field( $_POST['age-range-to'] ?? '' ),
-			
+			'nature-of-stay'     => sanitize_text_field( $_POST['nature-of-stay'] ?? '' ),
+			'age-range-from'     => sanitize_text_field( $_POST['age-range-from'] ?? '' ),
+			'age-range-to'       => sanitize_text_field( $_POST['age-range-to'] ?? '' ),
+
 			// Hidden fields for iPro compatibility
-			'property_name' => sanitize_text_field( $_POST['property_name'] ?? '' ),
-			'date_from' => sanitize_text_field( $_POST['date_from'] ?? '' ),
-			'period' => sanitize_text_field( $_POST['period'] ?? '' ),
-			'post_id' => sanitize_text_field( $_POST['house_id'] ?? $_POST['post_id'] ?? '' ),
-			'salutation' => sanitize_text_field( $_POST['salutation'] ?? '' ),
-			
+			'property_name'      => sanitize_text_field( $_POST['property_name'] ?? '' ),
+			'date_from'          => sanitize_text_field( $_POST['date_from'] ?? '' ),
+			'period'             => sanitize_text_field( $_POST['period'] ?? '' ),
+			'post_id'            => sanitize_text_field( $_POST['house_id'] ?? $_POST['post_id'] ?? '' ),
+			'salutation'         => sanitize_text_field( $_POST['salutation'] ?? '' ),
+
 			// Additional fields
-			'special_requests' => sanitize_textarea_field( $_POST['special_requests'] ?? '' ),
-			'how_heard' => sanitize_text_field( $_POST['how_heard'] ?? '' ),
+			'special_requests'   => sanitize_textarea_field( $_POST['special_requests'] ?? '' ),
+			'how_heard'          => sanitize_text_field( $_POST['how_heard'] ?? '' ),
 		);
 
 		// Validate required fields
 		$required_fields = array(
-			'first-name' => 'First Name',
-			'last-name' => 'Last Name', 
-			'email' => 'Email Address',
-			'mobile' => 'Mobile Number',
-			'address-1' => 'Address Line 1',
-			'address-3' => 'Town/City',
-			'address-5' => 'Post Code',
-			'number-of-adults' => 'Number of Adults',
+			'first-name'         => 'First Name',
+			'last-name'          => 'Last Name',
+			'email'              => 'Email Address',
+			'mobile'             => 'Mobile Number',
+			'address-1'          => 'Address Line 1',
+			'address-3'          => 'Town/City',
+			'address-5'          => 'Post Code',
+			'number-of-adults'   => 'Number of Adults',
 			'number-of-children' => 'Number of Children',
-			'number-of-infants' => 'Number of Infants',
-			'nature-of-stay' => 'Nature of Stay',
-			'age-range-from' => 'Age Range From',
-			'age-range-to' => 'Age Range To',
-			'property_name' => 'Property Name',
-			'date_from' => 'Check-in Date',
-			'period' => 'Booking Period',
-			'post_id' => 'House ID'
+			'number-of-infants'  => 'Number of Infants',
+			'nature-of-stay'     => 'Nature of Stay',
+			'age-range-from'     => 'Age Range From',
+			'age-range-to'       => 'Age Range To',
+			'property_name'      => 'Property Name',
+			'date_from'          => 'Check-in Date',
+			'period'             => 'Booking Period',
+			'post_id'            => 'House ID',
 		);
 
 		foreach ( $required_fields as $field => $label ) {
-			if ( empty( $sanitized_data[$field] ) ) {
+			if ( empty( $sanitized_data[ $field ] ) ) {
 				wp_send_json_error( "Missing required field: {$label}" );
 				return;
 			}
@@ -1700,17 +1886,19 @@ class House_Calendar_Manager {
 			// Process the booking using the same logic as the existing callback
 			// but without the redirect to work with AJAX
 			$this->process_booking_for_ajax( $sanitized_data );
-			
+
 			// Generate a reference number for the response
 			$reference_number = 'BK-' . strtoupper( wp_generate_password( 8, false ) );
-			
-			wp_send_json_success( array(
-				'reference_number' => $reference_number,
-				'house_name' => $sanitized_data['property_name'],
-				'guest_name' => $sanitized_data['first-name'] . ' ' . $sanitized_data['last-name'],
-				'message' => 'Your booking enquiry has been submitted successfully!'
-			) );
-			
+
+			wp_send_json_success(
+				array(
+					'reference_number' => $reference_number,
+					'house_name'       => $sanitized_data['property_name'],
+					'guest_name'       => $sanitized_data['first-name'] . ' ' . $sanitized_data['last-name'],
+					'message'          => 'Your booking enquiry has been submitted successfully!',
+				)
+			);
+
 		} catch ( Exception $e ) {
 			error_log( 'Booking submission error: ' . $e->getMessage() );
 			wp_send_json_error( 'There was an error processing your booking. Please try again.' );
@@ -1720,7 +1908,7 @@ class House_Calendar_Manager {
 	/**
 	 * Process booking data using the same logic as Kate and Toms Get in Touch plugin
 	 * but adapted for AJAX responses (no redirect).
-	 * 
+	 *
 	 * @param array $post_data The sanitized booking data
 	 * @throws Exception If processing fails
 	 */
@@ -1729,7 +1917,7 @@ class House_Calendar_Manager {
 		if ( $post_data['email'] === 'testing@example.com' ) {
 			throw new Exception( 'Spam detected' );
 		}
-		
+
 		if ( strpos( $post_data['first-name'], 'Jcfuzqsq' ) !== false ) {
 			throw new Exception( 'Spam detected' );
 		}
@@ -1745,20 +1933,20 @@ class House_Calendar_Manager {
 		$get_in_touch_public = new Kate_And_Toms_Get_In_Touch_Public( '', '' );
 
 		// Use the plugin's helper methods if available
-		$duration = $get_in_touch_public->resolve_booking_period( $post_data['period'] );
-		$enddate = date( 'Y-m-d', strtotime( $post_data['date_from'] . ' + ' . $duration . 'days' ) );
-		$property_id = $get_in_touch_public->ipro_reflookup_callback( $post_data['post_id'] );
+		$duration     = $get_in_touch_public->resolve_booking_period( $post_data['period'] );
+		$enddate      = date( 'Y-m-d', strtotime( $post_data['date_from'] . ' + ' . $duration . 'days' ) );
+		$property_id  = $get_in_touch_public->ipro_reflookup_callback( $post_data['post_id'] );
 		$access_token = $get_in_touch_public->generate_access_token();
 
 		// Build the same message format as original
-		$message = sprintf( __( 'Booking details are detailed below:' ) ) . "\r\n\r\n";
+		$message  = sprintf( __( 'Booking details are detailed below:' ) ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Full name: %s' ), $post_data['first-name'] . ' ' . $post_data['last-name'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Email address: %s' ), $post_data['email'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Mobile number: %s' ), $post_data['mobile'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Address: %s' ), $post_data['address-1'] . ' ' . $post_data['address-2'] . ' ' . $post_data['address-3'] . ' ' . $post_data['address-4'] . ' ' . $post_data['address-5'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Booking details:' ) ) . "\r\n\r\n";
 		$message .= sprintf( __( 'House name: %s' ), $post_data['property_name'] ) . "\r\n\r\n";
-		$message .= sprintf( __( '%s from %s' ), $post_data['period'], $post_data['date_from'] ) . "\r\n\r\n";
+		$message .= sprintf( __( '%1$s from %2$s' ), $post_data['period'], $post_data['date_from'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Number of Adults: %s' ), $post_data['number-of-adults'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Number of Children: %s' ), $post_data['number-of-children'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Number of Infants: %s' ), $post_data['number-of-infants'] ) . "\r\n\r\n";
@@ -1766,10 +1954,10 @@ class House_Calendar_Manager {
 		$message .= sprintf( __( 'Breed of Pets: %s' ), $post_data['breed-of-pets'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Age of Pets: %s' ), $post_data['age-of-pets'] ) . "\r\n\r\n";
 		$message .= sprintf( __( 'Nature of event: %s' ), $post_data['nature-of-stay'] ) . "\r\n\r\n";
-		$message .= sprintf( __( 'Age range: %s - %s' ), $post_data['age-range-from'], $post_data['age-range-to'] ) . "\r\n\r\n";
+		$message .= sprintf( __( 'Age range: %1$s - %2$s' ), $post_data['age-range-from'], $post_data['age-range-to'] ) . "\r\n\r\n";
 
 		// Build iPro API URL (same as original)
-		$api_url = '/apis/enquiry?';
+		$api_url  = '/apis/enquiry?';
 		$api_url .= 'firstname=' . urlencode( $post_data['first-name'] );
 		$api_url .= '&lastname=' . urlencode( $post_data['last-name'] );
 		$api_url .= '&startdate=' . date( 'Y-m-d', strtotime( $post_data['date_from'] ) );
@@ -1791,22 +1979,25 @@ class House_Calendar_Manager {
 		// Make the iPro API call (same as original)
 		$curl = curl_init();
 
-		curl_setopt_array( $curl, array(
-			CURLOPT_URL => IPRO_API_URL . $api_url,
-			CURLOPT_RETURNTRANSFER => true,
-			CURLOPT_ENCODING => '',
-			CURLOPT_MAXREDIRS => 10,
-			CURLOPT_TIMEOUT => 0,
-			CURLOPT_FOLLOWLOCATION => true,
-			CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-			CURLOPT_CUSTOMREQUEST => 'POST',
-			CURLOPT_HTTPHEADER => array(
-				'Content-Length: 0',
-				'Authorization: Bearer ' . $access_token
-			),
-		) );
+		curl_setopt_array(
+			$curl,
+			array(
+				CURLOPT_URL            => IPRO_API_URL . $api_url,
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_ENCODING       => '',
+				CURLOPT_MAXREDIRS      => 10,
+				CURLOPT_TIMEOUT        => 0,
+				CURLOPT_FOLLOWLOCATION => true,
+				CURLOPT_HTTP_VERSION   => CURL_HTTP_VERSION_1_1,
+				CURLOPT_CUSTOMREQUEST  => 'POST',
+				CURLOPT_HTTPHEADER     => array(
+					'Content-Length: 0',
+					'Authorization: Bearer ' . $access_token,
+				),
+			)
+		);
 
-		$response = curl_exec( $curl );
+		$response  = curl_exec( $curl );
 		$http_code = curl_getinfo( $curl, CURLINFO_HTTP_CODE );
 		curl_close( $curl );
 
@@ -1827,7 +2018,7 @@ class House_Calendar_Manager {
 
 	/**
 	 * Store booking enquiry data (you might implement database storage here).
-	 * 
+	 *
 	 * @param array $booking_data The booking data to store
 	 */
 	private function store_booking_enquiry( $booking_data ) {
@@ -1842,49 +2033,49 @@ class House_Calendar_Manager {
 
 	/**
 	 * Send booking notification email.
-	 * 
+	 *
 	 * @param array $booking_data The booking data
 	 * @return bool True if email sent successfully
 	 */
 	private function send_booking_notification_email( $booking_data ) {
-		$guest = $booking_data['guest_details'];
+		$guest   = $booking_data['guest_details'];
 		$booking = $booking_data['booking_details'];
-		
+
 		// Format the checkin date
 		$checkin_formatted = DateTime::createFromFormat( 'd-m-Y', $booking_data['checkin_date'] );
-		$checkin_display = $checkin_formatted ? $checkin_formatted->format( 'l, j F Y' ) : $booking_data['checkin_date'];
+		$checkin_display   = $checkin_formatted ? $checkin_formatted->format( 'l, j F Y' ) : $booking_data['checkin_date'];
 
 		// Prepare email content
 		$subject = 'New Booking Enquiry - ' . $booking_data['reference_number'];
-		
-		$message = "New booking enquiry received:\n\n";
-		$message .= "Reference: " . $booking_data['reference_number'] . "\n";
-		$message .= "House: " . $booking_data['house_name'] . "\n";
-		$message .= "Period: " . ucwords( str_replace( '-', ' ', $booking_data['selected_period'] ) ) . "\n";
-		$message .= "Check-in Date: " . $checkin_display . "\n\n";
-		
+
+		$message  = "New booking enquiry received:\n\n";
+		$message .= 'Reference: ' . $booking_data['reference_number'] . "\n";
+		$message .= 'House: ' . $booking_data['house_name'] . "\n";
+		$message .= 'Period: ' . ucwords( str_replace( '-', ' ', $booking_data['selected_period'] ) ) . "\n";
+		$message .= 'Check-in Date: ' . $checkin_display . "\n\n";
+
 		$message .= "Guest Details:\n";
-		$message .= "Name: " . $guest['first_name'] . " " . $guest['last_name'] . "\n";
-		$message .= "Email: " . $guest['email'] . "\n";
-		$message .= "Phone: " . $guest['phone'] . "\n";
+		$message .= 'Name: ' . $guest['first_name'] . ' ' . $guest['last_name'] . "\n";
+		$message .= 'Email: ' . $guest['email'] . "\n";
+		$message .= 'Phone: ' . $guest['phone'] . "\n";
 		if ( ! empty( $guest['address'] ) ) {
-			$message .= "Address: " . $guest['address'] . "\n";
+			$message .= 'Address: ' . $guest['address'] . "\n";
 		}
 		$message .= "\n";
-		
+
 		$message .= "Booking Details:\n";
-		$message .= "Adults: " . $booking['adults'] . "\n";
-		$message .= "Children: " . $booking['children'] . "\n";
+		$message .= 'Adults: ' . $booking['adults'] . "\n";
+		$message .= 'Children: ' . $booking['children'] . "\n";
 		if ( ! empty( $booking['special_requests'] ) ) {
-			$message .= "Special Requests: " . $booking['special_requests'] . "\n";
+			$message .= 'Special Requests: ' . $booking['special_requests'] . "\n";
 		}
 		if ( ! empty( $booking['how_heard'] ) ) {
-			$message .= "How they heard about us: " . $booking['how_heard'] . "\n";
+			$message .= 'How they heard about us: ' . $booking['how_heard'] . "\n";
 		}
 		$message .= "\n";
-		
-		$message .= "Submitted: " . date( 'l, j F Y \a\t g:i A', $booking_data['submitted_at'] ) . "\n";
-		$message .= "IP Address: " . $booking_data['ip_address'] . "\n";
+
+		$message .= 'Submitted: ' . date( 'l, j F Y \a\t g:i A', $booking_data['submitted_at'] ) . "\n";
+		$message .= 'IP Address: ' . $booking_data['ip_address'] . "\n";
 
 		// Set email headers
 		$headers = array(
@@ -1895,7 +2086,7 @@ class House_Calendar_Manager {
 
 		// Send to admin email
 		$admin_email = get_option( 'admin_email', 'hello@kateandtoms.com' );
-		$sent = wp_mail( $admin_email, $subject, $message, $headers );
+		$sent        = wp_mail( $admin_email, $subject, $message, $headers );
 
 		// Send confirmation email to guest
 		$this->send_guest_confirmation_email( $booking_data );
@@ -1905,40 +2096,40 @@ class House_Calendar_Manager {
 
 	/**
 	 * Send confirmation email to the guest.
-	 * 
+	 *
 	 * @param array $booking_data The booking data
 	 * @return bool True if email sent successfully
 	 */
 	private function send_guest_confirmation_email( $booking_data ) {
 		$guest = $booking_data['guest_details'];
-		
+
 		// Format the checkin date
 		$checkin_formatted = DateTime::createFromFormat( 'd-m-Y', $booking_data['checkin_date'] );
-		$checkin_display = $checkin_formatted ? $checkin_formatted->format( 'l, j F Y' ) : $booking_data['checkin_date'];
+		$checkin_display   = $checkin_formatted ? $checkin_formatted->format( 'l, j F Y' ) : $booking_data['checkin_date'];
 
 		$subject = 'Booking Enquiry Confirmation - ' . $booking_data['reference_number'];
-		
-		$message = "Dear " . $guest['first_name'] . ",\n\n";
+
+		$message  = 'Dear ' . $guest['first_name'] . ",\n\n";
 		$message .= "Thank you for your booking enquiry with Kate & Toms.\n\n";
 		$message .= "We have received your request for:\n";
-		$message .= "• House: " . $booking_data['house_name'] . "\n";
-		$message .= "• Period: " . ucwords( str_replace( '-', ' ', $booking_data['selected_period'] ) ) . "\n";
-		$message .= "• Check-in Date: " . $checkin_display . "\n";
-		$message .= "• Reference: " . $booking_data['reference_number'] . "\n\n";
-		
+		$message .= '• House: ' . $booking_data['house_name'] . "\n";
+		$message .= '• Period: ' . ucwords( str_replace( '-', ' ', $booking_data['selected_period'] ) ) . "\n";
+		$message .= '• Check-in Date: ' . $checkin_display . "\n";
+		$message .= '• Reference: ' . $booking_data['reference_number'] . "\n\n";
+
 		$message .= "What happens next:\n";
 		$message .= "• We'll review your request and check availability\n";
 		$message .= "• You'll receive a confirmation email within 24 hours\n";
 		$message .= "• If available, we'll send you booking terms and payment details\n";
 		$message .= "• For urgent enquiries, please call us on 01242 235151\n\n";
-		
+
 		$message .= "If you have any questions, please don't hesitate to contact us:\n";
 		$message .= "Phone: 01242 235151\n";
 		$message .= "Email: hello@kateandtoms.com\n\n";
-		
+
 		$message .= "Thank you for choosing Kate & Toms.\n\n";
 		$message .= "Best regards,\n";
-		$message .= "The Kate & Toms Team";
+		$message .= 'The Kate & Toms Team';
 
 		$headers = array(
 			'Content-Type: text/plain; charset=UTF-8',
@@ -1950,12 +2141,12 @@ class House_Calendar_Manager {
 
 	/**
 	 * Get client IP address.
-	 * 
+	 *
 	 * @return string Client IP address
 	 */
 	private function get_client_ip() {
 		$ip_keys = array( 'HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR' );
-		
+
 		foreach ( $ip_keys as $key ) {
 			if ( array_key_exists( $key, $_SERVER ) && ! empty( $_SERVER[ $key ] ) ) {
 				$ip = sanitize_text_field( $_SERVER[ $key ] );
@@ -1964,7 +2155,7 @@ class House_Calendar_Manager {
 				}
 			}
 		}
-		
+
 		return sanitize_text_field( $_SERVER['REMOTE_ADDR'] ?? 'Unknown' );
 	}
 }
@@ -1990,12 +2181,12 @@ function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_d
 	$calendar_manager = new House_Calendar_Manager();
 
 	// Use reflection to access private methods
-	$reflection = new ReflectionClass( $calendar_manager );
+	$reflection             = new ReflectionClass( $calendar_manager );
 	$get_property_id_method = $reflection->getMethod( 'get_property_id_from_wp_house_id' );
 	$get_property_id_method->setAccessible( true );
 
-	$filtered_houses = array();
-	$checked_count = 0;
+	$filtered_houses      = array();
+	$checked_count        = 0;
 	$no_property_id_count = 0;
 
 	foreach ( $houses as $house ) {
@@ -2004,11 +2195,11 @@ function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_d
 
 		if ( ! $property_id ) {
 			// Skip if no property ID mapping found
-			$no_property_id_count++;
+			++$no_property_id_count;
 			continue;
 		}
 
-		$checked_count++;
+		++$checked_count;
 
 		// Check if house has availability for ANY of the required periods within the date range
 		if ( kate_toms_check_house_seasonal_availability( $property_id, $beginning_date, $ending_date, $periods ) ) {
@@ -2017,13 +2208,15 @@ function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_d
 		}
 	}
 
-	error_log( sprintf(
-		'Seasonal filtering stats: Total houses=%d, Checked=%d, No PropertyId=%d, Matched=%d',
-		count( $houses ),
-		$checked_count,
-		$no_property_id_count,
-		count( $filtered_houses )
-	) );
+	error_log(
+		sprintf(
+			'Seasonal filtering stats: Total houses=%d, Checked=%d, No PropertyId=%d, Matched=%d',
+			count( $houses ),
+			$checked_count,
+			$no_property_id_count,
+			count( $filtered_houses )
+		)
+	);
 
 	return $filtered_houses;
 }
@@ -2039,7 +2232,7 @@ function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_d
  */
 function kate_toms_check_house_seasonal_availability( $property_id, $beginning_date, $ending_date, $periods ) {
 	// Check cache first for this specific availability check
-	$cache_key = 'kt_seasonal_avail_' . $property_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
+	$cache_key     = 'kt_seasonal_avail_' . $property_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
 	$cached_result = get_transient( $cache_key );
 
 	if ( false !== $cached_result ) {
@@ -2049,7 +2242,7 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 	$calendar_manager = new House_Calendar_Manager();
 
 	// Use reflection to get the private access token
-	$reflection = new ReflectionClass( $calendar_manager );
+	$reflection     = new ReflectionClass( $calendar_manager );
 	$token_property = $reflection->getProperty( 'api_access_token' );
 	$token_property->setAccessible( true );
 	$access_token = $token_property->getValue( $calendar_manager );
@@ -2066,13 +2259,13 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 	// Convert dates to DateTime objects
 	try {
 		$start_date = new DateTime( $beginning_date );
-		$end_date = new DateTime( $ending_date );
+		$end_date   = new DateTime( $ending_date );
 	} catch ( Exception $e ) {
 		return false;
 	}
 
 	// Use reflection to access the private method once
-	$reflection = new ReflectionClass( $calendar_manager );
+	$reflection         = new ReflectionClass( $calendar_manager );
 	$get_periods_method = $reflection->getMethod( 'get_booking_periods_for_date' );
 	$get_periods_method->setAccessible( true );
 
@@ -2123,7 +2316,7 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
  */
 function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date, $periods ) {
 	// Check transient cache first for this specific request
-	$cache_key = 'kt_seasonal_prices_' . $house_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
+	$cache_key     = 'kt_seasonal_prices_' . $house_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
 	$cached_prices = get_transient( $cache_key );
 
 	if ( false !== $cached_prices ) {
@@ -2133,7 +2326,7 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 	$calendar_manager = new House_Calendar_Manager();
 
 	// Use reflection to get the private property ID method
-	$reflection = new ReflectionClass( $calendar_manager );
+	$reflection             = new ReflectionClass( $calendar_manager );
 	$get_property_id_method = $reflection->getMethod( 'get_property_id_from_wp_house_id' );
 	$get_property_id_method->setAccessible( true );
 
@@ -2162,26 +2355,26 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 
 	// Map API period codes to display labels
 	$period_labels = array(
-		'week'             => 'Week',
-		'2-night-weekend'  => '2 night weekend',
-		'3-night-weekend'  => '3 night weekend',
-		'midweek'          => 'Midweek',
-		'2-night-midweek'  => '2 night midweek',
+		'week'            => 'Week',
+		'2-night-weekend' => '2 night weekend',
+		'3-night-weekend' => '3 night weekend',
+		'midweek'         => 'Midweek',
+		'2-night-midweek' => '2 night midweek',
 	);
 
 	// Map API codes to rate codes
 	$stay_code_map = array(
-		'week'             => '70',
-		'2-night-weekend'  => '50',
-		'3-night-weekend'  => '60',
-		'midweek'          => '80',
-		'2-night-midweek'  => '85',
+		'week'            => '70',
+		'2-night-weekend' => '50',
+		'3-night-weekend' => '60',
+		'midweek'         => '80',
+		'2-night-midweek' => '85',
 	);
 
 	// Convert dates to DateTime objects
 	try {
 		$start_date = new DateTime( $beginning_date );
-		$end_date = new DateTime( $ending_date );
+		$end_date   = new DateTime( $ending_date );
 	} catch ( Exception $e ) {
 		return array();
 	}
@@ -2190,7 +2383,7 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 	$available_dates = array();
 
 	foreach ( $periods as $period_key ) {
-		$stay_code = $stay_code_map[ $period_key ] ?? null;
+		$stay_code    = $stay_code_map[ $period_key ] ?? null;
 		$period_label = $period_labels[ $period_key ] ?? ucfirst( str_replace( '-', ' ', $period_key ) );
 
 		if ( ! $stay_code ) {
@@ -2239,7 +2432,7 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 	// Remove periods with no rates
 	$available_dates = array_filter(
 		$available_dates,
-		function( $rates ) {
+		function ( $rates ) {
 			return ! empty( $rates );
 		}
 	);
@@ -2266,8 +2459,8 @@ function kate_toms_convert_from_price( $values ) {
 	$int_values = array();
 	foreach ( $values as $value ) {
 		// Remove commas and convert to integer
-		$number = str_replace( ',', '', $value );
-		$number = (int) $number;
+		$number       = str_replace( ',', '', $value );
+		$number       = (int) $number;
 		$int_values[] = $number;
 	}
 
