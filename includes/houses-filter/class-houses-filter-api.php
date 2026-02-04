@@ -71,10 +71,35 @@ class Houses_Filter_API {
 						'default'           => 1,
 						'sanitize_callback' => 'absint',
 					),
-					'per_page' => array(
+					'per_page'  => array(
 						'type'              => 'integer',
 						'default'           => 20,
 						'sanitize_callback' => 'absint',
+					),
+					'locations' => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'features'  => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'sizes'     => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'types'     => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'occasions' => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
 			)
@@ -341,11 +366,48 @@ class Houses_Filter_API {
 	 * @return WP_REST_Response The response containing HTML and pagination info.
 	 */
 	public function get_paginated_houses( $request ) {
-		$page     = $request->get_param( 'page' ) ?? 1;
-		$per_page = $request->get_param( 'per_page' ) ?? 20;
+		$page            = $request->get_param( 'page' ) ?? 1;
+		$per_page        = $request->get_param( 'per_page' ) ?? 20;
+		$locations_param = $request->get_param( 'locations' ) ?? '';
+		$features_param  = $request->get_param( 'features' ) ?? '';
+		$sizes_param     = $request->get_param( 'sizes' ) ?? '';
+		$types_param     = $request->get_param( 'types' ) ?? '';
+		$occasions_param = $request->get_param( 'occasions' ) ?? '';
 
-		// Cotswolds style configuration.
-		$title_bg_color = 'colorfive';
+		// Helper function to parse comma-separated IDs.
+		$parse_ids = function ( $param ) {
+			if ( empty( $param ) ) {
+				return array();
+			}
+			return array_filter( array_map( 'absint', explode( ',', $param ) ) );
+		};
+
+		$location_term_ids = $parse_ids( $locations_param );
+		$feature_term_ids  = $parse_ids( $features_param );
+		$size_term_ids     = $parse_ids( $sizes_param );
+		$type_term_ids     = $parse_ids( $types_param );
+		$occasion_term_ids = $parse_ids( $occasions_param );
+
+		// Map location term IDs to title background colors.
+		$location_color_map = array(
+			604 => 'colorfive',       // Cotswolds.
+			810 => 'coloreight',      // Coast.
+			790 => 'titlecolorthree', // Country.
+			603 => 'coloreight',      // Town.
+		);
+
+		// Map location term IDs to advert location keys.
+		$location_key_map = array(
+			604 => 'cotswolds',
+			810 => 'coast',
+			790 => 'country',
+			603 => 'town',
+		);
+
+		// Determine title color and location key from first selected location, or use defaults.
+		$first_location_id = ! empty( $location_term_ids ) ? $location_term_ids[0] : 0;
+		$title_bg_color    = isset( $location_color_map[ $first_location_id ] ) ? $location_color_map[ $first_location_id ] : 'colorfive';
+		$location_key      = isset( $location_key_map[ $first_location_id ] ) ? $location_key_map[ $first_location_id ] : 'cotswolds';
 
 		// Build query arguments.
 		$args = array(
@@ -364,6 +426,61 @@ class Houses_Filter_API {
 				),
 			),
 		);
+
+		// Build taxonomy query for location and/or features.
+		$tax_query = array();
+
+		if ( ! empty( $location_term_ids ) ) {
+			$tax_query[] = array(
+				'taxonomy' => 'location',
+				'field'    => 'term_id',
+				'terms'    => $location_term_ids,
+				'operator' => 'IN',
+			);
+		}
+
+		if ( ! empty( $feature_term_ids ) ) {
+			$tax_query[] = array(
+				'taxonomy' => 'feature',
+				'field'    => 'term_id',
+				'terms'    => $feature_term_ids,
+				'operator' => 'AND',
+			);
+		}
+
+		if ( ! empty( $size_term_ids ) ) {
+			$tax_query[] = array(
+				'taxonomy' => 'size',
+				'field'    => 'term_id',
+				'terms'    => $size_term_ids,
+				'operator' => 'IN',
+			);
+		}
+
+		if ( ! empty( $type_term_ids ) ) {
+			$tax_query[] = array(
+				'taxonomy' => 'type',
+				'field'    => 'term_id',
+				'terms'    => $type_term_ids,
+				'operator' => 'IN',
+			);
+		}
+
+		if ( ! empty( $occasion_term_ids ) ) {
+			$tax_query[] = array(
+				'taxonomy' => 'occasion',
+				'field'    => 'term_id',
+				'terms'    => $occasion_term_ids,
+				'operator' => 'IN',
+			);
+		}
+
+		if ( ! empty( $tax_query ) ) {
+			if ( count( $tax_query ) > 1 ) {
+				$tax_query['relation'] = 'AND';
+			}
+			$args['tax_query'] = $tax_query;
+		}
 
 		// Execute the query.
 		$query        = new WP_Query( $args );
@@ -452,10 +569,10 @@ class Houses_Filter_API {
 			if ( $remainder > 0 ) {
 				$adverts_needed = 4 - $remainder;
 
-				// Get adverts for cotswolds location.
+				// Get adverts for the selected location.
 				if ( class_exists( 'Kate_Toms_Core_Admin' ) ) {
 					$admin   = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
-					$adverts = $admin->get_adverts_for_location( 'cotswolds', $adverts_needed );
+					$adverts = $admin->get_adverts_for_location( $location_key, $adverts_needed );
 
 					ob_start();
 					foreach ( $adverts as $advert ) {

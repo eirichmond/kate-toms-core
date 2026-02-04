@@ -18,6 +18,41 @@
 		"postsPerPage": {
 			"type": "number",
 			"default": 20
+		},
+		"locationTermIds": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "number"
+			}
+		},
+		"featureTermIds": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "number"
+			}
+		},
+		"sizeTermIds": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "number"
+			}
+		},
+		"typeTermIds": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "number"
+			}
+		},
+		"occasionTermIds": {
+			"type": "array",
+			"default": [],
+			"items": {
+				"type": "number"
+			}
 		}
 	},
 	"textdomain": "kate-toms-core",

@@ -1,35 +1,31 @@
 /**
  * WordPress dependencies
  */
-import { store, getContext } from "@wordpress/interactivity";
+import { store, getContext, getElement } from "@wordpress/interactivity";
 
-const { state, actions, callbacks } = store("kate-toms-house-load-search", {
-	state: {
-		isLoading: false,
-		hasMore: true,
-	},
-
+store("kate-toms-house-load-search", {
 	actions: {
 		/**
-		 * Check if we should load more houses based on scroll position
+		 * Check if we should load more houses based on scroll position.
+		 * Scoped to the block instance via getElement().
 		 */
 		checkScroll() {
 			const context = getContext();
+			const { ref } = getElement();
 
-			// Don't load if already loading or no more houses
-			if (state.isLoading || !state.hasMore) {
+			if (context.isLoading || !context.hasMore) {
 				return;
 			}
 
-			// Find the sentinel element
-			const sentinel = document.querySelector('.house-load-search-sentinel');
+			// Find the sentinel within this block instance.
+			const wrapper = ref.closest('.house-load-search');
+			const sentinel = wrapper?.querySelector('.house-load-search-sentinel');
 			if (!sentinel) {
 				return;
 			}
 
-			// Check if sentinel is in viewport
 			const rect = sentinel.getBoundingClientRect();
-			const inViewport = rect.top <= window.innerHeight + 200; // 200px buffer
+			const inViewport = rect.top <= window.innerHeight + 200;
 
 			if (inViewport) {
 				actions.loadMore();
@@ -37,17 +33,18 @@ const { state, actions, callbacks } = store("kate-toms-house-load-search", {
 		},
 
 		/**
-		 * Load more houses via REST API
+		 * Load more houses via REST API.
+		 * Each block instance manages its own pagination via context.
 		 */
 		async loadMore() {
 			const context = getContext();
+			const { ref } = getElement();
 
-			// Prevent multiple simultaneous loads
-			if (state.isLoading || !state.hasMore) {
+			if (context.isLoading || !context.hasMore) {
 				return;
 			}
 
-			state.isLoading = true;
+			context.isLoading = true;
 
 			try {
 				const nextPage = context.currentPage + 1;
@@ -55,6 +52,26 @@ const { state, actions, callbacks } = store("kate-toms-house-load-search", {
 					page: nextPage,
 					per_page: context.postsPerPage,
 				});
+
+				if (context.locationTermIds && context.locationTermIds.length > 0) {
+					params.set('locations', context.locationTermIds.join(','));
+				}
+
+				if (context.featureTermIds && context.featureTermIds.length > 0) {
+					params.set('features', context.featureTermIds.join(','));
+				}
+
+				if (context.sizeTermIds && context.sizeTermIds.length > 0) {
+					params.set('sizes', context.sizeTermIds.join(','));
+				}
+
+				if (context.typeTermIds && context.typeTermIds.length > 0) {
+					params.set('types', context.typeTermIds.join(','));
+				}
+
+				if (context.occasionTermIds && context.occasionTermIds.length > 0) {
+					params.set('occasions', context.occasionTermIds.join(','));
+				}
 
 				const apiUrl = `/wp-json/kate-toms/v1/houses-load?${params.toString()}`;
 				const response = await fetch(apiUrl);
@@ -69,30 +86,26 @@ const { state, actions, callbacks } = store("kate-toms-house-load-search", {
 					throw new Error("Invalid response from API");
 				}
 
-				// Append new houses to the results container
-				const resultsContainer = document.querySelector('.house-load-search-results');
+				// Find the results container within this block instance.
+				const wrapper = ref.closest('.house-load-search');
+				const resultsContainer = wrapper?.querySelector('.house-load-search-results');
+
 				if (resultsContainer && data.data && data.data.html) {
-					// Create a temporary container to parse the HTML
 					const temp = document.createElement('div');
 					temp.innerHTML = data.data.html;
 
-					// Append each house card individually
 					while (temp.firstChild) {
 						resultsContainer.appendChild(temp.firstChild);
 					}
 				}
 
-				// Update context state
 				context.currentPage = nextPage;
 
-				// Check if there are more houses to load
 				if (data.data.hasMore === false || nextPage >= context.totalPages) {
-					state.hasMore = false;
 					context.hasMore = false;
 
-					// Load adverts for final row if needed
 					if (data.data.adverts) {
-						const advertsContainer = document.querySelector('.house-load-search-adverts');
+						const advertsContainer = wrapper?.querySelector('.house-load-search-adverts');
 						if (advertsContainer) {
 							advertsContainer.innerHTML = data.data.adverts;
 						}
@@ -101,32 +114,21 @@ const { state, actions, callbacks } = store("kate-toms-house-load-search", {
 			} catch (error) {
 				console.error('Error loading more houses:', error);
 			} finally {
-				state.isLoading = false;
-			}
-		},
-
-		/**
-		 * Append houses to the results (called from custom event)
-		 */
-		appendHouses(event) {
-			const { html } = event.detail;
-			const resultsContainer = event.target;
-
-			if (resultsContainer && html) {
-				resultsContainer.insertAdjacentHTML('beforeend', html);
+				context.isLoading = false;
 			}
 		},
 	},
 
 	callbacks: {
 		/**
-		 * Initialize the infinite scroll observer
+		 * Initialize the infinite scroll observer for this block instance.
 		 */
 		init() {
 			const context = getContext();
+			const { ref } = getElement();
 
-			// Set up IntersectionObserver for smoother infinite scroll
-			const sentinel = document.querySelector('.house-load-search-sentinel');
+			// The sentinel is the element with data-wp-init, so ref IS the sentinel.
+			const sentinel = ref;
 			if (!sentinel) {
 				return;
 			}
@@ -134,21 +136,23 @@ const { state, actions, callbacks } = store("kate-toms-house-load-search", {
 			const observer = new IntersectionObserver(
 				(entries) => {
 					entries.forEach((entry) => {
-						if (entry.isIntersecting && !state.isLoading && state.hasMore) {
+						if (entry.isIntersecting && !context.isLoading && context.hasMore) {
 							actions.loadMore();
 						}
 					});
 				},
 				{
-					rootMargin: '200px', // Start loading 200px before sentinel is visible
+					rootMargin: '200px',
 					threshold: 0,
 				}
 			);
 
 			observer.observe(sentinel);
 
-			// Store observer reference for cleanup if needed
 			context.observer = observer;
 		},
 	},
 });
+
+// Store reference so callbacks can call actions.
+const { actions } = store("kate-toms-house-load-search");
