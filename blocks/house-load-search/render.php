@@ -72,7 +72,7 @@ if ( ! empty( $feature_term_ids ) ) {
 		'taxonomy' => 'feature',
 		'field'    => 'term_id',
 		'terms'    => $feature_term_ids,
-		'operator' => 'AND',
+		'operator' => 'IN',
 	);
 }
 
@@ -250,6 +250,7 @@ $context = array(
 
 		<!-- Skeleton Placeholders (shown during loading) -->
 		<!-- TODO: Add back data-wp-bind--hidden="!state.isLoading" when done styling -->
+		<!-- TODO: Add back data-wp-bind--hidden="!context.isLoading" when done styling -->
 		<div class="house-load-search-skeletons" data-wp-bind--hidden="!context.isLoading">
 			<?php for ( $i = 0; $i < 4; $i++ ) : ?>
 				<div class="house-card-skeleton">

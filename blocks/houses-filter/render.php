@@ -80,7 +80,7 @@ $duration_options = array(
 
 ?>
 
-<div 
+<div
 <?php
 	echo wp_kses_post(
 		get_block_wrapper_attributes(
@@ -111,11 +111,12 @@ $duration_options = array(
 			</div>
 
 			<!-- Only show on small screens -->
- 			<div class="houses-filter__button-group houses-filter__button-group--date is-style-hide-navigation-desktop">
+			<div class="houses-filter__button-group houses-filter__button-group--date is-style-hide-navigation-desktop">
 				<?php foreach ( $duration_options as $option ) : ?>
 				<button type="button" class="houses-filter__button"
-					data-value="<?php echo esc_attr( $option['value'] ); ?>" data-wp-on--click="actions.updateDtype"
-					data-wp-bind--aria-pressed="state.activeFilters.dtype.includes('<?php echo esc_js( $option['value'] ); ?>')">
+					data-wp-context='<?php echo wp_json_encode( array( 'filterType' => 'dtype', 'filterValue' => $option['value'] ) ); ?>'
+					data-wp-on--click="actions.updateDtype"
+					data-wp-bind--aria-pressed="state.isFilterPressed">
 					<?php echo esc_html( $option['label'] ); ?>
 				</button>
 				<?php endforeach; ?>
@@ -130,9 +131,7 @@ $duration_options = array(
 				<label class="houses-filter__label">
 					<?php esc_html_e( 'SLEEPS', 'kate-and-toms-houses-filter-search' ); ?>
 				</label>
-				<select class="houses-filter__select" data-wp-on--change="actions.updateSize"
-					data-wp-bind--value="state.activeFilters.size[0] || ''"
-					data-wp-bind--aria-pressed="state.activeFilters.size.includes(value)">
+				<select class="houses-filter__select" data-wp-on--change="actions.updateSize">
 					<option value=""><?php esc_html_e( 'Any', 'kate-and-toms-houses-filter-search' ); ?></option>
 					<?php foreach ( $size_options as $option ) : ?>
 					<option value="<?php echo esc_attr( $option['value'] ); ?>">
@@ -150,9 +149,7 @@ $duration_options = array(
 				<label class="houses-filter__label">
 					<?php esc_html_e( 'WHERE', 'kate-and-toms-houses-filter-search' ); ?>
 				</label>
-				<select class="houses-filter__select" data-wp-on--change="actions.updateLocation"
-					data-wp-bind--value="state.activeFilters.local[0] || ''"
-					data-wp-bind--aria-pressed="state.activeFilters.local.includes(value)">
+				<select class="houses-filter__select" data-wp-on--change="actions.updateLocation">
 					<option value=""><?php esc_html_e( 'Any', 'kate-and-toms-houses-filter-search' ); ?></option>
 					<?php foreach ( $locations as $location ) : ?>
 					<option value="<?php echo esc_attr( $location->term_id ); ?>">
@@ -170,9 +167,7 @@ $duration_options = array(
 				<label class="houses-filter__label">
 					<?php esc_html_e( 'FEATURES', 'kate-and-toms-houses-filter-search' ); ?>
 				</label>
-				<select class="houses-filter__select" data-wp-on--change="actions.updateFeature"
-					data-wp-bind--value="state.activeFilters.feature[0] || ''"
-					data-wp-bind--aria-pressed="state.activeFilters.feature.includes(value)">
+				<select class="houses-filter__select" data-wp-on--change="actions.updateFeature">
 					<option value=""><?php esc_html_e( 'Any', 'kate-and-toms-houses-filter-search' ); ?></option>
 					<?php foreach ( $features as $feature ) : ?>
 					<option value="<?php echo esc_attr( $feature->term_id ); ?>">
@@ -189,8 +184,9 @@ $duration_options = array(
 			<div class="houses-filter__button-group houses-filter__button-group--date is-style-hide-navigation-mobile">
 				<?php foreach ( $duration_options as $option ) : ?>
 				<button type="button" class="houses-filter__button"
-					data-value="<?php echo esc_attr( $option['value'] ); ?>" data-wp-on--click="actions.updateDtype"
-					data-wp-bind--aria-pressed="state.activeFilters.dtype.includes('<?php echo esc_js( $option['value'] ); ?>')">
+					data-wp-context='<?php echo wp_json_encode( array( 'filterType' => 'dtype', 'filterValue' => $option['value'] ) ); ?>'
+					data-wp-on--click="actions.updateDtype"
+					data-wp-bind--aria-pressed="state.isFilterPressed">
 					<?php echo esc_html( $option['label'] ); ?>
 				</button>
 				<?php endforeach; ?>
@@ -200,9 +196,9 @@ $duration_options = array(
 			<div class="houses-filter__button-group houses-filter__button-group--size is-style-hide-navigation-mobile">
 				<?php foreach ( $size_options as $option ) : ?>
 				<button type="button" class="houses-filter__button"
-					data-value="<?php echo esc_attr( $option['value'] ); ?>"
+					data-wp-context='<?php echo wp_json_encode( array( 'filterType' => 'size', 'filterValue' => $option['value'] ) ); ?>'
 					data-wp-on--click="actions.updateSize"
-					data-wp-bind--aria-pressed="state.activeFilters.size.includes('<?php echo esc_js( $option['value'] ); ?>')">
+					data-wp-bind--aria-pressed="state.isFilterPressed">
 					<?php echo esc_html( $option['label'] ); ?>
 				</button>
 				<?php endforeach; ?>
@@ -229,9 +225,9 @@ $duration_options = array(
 					if ( $matching_location ) :
 						?>
 				<button type="button" class="houses-filter__button"
-					data-value="<?php echo esc_attr( $matching_location->term_id ); ?>"
+					data-wp-context='<?php echo wp_json_encode( array( 'filterType' => 'local', 'filterValue' => (string) $matching_location->term_id ) ); ?>'
 					data-wp-on--click="actions.updateLocation"
-					data-wp-bind--aria-pressed="state.activeFilters.local.includes('<?php echo esc_js( $matching_location->term_id ); ?>')">
+					data-wp-bind--aria-pressed="state.isFilterPressed">
 					<?php echo esc_html( $button_label ); ?>
 				</button>
 						<?php
@@ -261,9 +257,9 @@ $duration_options = array(
 					if ( $matching_feature ) :
 						?>
 				<button type="button" class="houses-filter__button"
-					data-value="<?php echo esc_attr( $matching_feature->term_id ); ?>"
+					data-wp-context='<?php echo wp_json_encode( array( 'filterType' => 'feature', 'filterValue' => (string) $matching_feature->term_id ) ); ?>'
 					data-wp-on--click="actions.updateFeature"
-					data-wp-bind--aria-pressed="state.activeFilters.feature.includes('<?php echo esc_js( $matching_feature->term_id ); ?>')">
+					data-wp-bind--aria-pressed="state.isFilterPressed">
 					<?php echo esc_html( $button_label ); ?>
 				</button>
 						<?php
@@ -275,8 +271,8 @@ $duration_options = array(
 
 	</form>
 
-	<div 
-		class="houses-loading-overlay" 
+	<div
+		class="houses-loading-overlay"
 		data-wp-bind--hidden="!state.isLoading"
 	>
 		<div class="houses-loading-spinner">

@@ -1,7 +1,7 @@
 /**
  * WordPress dependencies
  */
-import { store } from '@wordpress/interactivity';
+import { store, getContext } from '@wordpress/interactivity';
 
 /**
  * Store configuration for the houses filter block.
@@ -37,17 +37,35 @@ const { state, actions } = store(storeName, {
 		},
 		get hasResults() {
 			return state.results > 0;
+		},
+		get isFilterPressed() {
+			const ctx = getContext();
+			const filterType = ctx.filterType;
+			const filterValue = ctx.filterValue;
+			if ( ! filterType || ! filterValue ) {
+				return false;
+			}
+			const active = state.activeFilters[ filterType ];
+			return Array.isArray( active ) && active.includes( filterValue );
 		}
 	},
 	actions: {
 		updateDate(event) {
 			state.date = event.target.value;
+
+			// Default to Weekend (dtype '1') whenever a new date is set.
+			if ( state.date ) {
+				state.activeFilters.dtype = [ '1' ];
+				state.dtype = '1';
+			}
+
 			actions.updateFilters();
 		},
 
-		updateDtype(event) {
-			const value = event.target.dataset.value;
-			
+		updateDtype() {
+			const ctx = getContext();
+			const value = ctx.filterValue;
+
 			// Toggle the value in activeFilters
 			if (state.activeFilters.dtype.includes(value)) {
 				state.activeFilters.dtype = state.activeFilters.dtype.filter(v => v !== value);
@@ -60,8 +78,9 @@ const { state, actions } = store(storeName, {
 		},
 
 		updateSize(event) {
-			const value = event.target.dataset.value || event.target.value;
-			
+			const ctx = getContext();
+			const value = ctx.filterValue || event.target.value;
+
 			// Toggle the value in activeFilters
 			if (state.activeFilters.size.includes(value)) {
 				state.activeFilters.size = state.activeFilters.size.filter(v => v !== value);
@@ -75,8 +94,9 @@ const { state, actions } = store(storeName, {
 
 		updateLocation(event) {
 			state.isLoading = true;
-			const value = event.target.dataset.value || event.target.value;
-			
+			const ctx = getContext();
+			const value = ctx.filterValue || event.target.value;
+
 			// Toggle the value in activeFilters
 			if (state.activeFilters.local.includes(value)) {
 				state.activeFilters.local = state.activeFilters.local.filter(v => v !== value);
@@ -89,8 +109,9 @@ const { state, actions } = store(storeName, {
 		},
 
 		updateFeature(event) {
-			const value = event.target.dataset.value || event.target.value;
-			
+			const ctx = getContext();
+			const value = ctx.filterValue || event.target.value;
+
 			// Toggle the value in activeFilters
 			if (state.activeFilters.feature.includes(value)) {
 				state.activeFilters.feature = state.activeFilters.feature.filter(v => v !== value);
@@ -130,32 +151,29 @@ const { state, actions } = store(storeName, {
 					}
 
 					const apiUrl = `/wp-json/kate-toms/v1/houses?${regionParams.toString()}`;
-					console.log("Fetching:", apiUrl);
 
 					try {
 						const response = await fetch(apiUrl);
-						console.log("Raw Response:", response);
 						const data = await response.json();
-						console.log("JSON Response:", data);
-						
+
 						if (data.success) {
 							const housesGrid = region.querySelector('.houses-grid');
 							if (housesGrid && data.data && data.data.html) {
 								housesGrid.innerHTML = data.data.html;
 								const total = data.data.total || 0;
-								
+
 								// Find the parent block element and all its .wp-block-group ancestors
 								let currentElement = region;
 								while (currentElement) {
 									// If this is a .wp-block-group or our results block, toggle visibility
-									if (currentElement.classList.contains('wp-block-group') || 
+									if (currentElement.classList.contains('wp-block-group') ||
 										currentElement.classList.contains('wp-block-kate-toms-core-houses-filtered-results')) {
 										currentElement.style.display = total === 0 ? 'none' : '';
 									}
 									// Move up to the next parent
 									currentElement = currentElement.parentElement;
 								}
-								
+
 								return total;
 							}
 						}

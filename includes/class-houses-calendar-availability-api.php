@@ -5,6 +5,15 @@
  *
  * Handles availability and rates data from the booking API with
  * Kate & Tom's specific pricing keys and stay duration logic.
+ * 
+ * Note on KT's period rates and checkin/checkout days:
+ * 2 night weekend = Friday(1) +1day checkout Sunday
+ * 3 night weekend = Friday(1) +2day checkout Monday
+ * Week = Friday(1) +6day checkout Friday
+ * Midweek = Monday(1) +3day checkout Friday
+ * 2 night midweek = Monday, Tues or Weds(1) +1day checkout +1day from checkin
+ * 
+ * 
  *
  * @since Version 3 digits
  */
@@ -47,11 +56,13 @@ class House_Calendar_Manager {
 	private $token_transient_key = 'kt_booking_api_access_token';
 
 	/**
-	 * Cache duration for API data (20 minutes as requested).
+	 * Cache duration for API data.
+	 * Set to 24 hours. The full warm must be run via WP CLI (too slow for web cron).
+	 * Incremental updates (every 5 min via web cron) refresh properties with rate changes.
 	 *
 	 * @var int
 	 */
-	private $cache_duration = 20 * MINUTE_IN_SECONDS;
+	private $cache_duration = 24 * HOUR_IN_SECONDS;
 
 	/**
 	 * Temporarily stores processed availability data during processing.
@@ -292,6 +303,15 @@ class House_Calendar_Manager {
 		// Initialize temporary storage for raw availability statuses
 		// Build a flat array of all raw statuses BEFORE processing
 		// This allows us to check adjacent day statuses during processing.
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( 'Processing rates structure: ' . print_r( array_keys( $rates ), true ) );
+		}
+
+		// Cap availability to the last month that has rate data.
+		// The API returns availability far beyond the rates range, which causes
+		// unnecessary calendars to be rendered.
+		$availability = $this->cap_availability_to_rates( $availability, $rates );
+
 		$this->processed_availability = array();
 
 		$processed_data = array(
@@ -392,6 +412,65 @@ class House_Calendar_Manager {
 	}
 
 	/**
+	 * Cap availability data to only include months covered by rates.
+	 *
+	 * The availability API can return data far beyond the rates range (e.g.
+	 * availability through 2028 but rates only to Dec 2026). This trims the
+	 * availability array so we don't process and render unnecessary calendars.
+	 *
+	 * @param array $availability Raw availability data keyed by year > month > day.
+	 * @param array $rates Raw rates data from API.
+	 * @return array Filtered availability data.
+	 */
+	private function cap_availability_to_rates( $availability, $rates ) {
+		if ( ! isset( $rates['Rates'] ) || ! is_array( $rates['Rates'] ) || empty( $rates['Rates'] ) ) {
+			return $availability;
+		}
+
+		// Find the last month in the rates data.
+		$last_rate_month = null;
+		foreach ( $rates['Rates'] as $rate_period ) {
+			if ( isset( $rate_period['Month'] ) && $rate_period['Month'] > $last_rate_month ) {
+				$last_rate_month = $rate_period['Month'];
+			}
+		}
+
+		if ( ! $last_rate_month ) {
+			return $availability;
+		}
+
+		// Parse the last rate month (format: "2026-12").
+		$parts      = explode( '-', $last_rate_month );
+		$cap_year   = (int) $parts[0];
+		$cap_month  = (int) $parts[1];
+
+		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+			error_log( "Capping availability to last rate month: {$last_rate_month}" );
+		}
+
+		// Filter availability to only include data up to the cap month.
+		$filtered = array();
+		foreach ( $availability as $year => $months ) {
+			$year_int = (int) $year;
+			if ( $year_int > $cap_year ) {
+				continue;
+			}
+			if ( ! is_array( $months ) ) {
+				continue;
+			}
+			foreach ( $months as $month => $days ) {
+				$month_int = (int) $month;
+				if ( $year_int === $cap_year && $month_int > $cap_month ) {
+					continue;
+				}
+				$filtered[ $year ][ $month ] = $days;
+			}
+		}
+
+		return $filtered;
+	}
+
+	/**
 	 * Process individual day availability.
 	 *
 	 * @param string $date Date in Y-m-d format.
@@ -448,7 +527,7 @@ class House_Calendar_Manager {
 		$prev_day_status = $this->get_previous_day_status( $date );
 		$next_day_status = $this->get_next_day_status( $date );
 
-		// Only Monday (1) and Friday (5) can be check-in/check-out days
+		// Only Monday (1), Tuesday (2), Wednesday (3) and Friday (5) can be check-in/check-out days
 		if ( ! in_array( $day_of_week, array( 1, 2, 3, 5 ), true ) ) {
 
 			if ( $status == 'available' ) {
@@ -457,6 +536,7 @@ class House_Calendar_Manager {
 					$processed_day['diagonal_style'] = 'halfafter';
 				}
 			}
+
 			return $processed_day;
 		}
 
@@ -503,13 +583,31 @@ class House_Calendar_Manager {
 			// Set diagonal style based on detected transitions
 			if ( $has_checkin_transition && $has_checkout_transition ) {
 				// Both transitions: available day sandwiched between booked periods (changeover day)
-				$processed_day['diagonal_style'] = 'halfafter halfbefore';
+				// Only show full crossover on standard changeover days (Mon/Fri).
+				// For other days (Tue/Wed), the adjacent booked day handles the transition.
+				if ( in_array( $day_of_week, array( 1, 5 ), true ) ) {
+					$processed_day['diagonal_style'] = 'halfafter halfbefore';
+				} else {
+					$processed_day['is_checkin']  = false;
+					$processed_day['is_checkout'] = false;
+				}
 			} elseif ( $has_checkin_transition ) {
 				// Transition from booked to available (green triangle - checkin day)
-				$processed_day['diagonal_style'] = 'halfafter';
+				// Only show diagonal on standard changeover days (Mon/Fri).
+				// For Tue/Wed, the day is just available — no transition indicator needed.
+				if ( in_array( $day_of_week, array( 1, 5 ), true ) ) {
+					$processed_day['diagonal_style'] = 'halfafter';
+				} else {
+					$processed_day['is_checkin'] = false;
+				}
 			} elseif ( $has_checkout_transition ) {
 				// Transition from available to booked (red triangle - day before checkin)
-				$processed_day['diagonal_style'] = 'halfbefore';
+				// Only show diagonal on standard changeover days (Mon/Fri).
+				if ( in_array( $day_of_week, array( 1, 5 ), true ) ) {
+					$processed_day['diagonal_style'] = 'halfbefore';
+				} else {
+					$processed_day['is_checkout'] = false;
+				}
 			}
 		}
 
@@ -674,13 +772,27 @@ class House_Calendar_Manager {
 	 * @return array Processed rate data.
 	 */
 	private function process_single_rate( $rate ) {
+		// Handle v2 API format where rate is an object with rental/mandatory_extras_total/total.
+		$price_breakdown = null;
+		if ( is_array( $rate ) && isset( $rate['total'] ) ) {
+			$price_breakdown = array(
+				'rental'                 => $rate['rental'] ?? null,
+				'mandatory_extras_total' => $rate['mandatory_extras_total'] ?? null,
+				'total'                  => $rate['total'],
+			);
+			// Use the total value for all downstream processing.
+			$rate = $rate['total'];
+		}
+
+		$result = null;
+
 		// Handle Kate & Tom's special pricing keys
 		if ( is_string( $rate ) ) {
 			// Check for rates with special offers (contains * but is numeric)
 			if ( preg_match( '/^(\d+)\s*(\*+)?$/', trim( $rate ), $matches ) ) {
 				$numeric_value = intval( $matches[1] );
 				$offer_stars   = $matches[2] ?? '';
-				return array(
+				$result        = array(
 					'type'    => 'price',
 					'display' => '£' . number_format( $numeric_value ),
 					'value'   => $numeric_value,
@@ -688,81 +800,101 @@ class House_Calendar_Manager {
 				);
 			}
 
-			switch ( trim( $rate ) ) {
-				case '+':
-					return array(
-						'type'    => 'from',
-						'display' => 'Prices From',
-						'value'   => null,
-					);
-				case '-2':
-					return array(
-						'type'    => 'hidden',
-						'display' => '',
-						'value'   => null,
-					);
-				case '*':
-					return array(
-						'type'    => 'special1',
-						'display' => 'Special Offer*',
-						'value'   => null,
-					);
-				case '**':
-					return array(
-						'type'    => 'special2',
-						'display' => 'Special Offer**',
-						'value'   => null,
-					);
-				case '***':
-					return array(
-						'type'    => 'special3',
-						'display' => 'Special Offer***',
-						'value'   => null,
-					);
-				case '-1':
-					return array(
-						'type'    => 'no',
-						'display' => 'n/a',
-						'value'   => null,
-					);
-				case '0':
-					return array(
-						'type'    => 'previous',
-						'display' => 'See Previous Week',
-						'value'   => 0,
-					);
-				default:
-					// Try to parse as numeric
-					if ( is_numeric( $rate ) ) {
-						$numeric_value = floatval( $rate );
-						return array(
-							'type'    => 'price',
-							'display' => '£' . number_format( $numeric_value ),
-							'value'   => $numeric_value,
+			if ( null === $result ) {
+				switch ( trim( $rate ) ) {
+					case '+':
+						$result = array(
+							'type'    => 'from',
+							'display' => 'Prices From',
+							'value'   => null,
 						);
-					}
-					return array(
-						'type'    => 'unknown',
-						'display' => esc_html( $rate ),
-						'value'   => null,
-					);
+						break;
+					case '-2':
+						$result = array(
+							'type'    => 'hidden',
+							'display' => '',
+							'value'   => null,
+						);
+						break;
+					case '*':
+						$result = array(
+							'type'    => 'special1',
+							'display' => 'Special Offer*',
+							'value'   => null,
+						);
+						break;
+					case '**':
+						$result = array(
+							'type'    => 'special2',
+							'display' => 'Special Offer**',
+							'value'   => null,
+						);
+						break;
+					case '***':
+						$result = array(
+							'type'    => 'special3',
+							'display' => 'Special Offer***',
+							'value'   => null,
+						);
+						break;
+					case '-1':
+						$result = array(
+							'type'    => 'no',
+							'display' => 'n/a',
+							'value'   => null,
+						);
+						break;
+					case '0':
+						$result = array(
+							'type'    => 'previous',
+							'display' => 'See Previous Week',
+							'value'   => 0,
+						);
+						break;
+					default:
+						// Try to parse as numeric
+						if ( is_numeric( $rate ) ) {
+							$numeric_value = floatval( $rate );
+							$result        = array(
+								'type'    => 'price',
+								'display' => '£' . number_format( $numeric_value ),
+								'value'   => $numeric_value,
+							);
+						} else {
+							$result = array(
+								'type'    => 'unknown',
+								'display' => esc_html( $rate ),
+								'value'   => null,
+							);
+						}
+						break;
+				}
 			}
 		}
 
 		// Numeric rate
-		if ( is_numeric( $rate ) && $rate > 0 ) {
-			return array(
+		if ( null === $result && is_numeric( $rate ) && $rate > 0 ) {
+			$result = array(
 				'type'    => 'price',
 				'display' => '£' . number_format( $rate ),
 				'value'   => $rate,
 			);
 		}
 
-		return array(
-			'type'    => 'unavailable',
-			'display' => 'Booked',
-			'value'   => null,
-		);
+		if ( null === $result ) {
+			$result = array(
+				'type'    => 'unavailable',
+				'display' => 'Booked',
+				'value'   => null,
+			);
+		}
+
+		// Attach v2 price breakdown if available.
+		if ( $price_breakdown ) {
+			$result['price_breakdown'] = $price_breakdown;
+		}
+
+		return $result;
 	}
 
 	/**
@@ -1092,7 +1224,7 @@ class House_Calendar_Manager {
 	 * @return array|WP_Error Rates data or error.
 	 */
 	private function fetch_rates_data( $house_id, $access_token ) {
-		$url      = $this->api_base_url . "/{$house_id}/customrates?access_token={$access_token}";
+		$url      = $this->api_base_url . "/{$house_id}/customrates?access_token={$access_token}&version=2";
 		$response = wp_remote_get(
 			$url,
 			array(

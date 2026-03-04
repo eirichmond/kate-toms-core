@@ -51,7 +51,7 @@ export default function Edit({ attributes, setAttributes }) {
 						value={maxResults}
 						onChange={(value) => setAttributes({ maxResults: value })}
 						min={3}
-						max={15}
+						max={40}
 						help={__('Maximum number of search results to display', 'kate-toms-core')}
 					/>
 				</PanelBody>

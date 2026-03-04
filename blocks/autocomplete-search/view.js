@@ -182,41 +182,37 @@ const { state } = store('kate-toms-core/autocomplete-search', {
 				return;
 			}
 			
-			// Optimized search with early exit and scoring
+			// Category display order: Locations first, then Features, then Houses
+			const categoryOrder = { 'Locations': 0, 'Features': 1, 'Houses': 2 };
+
+			// Match on name/label only (not description)
 			const scoredResults = [];
-			let resultCount = 0;
-			
+
 			for (const item of allResults) {
-				if (resultCount >= context.maxResults) break;
-				
 				let score = 0;
 				const labelLower = item.label.toLowerCase();
-				const categoryLower = item.category.toLowerCase();
-				const descLower = item.desc ? item.desc.toLowerCase() : '';
-				
-				// Prioritized scoring system
+
 				if (labelLower.startsWith(term)) {
-					score = 100; // Exact start match gets highest priority
+					score = 100;
 				} else if (labelLower.includes(term)) {
-					score = 80; // Label contains term
-				} else if (categoryLower.includes(term)) {
-					score = 60; // Category match
-				} else if (descLower.includes(term)) {
-					score = 40; // Description match
+					score = 80;
 				}
-				
+
 				if (score > 0) {
 					scoredResults.push({ ...item, score });
-					resultCount++;
 				}
 			}
-			
-			// Sort by score (highest first) and limit results
+
+			// Sort by category order first, then by score within each category
 			const sortedResults = scoredResults
-				.sort((a, b) => b.score - a.score)
+				.sort((a, b) => {
+					const catDiff = (categoryOrder[a.category] ?? 99) - (categoryOrder[b.category] ?? 99);
+					if (catDiff !== 0) return catDiff;
+					return b.score - a.score;
+				})
 				.slice(0, context.maxResults);
-			
-			// Group results by category (optimized)
+
+			// Group results by category in display order
 			const grouped = new Map();
 			for (const item of sortedResults) {
 				if (!grouped.has(item.category)) {

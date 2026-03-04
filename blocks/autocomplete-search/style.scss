@@ -59,7 +59,7 @@
 		border: 1px solid var(--wp--preset--color--tertiary);
 		border-radius: var(--wp--preset--spacing--30);
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-		max-height: 400px;
+		max-height: 600px;
 		overflow-y: auto;
 		z-index: 1000;
 		opacity: 0;
@@ -169,7 +169,7 @@
 	&__result-title {
 		font-size: var(--wp--preset--font-size--small);
 		font-weight: 600;
-		color: var(--wp--preset--color--black);
+		color: var(--wp--preset--color--autocompletegrey);
 		margin-bottom: 2px;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -181,9 +181,7 @@
 
 	&__result-desc {
 		font-size: var(--wp--preset--font-size--x-small);
-		color: var(--wp--preset--color--charcoal);
-		line-height: var(--wp--custom--typography--line-height--small);
-		overflow: hidden;
+		color: var(--wp--preset--color--autocompletegrey);
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
@@ -209,7 +207,7 @@
 		}
 
 		&__results {
-			max-height: 300px;
+			max-height: 450px;
 		}
 
 		&__result-image {

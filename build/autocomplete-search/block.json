@@ -32,7 +32,7 @@
     },
     "maxResults": {
       "type": "number",
-      "default": 8
+      "default": 30
     }
   },
   "editorScript": "file:./index.js",

@@ -104,6 +104,44 @@ class Houses_Filter_API {
 				),
 			)
 		);
+
+		// Register seasonal houses endpoint for infinite scroll (ID-based pagination).
+		register_rest_route(
+			'kate-toms/v1',
+			'/houses-seasonal-load',
+			array(
+				'methods'             => WP_REST_Server::READABLE,
+				'callback'            => array( $this, 'get_seasonal_houses_by_ids' ),
+				'permission_callback' => '__return_true',
+				'args'                => array(
+					'house_ids'      => array(
+						'type'              => 'string',
+						'required'          => true,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'pattern_style'  => array(
+						'type'              => 'string',
+						'default'           => 'coast',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'beginning_date' => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'ending_date'    => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'title_bg_color' => array(
+						'type'              => 'string',
+						'default'           => 'coloreight',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
 	}
 
 	/**
@@ -181,8 +219,8 @@ class Houses_Filter_API {
 		$tax_query = array();
 
 		// Handle location filtering with default location.
+		$location_terms = array();
 		if ( ! empty( $params['local'] ) || ! empty( $params['default_location'] ) ) {
-			$location_terms = array();
 			
 			// Add user-selected location if present
 			if ( ! empty( $params['local'] ) ) {
@@ -279,27 +317,113 @@ class Houses_Filter_API {
 
 		// Build the response HTML.
 		ob_start();
+		$house_count = 0;
 
 		if ( $query->have_posts() ) {
-			$house_count = 0;
+
+			// Pricing setup: build property ID lookup and checkin date once before the loop.
+			$calendar_manager  = null;
+			$property_id_map   = array();
+			$checkin_date      = null;
+			$dtype_period_map  = array(
+				'1' => array( '2-night-weekend', '3-night-weekend' ),
+				'2' => array( 'week' ),
+				'3' => array( 'midweek', '2-night-midweek' ),
+			);
+
+			if ( ! empty( $params['date'] ) && class_exists( 'House_Calendar_Manager' ) ) {
+				$calendar_manager = new House_Calendar_Manager();
+				$checkin_date     = new DateTime( $params['date'] );
+
+				// Build an indexed WP house ID → iPro PropertyId map once.
+				$reflection     = new ReflectionClass( $calendar_manager );
+				$mapping_method = $reflection->getMethod( 'get_cached_property_mapping' );
+				$mapping_method->setAccessible( true );
+				$property_mapping = $mapping_method->invoke( $calendar_manager );
+
+				if ( is_array( $property_mapping ) ) {
+					foreach ( $property_mapping as $property ) {
+						$wp_id   = isset( $property['PropertyReference'] ) ? (int) $property['PropertyReference'] : 0;
+						$ipro_id = isset( $property['PropertyId'] ) ? (string) $property['PropertyId'] : '';
+						if ( $wp_id && $ipro_id ) {
+							$property_id_map[ $wp_id ] = $ipro_id;
+						}
+					}
+				}
+			}
+
+			global $kt_current_house_pricing;
+
 			while ( $query->have_posts() ) {
 				$query->the_post();
 				$house_count++;
 
-				// TODO: Pricing lookup disabled due to performance concerns
-				// Each house requires API call to booking system, causing timeouts
-				// Consider implementing client-side pricing fetch or caching strategy
+				// Fetch pricing for this house when a date is provided.
+				$kt_current_house_pricing = array();
+				if ( $calendar_manager && $checkin_date ) {
+					$house_id    = get_the_ID();
+					$property_id = $property_id_map[ $house_id ] ?? '';
 
-				// Use your custom pattern.
-				if( in_array( 604, $location_terms ) ) {
-					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-cotswolds"} /-->' );
-				} elseif ( in_array( 810, $location_terms )) {
-					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-coast"} /-->' );
-				} elseif ( in_array( 790, $location_terms )) {
-					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-country"} /-->' );
-				} elseif ( in_array( 603, $location_terms )) {
-					echo do_blocks( '<!-- wp:pattern {"slug":"katomswold/house-card-search-town"} /-->' );
+					if ( $property_id ) {
+						// Only use cached calendar data — never hit the external API
+						// during a user request. The cron cache warmer keeps these warm.
+						$transient_key = "kt_house_calendar_{$property_id}";
+						$calendar_data = get_transient( $transient_key );
+
+						if ( false !== $calendar_data && isset( $calendar_data['availability'] ) ) {
+							$kt_current_house_pricing = $calendar_manager->get_booking_periods_for_date(
+								$property_id,
+								clone $checkin_date
+							);
+						}
+
+						// Filter by duration type if selected.
+						if ( ! empty( $params['dtype'] ) && ! empty( $kt_current_house_pricing ) ) {
+							$allowed_periods = $dtype_period_map[ $params['dtype'] ] ?? array();
+							if ( ! empty( $allowed_periods ) ) {
+								$kt_current_house_pricing = array_values(
+									array_filter(
+										$kt_current_house_pricing,
+										function ( $period ) use ( $allowed_periods ) {
+											return in_array( $period['id'], $allowed_periods, true );
+										}
+									)
+								);
+							}
+						}
+					}
+
 				}
+
+				// When a date is selected, skip houses that have no qualifying price.
+				if ( $checkin_date && empty( $kt_current_house_pricing ) ) {
+					--$house_count;
+					continue;
+				}
+
+				// Render the house card pattern. We include the file directly
+				// (rather than via do_blocks + pattern registry) so that the PHP
+				// in each pattern re-evaluates per house — the pattern registry
+				// caches evaluated content after the first call.
+				$pattern_file = '';
+				if ( in_array( 604, $location_terms ) ) {
+					$pattern_file = 'house-card-search-cotswolds';
+				} elseif ( in_array( 810, $location_terms ) ) {
+					$pattern_file = 'house-card-search-coast';
+				} elseif ( in_array( 790, $location_terms ) ) {
+					$pattern_file = 'house-card-search-country';
+				} elseif ( in_array( 603, $location_terms ) ) {
+					$pattern_file = 'house-card-search-town';
+				}
+
+				if ( $pattern_file ) {
+					ob_start();
+					include get_theme_file_path( "patterns/{$pattern_file}.php" );
+					echo do_blocks( ob_get_clean() );
+				}
+
+				// Reset pricing global after each house.
+				$kt_current_house_pricing = array();
 			}
 
 			// Check if we need adverts to fill the row
@@ -347,7 +471,7 @@ class Houses_Filter_API {
 
 		$response = array(
 			'html'  => ob_get_clean(),
-			'total' => $query->found_posts,
+			'total' => $house_count,
 		);
 
 		header( 'Content-Type: application/json' );
@@ -444,7 +568,7 @@ class Houses_Filter_API {
 				'taxonomy' => 'feature',
 				'field'    => 'term_id',
 				'terms'    => $feature_term_ids,
-				'operator' => 'AND',
+				'operator' => 'IN',
 			);
 		}
 
@@ -612,6 +736,217 @@ class Houses_Filter_API {
 	 * @param House_Calendar_Manager  $calendar_manager Calendar manager instance.
 	 * @return array Pricing periods array.
 	 */
+	/**
+	 * Get seasonal houses by IDs for infinite scroll.
+	 *
+	 * Accepts pre-filtered house IDs (from initial render) and returns
+	 * rendered card HTML with seasonal pricing. This avoids re-running
+	 * expensive availability checks on every scroll.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response with rendered HTML.
+	 */
+	public function get_seasonal_houses_by_ids( $request ) {
+		$house_ids_param = $request->get_param( 'house_ids' );
+		$pattern_style   = $request->get_param( 'pattern_style' ) ?? 'coast';
+		$beginning_date  = $request->get_param( 'beginning_date' ) ?? '';
+		$ending_date     = $request->get_param( 'ending_date' ) ?? '';
+		$title_bg_color  = $request->get_param( 'title_bg_color' ) ?? 'coloreight';
+
+		// Parse comma-separated house IDs.
+		$house_ids = array_filter( array_map( 'absint', explode( ',', $house_ids_param ) ) );
+
+		if ( empty( $house_ids ) ) {
+			return wp_send_json_success(
+				array(
+					'html'    => '',
+					'adverts' => '',
+					'hasMore' => false,
+				)
+			);
+		}
+
+		// Fetch posts by IDs, preserving the order from the request.
+		$query = new WP_Query(
+			array(
+				'post_type'      => 'houses',
+				'post_status'    => 'publish',
+				'post__in'       => $house_ids,
+				'orderby'        => 'post__in',
+				'posts_per_page' => count( $house_ids ),
+			)
+		);
+
+		// All period keys for seasonal pricing display.
+		$all_period_keys = array( 'week', '2-night-weekend', '3-night-weekend', 'midweek' );
+
+		// Build the response HTML.
+		ob_start();
+
+		if ( $query->have_posts() ) {
+			while ( $query->have_posts() ) {
+				$query->the_post();
+				$house_id = get_the_ID();
+				?>
+				<!-- House Card -->
+				<div class="wp-block-group has-white-background-color has-background house-card" style="min-height:365px">
+					<!-- Featured Image -->
+					<?php if ( has_post_thumbnail() ) : ?>
+						<a href="<?php the_permalink(); ?>">
+							<?php the_post_thumbnail( 'house_search', array( 'style' => 'width: 100%; height: auto; display: block;' ) ); ?>
+						</a>
+					<?php endif; ?>
+
+					<!-- Post Title with styling from pattern -->
+					<h2 class="wp-block-heading has-text-align-center has-small-font-size has-white-color has-<?php echo esc_attr( $title_bg_color ); ?>-background-color"
+					   style="margin-top:0;margin-bottom:0;padding-top:var(--wp--preset--spacing--40);padding-right:var(--wp--preset--spacing--40);padding-bottom:var(--wp--preset--spacing--40);padding-left:var(--wp--preset--spacing--40);font-style:normal;font-weight:600;font-size:var(--wp--preset--font-size--small)">
+						<a href="<?php the_permalink(); ?>" style="color: var(--wp--preset--color--white); text-decoration: none;">
+							<?php the_title(); ?>
+						</a>
+					</h2>
+
+					<!-- Brief Description -->
+					<div class="wp-block-group" style="padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+						<?php
+						$brief_description = get_post_meta( $house_id, 'brief_description', true );
+						if ( $brief_description ) :
+							?>
+							<p class="has-x-small-font-size"><?php echo esc_html( $brief_description ); ?></p>
+						<?php endif; ?>
+					</div>
+
+					<!-- Sleeps and Location Info -->
+					<div class="wp-block-group" style="border-top-color:var(--wp--preset--color--tertiary);border-top-width:1px;padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+						<div class="wp-block-group" style="display: flex; justify-content: space-between; align-items: center;">
+							<!-- Sleeps Info -->
+							<div class="wp-block-group" style="display: flex; align-items: center; gap: 0.2em;">
+								<?php
+								$sleeps_min = get_post_meta( $house_id, 'sleeps_min', true );
+								$sleeps_max = get_post_meta( $house_id, 'sleeps_max', true );
+								if ( $sleeps_max ) :
+									?>
+									<p class="has-x-small-font-size" style="margin: 0;">Sleeps </p>
+									<?php if ( $sleeps_min ) : ?>
+										<p class="has-x-small-font-size" style="margin: 0;"><?php echo esc_html( $sleeps_min ); ?></p>
+										<p class="has-x-small-font-size" style="margin: 0;"> to </p>
+									<?php endif; ?>
+									<p class="has-x-small-font-size" style="margin: 0;"><?php echo esc_html( $sleeps_max ); ?></p>
+								<?php endif; ?>
+							</div>
+
+							<!-- Location Info -->
+							<div class="wp-block-group">
+								<?php
+								$location_text = get_post_meta( $house_id, 'location_text', true );
+								if ( $location_text ) :
+									?>
+									<p class="has-text-align-right has-x-small-font-size" style="margin: 0;"><?php echo esc_html( $location_text ); ?></p>
+								<?php endif; ?>
+							</div>
+						</div>
+					</div>
+
+					<!-- Seasonal Prices -->
+					<?php
+					if ( ! empty( $beginning_date ) && ! empty( $ending_date ) ) :
+						$seasonal_prices = kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date, $all_period_keys );
+						if ( ! empty( $seasonal_prices ) ) :
+							?>
+							<div class="wp-block-group house_meta seasp" style="border-top-color:var(--wp--preset--color--tertiary);border-top-width:1px;padding-top:var(--wp--preset--spacing--30);padding-right:var(--wp--preset--spacing--30);padding-bottom:var(--wp--preset--spacing--30);padding-left:var(--wp--preset--spacing--30)">
+								<?php
+								$all_prices_with_from = get_post_meta( $house_id, 'all_prices_with_from', true );
+
+								foreach ( $seasonal_prices as $period_label => $rates ) :
+									// Skip unavailable periods (indicated by -2).
+									if ( in_array( '-2', $rates, true ) ) {
+										continue;
+									}
+
+									// Pluralize period names if multiple rates.
+									$display_period = $period_label;
+									if ( count( $rates ) > 1 ) {
+										$display_period = $period_label . 's';
+										$display_period = str_replace( 'ss', 's', $display_period );
+									}
+
+									// Check if any rates have "from" indicator (+).
+									$has_from_indicator = false;
+									foreach ( $rates as $rate ) {
+										if ( strstr( $rate, '+' ) ) {
+											$has_from_indicator = true;
+											break;
+										}
+									}
+
+									// Clean rates (strip +, *, spaces).
+									$clean_rates = array_map(
+										function ( $rate ) {
+											return str_replace( array( '+', '*', ' ' ), '', $rate );
+										},
+										$rates
+									);
+
+									// Get minimum price.
+									$min_price = kate_toms_convert_from_price( $clean_rates );
+
+									// Determine if we show "from" or exact price.
+									$show_from = ( $all_prices_with_from || count( $rates ) > 1 || $has_from_indicator );
+									?>
+									<p class="has-x-small-font-size" style="margin: 0;">
+										<?php echo esc_html( ucfirst( $display_period ) ); ?>
+										<?php echo $show_from ? ' from ' : ' - '; ?>
+										&pound;<?php echo esc_html( $min_price ); ?>
+									</p>
+								<?php endforeach; ?>
+							</div>
+						<?php endif; ?>
+					<?php endif; ?>
+				</div>
+				<?php
+			}
+		}
+
+		$html = ob_get_clean();
+
+		// Generate adverts HTML (the client tells us this is the last batch by context).
+		// We always return adverts so the client can use them when hasMore becomes false.
+		$adverts_html = '';
+		$location_key = $pattern_style;
+
+		// We don't know the total from here, but the client does.
+		// Return adverts for the location so the client can insert them on the last page.
+		if ( class_exists( 'Kate_Toms_Core_Admin' ) ) {
+			// Calculate adverts for up to 3 remaining grid slots (max possible remainder for 4-col grid).
+			$admin   = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
+			$adverts = $admin->get_adverts_for_location( $location_key, 3 );
+
+			if ( ! empty( $adverts ) ) {
+				ob_start();
+				foreach ( $adverts as $advert ) {
+					?>
+					<!-- Advert Placeholder Card -->
+					<div class="wp-block-group has-white-background-color has-background advert-placeholder" style="min-height:365px">
+						<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
+							style="width: 100%; height: 368px; display: block; object-fit: cover;"
+							alt="Advertisement">
+					</div>
+					<?php
+				}
+				$adverts_html = ob_get_clean();
+			}
+		}
+
+		wp_reset_postdata();
+
+		$response = array(
+			'html'    => $html,
+			'adverts' => $adverts_html,
+			'hasMore' => true, // Client determines this from its own context.
+		);
+
+		return wp_send_json_success( $response );
+	}
+
 	private function get_house_pricing_for_date( $house_id, $checkin_date, $calendar_manager ) {
 		try {
 			// Use reflection to access private methods

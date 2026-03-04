@@ -57,6 +57,11 @@ function deactivate_kate_toms_core() {
 register_activation_hook( __FILE__, 'activate_kate_toms_core' );
 register_deactivation_hook( __FILE__, 'deactivate_kate_toms_core' );
 
+// Load WP CLI cache warmer commands (only in CLI context).
+if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	require_once plugin_dir_path( __FILE__ ) . 'includes/class-calendar-cache-warmer.php';
+}
+
 /**
  * The core plugin class that is used to define internationalization,
  * admin-specific hooks, and public-facing site hooks.

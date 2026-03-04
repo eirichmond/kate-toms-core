@@ -1,0 +1,28 @@
+.house-filter-breadcrumb {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	padding: 0.5rem 0;
+	font-size: var(--wp--preset--font-size--small);
+	color: #555;
+	min-height: calc(1em * 1.4 + 1rem); // line-height + padding to reserve space
+	&[hidden] {
+		display: flex;
+		visibility: hidden;
+	}
+
+	&__item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+
+		&[hidden] {
+			display: none;
+		}
+	}
+
+	&__icon {
+		fill: #999;
+		flex-shrink: 0;
+	}
+}

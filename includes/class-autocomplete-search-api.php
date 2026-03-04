@@ -11,10 +11,17 @@
 class Autocomplete_Search_API {
 
 	/**
+	 * Page IDs for landing pages used as data sources.
+	 */
+	const LOCATIONS_PAGE_ID = 27142;
+	const FEATURES_PAGE_ID  = 48958;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
+		add_action( 'save_post', array( $this, 'invalidate_cache' ) );
 	}
 
 	/**
@@ -34,107 +41,200 @@ class Autocomplete_Search_API {
 
 	/**
 	 * Get search items for autocomplete including houses, locations, and features.
-	 * 
-	 * Modern implementation using wp_posts table and taxonomies.
-	 * 
-	 * @return WP_REST_Response The response object containing search items
+	 *
+	 * Houses come from wp_posts. Locations and Features are parsed from
+	 * their respective landing page block content.
+	 *
+	 * @return WP_REST_Response The response object containing search items.
 	 */
 	public function get_search_items() {
 		$search_items = array();
-		$blog_id = get_current_blog_id();
+		$blog_id      = get_current_blog_id();
 
-		// Get all houses from wp_posts
-		$houses_query = new WP_Query(array(
-			'post_type'      => 'houses',
-			'posts_per_page' => -1,
-			'post_status'    => 'publish',
-			'meta_key'       => 'sleeps_max',
-			'orderby'        => 'meta_value_num',
-			'order'          => ($blog_id == 7 || $blog_id == 13) ? 'ASC' : 'DESC',
-		));
+		// Get all houses from wp_posts.
+		$houses_query = new WP_Query(
+			array(
+				'post_type'      => 'houses',
+				'posts_per_page' => -1,
+				'post_status'    => 'publish',
+				'meta_key'       => 'sleeps_max',
+				'orderby'        => 'meta_value_num',
+				'order'          => ( $blog_id == 7 || $blog_id == 13 ) ? 'ASC' : 'DESC',
+			)
+		);
 
-		if ($houses_query->have_posts()) {
-			while ($houses_query->have_posts()) {
+		if ( $houses_query->have_posts() ) {
+			while ( $houses_query->have_posts() ) {
 				$houses_query->the_post();
 				$post_id = get_the_ID();
-				
+
 				$search_items[] = array(
-					'category'  => 'Houses',
-					'url'       => $this->normalize_url(get_permalink($post_id)),
-					'thumb'     => $this->normalize_url(get_the_post_thumbnail_url($post_id, 'thumbnail')),
-					'label'     => get_the_title(),
-					'desc'      => get_post_meta($post_id, 'brief_description', true),
-					'house_id'  => $post_id,
-					'blog_id'   => $blog_id,
-					'post_id'   => $post_id,
+					'category' => 'Houses',
+					'url'      => $this->normalize_url( get_permalink( $post_id ) ),
+					'thumb'    => $this->normalize_url( get_the_post_thumbnail_url( $post_id, 'thumbnail' ) ),
+					'label'    => get_the_title(),
+					'desc'     => get_post_meta( $post_id, 'brief_description', true ),
+					'house_id' => $post_id,
+					'blog_id'  => $blog_id,
+					'post_id'  => $post_id,
 				);
 			}
 			wp_reset_postdata();
 		}
 
-		// Get location taxonomy terms
-		$location_terms = get_terms(array(
-			'taxonomy'   => 'location',
-			'hide_empty' => false,
-		));
+		// Get locations from landing page block content.
+		$search_items = array_merge(
+			$search_items,
+			$this->parse_landing_page_items( self::LOCATIONS_PAGE_ID, 'Locations' )
+		);
 
-		if (!is_wp_error($location_terms) && !empty($location_terms)) {
-			foreach ($location_terms as $term) {
-				// Skip if empty description
-				if (empty($term->description)) {
-					continue;
-				}
+		// Get features from landing page block content.
+		$search_items = array_merge(
+			$search_items,
+			$this->parse_landing_page_items( self::FEATURES_PAGE_ID, 'Features' )
+		);
 
-				// Get term image and custom URL if available
-				$term_image = get_term_meta($term->term_id, 'image', true);
-				$custom_url = get_term_meta($term->term_id, 'custom_url', true);
+		return rest_ensure_response( $search_items );
+	}
 
-				$search_items[] = array(
-					'category'  => 'Locations',
-					'url'       => $this->normalize_url($custom_url ?: get_term_link($term)),
-					'thumb'     => $this->normalize_url($term_image ? wp_get_attachment_url($term_image) : ''),
-					'label'     => $term->name,
-					'desc'      => wp_trim_words($term->description, 10),
-					'house_id'  => null,
-					'blog_id'   => $blog_id,
-					'post_id'   => null,
-					'term_id'   => $term->term_id,
-				);
-			}
+	/**
+	 * Parse a landing page's block content to extract search items.
+	 *
+	 * Expects a page built with the "Image Set Fill" pattern where each item
+	 * is a core/group block with an `href` attribute containing nested
+	 * core/image, core/heading, and optionally core/paragraph blocks.
+	 *
+	 * @param int    $page_id  The landing page post ID.
+	 * @param string $category The category label for search results.
+	 * @return array Array of search item arrays.
+	 */
+	private function parse_landing_page_items( $page_id, $category ) {
+		$transient_key = 'autocomplete_search_' . $page_id;
+		$cached        = get_transient( $transient_key );
+
+		if ( false !== $cached ) {
+			return $cached;
 		}
 
-		// Get feature taxonomy terms
-		$feature_terms = get_terms(array(
-			'taxonomy'   => 'feature',
-			'hide_empty' => false,
-		));
+		$content = get_post_field( 'post_content', $page_id );
 
-		if (!is_wp_error($feature_terms) && !empty($feature_terms)) {
-			foreach ($feature_terms as $term) {
-				// Skip if empty description
-				if (empty($term->description)) {
-					continue;
-				}
-
-				// Get term image and custom URL if available
-				$term_image = get_term_meta($term->term_id, 'image', true);
-				$custom_url = get_term_meta($term->term_id, 'custom_url', true);
-
-				$search_items[] = array(
-					'category'  => 'Features',
-					'url'       => $this->normalize_url($custom_url ?: get_term_link($term)),
-					'thumb'     => $this->normalize_url($term_image ? wp_get_attachment_url($term_image) : ''),
-					'label'     => $term->name,
-					'desc'      => wp_trim_words($term->description, 10),
-					'house_id'  => null,
-					'blog_id'   => $blog_id,
-					'post_id'   => null,
-					'term_id'   => $term->term_id,
-				);
-			}
+		if ( empty( $content ) ) {
+			return array();
 		}
 
-		return rest_ensure_response($search_items);
+		$blocks = parse_blocks( $content );
+		$items  = array();
+		$blog_id = get_current_blog_id();
+
+		$this->find_linked_groups( $blocks, $items, $category, $blog_id );
+
+		set_transient( $transient_key, $items, DAY_IN_SECONDS );
+
+		return $items;
+	}
+
+	/**
+	 * Recursively find core/group blocks with an href attribute and extract search item data.
+	 *
+	 * @param array  $blocks   Array of parsed blocks.
+	 * @param array  $items    Reference to the items array to populate.
+	 * @param string $category The category label.
+	 * @param int    $blog_id  The current blog ID.
+	 */
+	private function find_linked_groups( $blocks, &$items, $category, $blog_id ) {
+		foreach ( $blocks as $block ) {
+			// A group block with href is a search item.
+			if ( 'core/group' === $block['blockName'] && ! empty( $block['attrs']['href'] ) ) {
+				$item = $this->extract_item_from_group( $block, $category, $blog_id );
+				if ( $item ) {
+					$items[] = $item;
+				}
+				continue;
+			}
+
+			// Recurse into inner blocks.
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$this->find_linked_groups( $block['innerBlocks'], $items, $category, $blog_id );
+			}
+		}
+	}
+
+	/**
+	 * Extract search item data from a linked group block.
+	 *
+	 * @param array  $block    The parsed group block.
+	 * @param string $category The category label.
+	 * @param int    $blog_id  The current blog ID.
+	 * @return array|null Search item array or null if no label found.
+	 */
+	private function extract_item_from_group( $block, $category, $blog_id ) {
+		$url   = $block['attrs']['href'];
+		$thumb = '';
+		$label = '';
+		$desc  = '';
+
+		$this->extract_inner_block_data( $block['innerBlocks'], $thumb, $label, $desc );
+
+		if ( empty( $label ) ) {
+			return null;
+		}
+
+		return array(
+			'category' => $category,
+			'url'      => $this->normalize_url( $url ),
+			'thumb'    => $this->normalize_url( $thumb ),
+			'label'    => $label,
+			'desc'     => $desc,
+			'house_id' => null,
+			'blog_id'  => $blog_id,
+			'post_id'  => null,
+		);
+	}
+
+	/**
+	 * Recursively extract image src, heading text, and paragraph text from inner blocks.
+	 *
+	 * @param array  $blocks Array of parsed inner blocks.
+	 * @param string $thumb  Reference to the thumbnail URL.
+	 * @param string $label  Reference to the label text.
+	 * @param string $desc   Reference to the description text.
+	 */
+	private function extract_inner_block_data( $blocks, &$thumb, &$label, &$desc ) {
+		foreach ( $blocks as $inner ) {
+			if ( 'core/image' === $inner['blockName'] && empty( $thumb ) ) {
+				// Extract src from the image block's innerHTML.
+				if ( preg_match( '/src="([^"]+)"/', $inner['innerHTML'], $matches ) ) {
+					$thumb = $matches[1];
+				}
+			} elseif ( 'core/heading' === $inner['blockName'] && empty( $label ) ) {
+				$label = html_entity_decode( trim( wp_strip_all_tags( $inner['innerHTML'] ) ), ENT_QUOTES, 'UTF-8' );
+			} elseif ( 'core/paragraph' === $inner['blockName'] && empty( $desc ) ) {
+				$text = html_entity_decode( trim( wp_strip_all_tags( $inner['innerHTML'] ) ), ENT_QUOTES, 'UTF-8' );
+				if ( ! empty( $text ) ) {
+					$desc = $text;
+				}
+			}
+
+			// Recurse into nested blocks (e.g. inner groups containing heading/paragraph).
+			if ( ! empty( $inner['innerBlocks'] ) ) {
+				$this->extract_inner_block_data( $inner['innerBlocks'], $thumb, $label, $desc );
+			}
+		}
+	}
+
+	/**
+	 * Invalidate landing page transient caches when those pages are saved.
+	 *
+	 * @param int $post_id The post ID being saved.
+	 */
+	public function invalidate_cache( $post_id ) {
+		if ( self::LOCATIONS_PAGE_ID === $post_id ) {
+			delete_transient( 'autocomplete_search_' . self::LOCATIONS_PAGE_ID );
+		}
+
+		if ( self::FEATURES_PAGE_ID === $post_id ) {
+			delete_transient( 'autocomplete_search_' . self::FEATURES_PAGE_ID );
+		}
 	}
 
 	/**

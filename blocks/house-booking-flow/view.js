@@ -157,9 +157,11 @@ class HouseBookingFlow {
 					<h2>Step 1: Select your booking</h2>
 					<ul>
 						<li><strong>Showing bookings beginning ${this.formatDate(selectedDate)} for ${this.config.houseName}</strong></li>
-						<li>Please choose the booking that you would like to make from the options on the right.</li>
-						<li>Week bookings usually begin on either a Friday or a Monday. Weekend bookings are available from Friday.</li>
-						<li><em>Bookings outside of these periods can be made on request. Please enquire by telephone or email.</em></li>
+						<li>Please choose the booking that you would like to make from the options to the right.</li>
+						<li>Week bookings usually begin on either a Friday or a Monday. If you would like to book a different period, please get in touch.</li>
+						<li>Weekend bookings are available from Friday.</li>
+						<li>The price includes all fees and taxes.</li>
+						<li>Pricing shown may be for the minimum group size, supplements may apply for extra guests.</li>
 					</ul>
 					
 					<div class="booking_details">

@@ -10,7 +10,7 @@
 $unique_id = wp_unique_id('autocomplete-search-');
 $placeholder = $attributes['placeholder'] ?? 'Search houses, locations, and features...';
 $show_categories = $attributes['showCategories'] ?? true;
-$max_results = $attributes['maxResults'] ?? 8;
+$max_results = $attributes['maxResults'] ?? 30;
 
 $context = array(
 	'searchTerm' => '',

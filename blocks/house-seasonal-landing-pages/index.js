@@ -2,16 +2,21 @@
  * WordPress dependencies
  */
 import { registerBlockType } from '@wordpress/blocks';
-import { __ } from '@wordpress/i18n';
+
+/**
+ * Styles
+ */
+import './style.scss';
 
 /**
  * Internal dependencies
  */
 import Edit from './edit';
+import metadata from './block.json';
 
 /**
  * Register the House Seasonal Landing Pages block
  */
-registerBlockType( 'kate-toms-core/house-seasonal-landing-pages', {
+registerBlockType( metadata.name, {
 	edit: Edit,
 } );

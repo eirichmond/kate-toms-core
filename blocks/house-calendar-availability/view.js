@@ -103,14 +103,28 @@ class HouseCalendar {
 
 		let html = '<div class="calendar-wrapper">';
 
-		// Generate months from now through December of next year
+		// Generate months from now through the last month that has rate data
 		const now = new Date();
 		const currentYear = now.getFullYear();
 		const currentMonth = now.getMonth(); // 0-indexed (0 = January, 11 = December)
 
-		// End date is December of next year
-		const endYear = currentYear + 1;
-		const endMonth = 11; // December (0-indexed)
+		// Determine end date from the last month in rates data
+		const rateMonths = Object.keys(this.calendarData.rates || {}).sort();
+		let endYear, endMonth;
+		if (rateMonths.length > 0) {
+			const lastRateMonth = rateMonths[rateMonths.length - 1]; // e.g. "2026-12"
+			const parts = lastRateMonth.split('-');
+			endYear = parseInt(parts[0], 10);
+			endMonth = parseInt(parts[1], 10) - 1; // Convert to 0-indexed
+		} else {
+			// Fallback: show 6 months from now
+			endYear = currentYear;
+			endMonth = currentMonth + 5;
+			if (endMonth > 11) {
+				endYear += Math.floor(endMonth / 12);
+				endMonth = endMonth % 12;
+			}
+		}
 
 		// Calculate number of months to show
 		const monthsToShow = (endYear - currentYear) * 12 + (endMonth - currentMonth) + 1;
@@ -489,7 +503,7 @@ class HouseCalendar {
 	generateWeekRates(monthKey, weekReferenceDate, visibleRateColumns) {
 
 		let html = "";
-		debugger;
+		// debugger;
 		// Calculate the Friday of this week - API data is keyed by Friday's date
 		const refDate = new Date(weekReferenceDate);
 		const dayOfWeek = refDate.getDay();
@@ -767,7 +781,7 @@ class HouseCalendar {
 				if (rateKey === "70") {
 					let monthKey = previousWeekDate.substring(0, 7);
 					if (monthKey !== calendarMonthKey) { 
-						debugger;
+						// debugger;
 						const rateData = this.calendarData.rates[calendarMonthKey].weeks[calendarMonthKey + "-01"][rateKey];
 						return rateData;
 					}
