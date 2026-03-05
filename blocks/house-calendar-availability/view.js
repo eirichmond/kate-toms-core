@@ -2,19 +2,6 @@
  * House Calendar Availability Block Frontend Script
  */
 
-/**
-
-	Note on KT's period rates and days:
-
-	2 night weekend = check in on Friday(1) +1day checkout Sunday
-	3 night weekend = check in on Friday(1) +2day checkout Monday
-	Week = check in on Friday(1) +6day checkout Friday || Monday(1) +6day checkout Monday
-	Midweek = check in on Monday(1) +3day checkout Friday
-	2 night midweek = check in on Monday, Tues or Weds(1) +1day checkout +1day from checkin
-
-
-**/
-
 
 document.addEventListener('DOMContentLoaded', function() {
 	// Initialize all calendar blocks on the page
@@ -83,8 +70,7 @@ class HouseCalendar {
 			});
 			
 			const data = await response.json();
-			// debugger;
-			if (data.success) {
+				if (data.success) {
 				this.calendarData = data.data;
 				this.renderCalendar();
 				this.showCalendar();
@@ -250,8 +236,7 @@ class HouseCalendar {
 			if (isCurrentMonth) {
 				// change the currentDay variable to a specific date
 				// currentDay = new Date("2026-05-23");
-				// debugger;
-
+		
 				const dayData = this.getDayData(currentDay);
 				html += this.generateDayCell(dayNum, dayData, currentDay);
 			} else {
@@ -352,7 +337,6 @@ class HouseCalendar {
 		// Get day data directly using the date key (format: "YYYY-MM-DD")
 		const dayData = this.calendarData.availability?.[dateKey];
 		
-		// debugger;
 		// If no data found, return default
 		if (!dayData) {
 			return {
@@ -377,53 +361,33 @@ class HouseCalendar {
 	}
 	
 	calculateDiagonalStyle(date, dayData) {
-		// If diagonal style is already explicitly set in data, use it
-		// This handles explicit transition days set in the booking system
+		// If diagonal style is already explicitly set in data (from PHP), use it.
 		if (dayData.diagonal_style && dayData.diagonal_style !== 'none') {
 			return dayData.diagonal_style;
-		}
-
-		// Check for crossover days (checkout + checkin on same day)
-		// Only apply if it's a valid check-in/check-out day (Monday or Friday)
-		if (dayData.is_checkin && dayData.is_checkout) {
-			const dayOfWeek = date.getDay(); // 0=Sunday, 1=Monday, 5=Friday
-			if (dayOfWeek === 1 || dayOfWeek === 5) {
-				return 'halfafter halfbefore'; // Both triangles for same-day changeover
-			}
-		}
-
-		// Get day of week for validation (0=Sunday, 1=Monday, 5=Friday)
-		const dayOfWeek = date.getDay();
-
-		// Only Monday (1) and Friday (5) can be check-in/check-out days
-		// unless explicitly set in the data above
-		const isValidTransitionDay = dayOfWeek === 1 || dayOfWeek === 5;
-
-		if (!isValidTransitionDay) {
-			return 'none';
 		}
 
 		const prevDay = this.getAdjacentDayData(date, -1);
 		const nextDay = this.getAdjacentDayData(date, 1);
 
-		// For booked days, check if this is a checkout day
+		const isPrevBooked = prevDay?.status === 'booked' || prevDay?.status === 'owner_blocked';
+		const isNextBooked = nextDay?.status === 'booked' || nextDay?.status === 'owner_blocked';
+
+		// Diagonals only on the FIRST day of a new status:
+		// First BOOKED day (prev=available): halfbefore (green-to-red) = check-in.
+		// First AVAILABLE day (prev=booked): halfafter (red-to-green) = check-out.
+
 		if (dayData.status === 'booked') {
-			// Check if this is a checkout day (this booked, next available)
-			if ( nextDay?.status === "available" && dayData.is_checkin ) {
-				return "halfafter"; // Green triangle (checkout day)
+			if (prevDay?.status === 'available') {
+				return 'halfbefore'; // Check-in: first booked day.
 			}
 		}
 
-		// For available days, check for changeover patterns
 		if (dayData.status === 'available') {
-			// Check if this is a changeover day (available between two booked periods)
-			if (prevDay?.status === 'booked' && nextDay?.status === 'booked') {
-				return 'halfafter halfbefore'; // Both triangles for changeover day
+			if (isPrevBooked && isNextBooked) {
+				return 'halfafter halfbefore'; // Changeover day.
 			}
-
-			// Check if this is day before checkin (this available, next booked)
-			if (nextDay?.status === 'booked') {
-				return 'halfbefore'; // Red triangle (day before checkin)
+			if (isPrevBooked) {
+				return 'halfafter'; // Check-out: first available after booking.
 			}
 		}
 
@@ -457,7 +421,6 @@ class HouseCalendar {
 
 		// If date is in the past, override status to unknown
 		const effectiveStatus = isPastDate ? 'unknown' : dayData.status;
-		// debugger;
 		// Add status class
 		switch (effectiveStatus) {
 			case 'available':
@@ -503,7 +466,6 @@ class HouseCalendar {
 	generateWeekRates(monthKey, weekReferenceDate, visibleRateColumns) {
 
 		let html = "";
-		// debugger;
 		// Calculate the Friday of this week - API data is keyed by Friday's date
 		const refDate = new Date(weekReferenceDate);
 		const dayOfWeek = refDate.getDay();
@@ -781,8 +743,7 @@ class HouseCalendar {
 				if (rateKey === "70") {
 					let monthKey = previousWeekDate.substring(0, 7);
 					if (monthKey !== calendarMonthKey) { 
-						// debugger;
-						const rateData = this.calendarData.rates[calendarMonthKey].weeks[calendarMonthKey + "-01"][rateKey];
+										const rateData = this.calendarData.rates[calendarMonthKey].weeks[calendarMonthKey + "-01"][rateKey];
 						return rateData;
 					}
 				} else {

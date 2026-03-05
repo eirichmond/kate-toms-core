@@ -516,110 +516,41 @@ class House_Calendar_Manager {
 	 * @return array Updated day data.
 	 */
 	private function determine_checkin_checkout( $date, $processed_day, $api_status ) {
-		// if ( $date != '2026-05-04' ) {
-		// return $processed_day;
-		// }
+		$status = $processed_day['status'];
 
-		$day_of_week = (int) $processed_day['day_of_week'];
-		$status      = $processed_day['status'];
-
-		// Get adjacent day statuses
+		// Get adjacent day statuses.
 		$prev_day_status = $this->get_previous_day_status( $date );
 		$next_day_status = $this->get_next_day_status( $date );
 
-		// Only Monday (1), Tuesday (2), Wednesday (3) and Friday (5) can be check-in/check-out days
-		if ( ! in_array( $day_of_week, array( 1, 2, 3, 5 ), true ) ) {
+		$is_prev_booked = in_array( $prev_day_status, array( 'booked', 'owner_blocked' ), true );
+		$is_next_booked = in_array( $next_day_status, array( 'booked', 'owner_blocked' ), true );
 
-			if ( $status == 'available' ) {
-				if ( $prev_day_status == 'booked' && $next_day_status == 'available' ) {
-					$processed_day['is_checkin']     = true; // Note: Using "checkout" flag for UI purposes
-					$processed_day['diagonal_style'] = 'halfafter';
-				}
-			}
+		// Diagonals only appear on the FIRST day of a new status:
+		// - First BOOKED day (prev=available): halfbefore (green-to-red) = check-in.
+		// - First AVAILABLE day after booking (prev=booked): halfafter (red-to-green) = check-out.
 
-			return $processed_day;
-		}
-
-		// if the previous day is booked and this day is booked then it can't be a checkin or checkout day
-		if ( 'booked' === $prev_day_status && 'booked' === $status ) {
-			return $processed_day;
-		}
-
-		// if the previous day is available and this day is booked then it is a checkout day
-		if ( 'available' === $prev_day_status && 'booked' === $status ) {
-			$processed_day['is_checkout']    = true; // Note: Using "checkout" flag for UI purposes
-			$processed_day['diagonal_style'] = 'halfbefore';
-			$processed_day['bk_avail']       = true;
-			return $processed_day;
-		}
-
-		// return $processed_day;
-
-		// Helper: Check if a status represents "not available for booking"
-		$is_prev_unavailable = in_array( $prev_day_status, array( 'booked' ), true );
-		$is_next_unavailable = in_array( $next_day_status, array( 'booked' ), true );
-		$is_next_available   = ( 'available' === $next_day_status );
-
-		// LOGIC FOR AVAILABLE DAYS
-		// Detect transitions FROM booked TO available (checkin) and FROM available TO booked (day before checkin)
+		// AVAILABLE days.
 		if ( 'available' === $status ) {
-			$has_checkin_transition  = false; // Transition from booked to available (previous day was booked)
-			$has_checkout_transition = false; // Transition from available to booked (next day is booked)
+			// First available after booking = checkout (guests departed this morning).
+			if ( $is_prev_booked ) {
+				$processed_day['is_checkout']    = true;
+				$processed_day['diagonal_style'] = 'halfafter';
 
-			// Check for transition from NOT AVAILABLE to AVAILABLE (check-in day)
-			// Previous day was booked/blocked, this day is available → guests can check in today
-			if ( $is_prev_unavailable ) {
-				$has_checkin_transition      = true;
-				$processed_day['is_checkin'] = true;
-			}
-
-			// Check for transition from AVAILABLE to NOT AVAILABLE (day before check-in)
-			// This day is available, next day is booked/blocked → last available day before booking starts
-			if ( $is_next_unavailable ) {
-				$has_checkout_transition      = true;
-				$processed_day['is_checkout'] = true; // Note: Using "checkout" flag for UI purposes
-			}
-
-			// Set diagonal style based on detected transitions
-			if ( $has_checkin_transition && $has_checkout_transition ) {
-				// Both transitions: available day sandwiched between booked periods (changeover day)
-				// Only show full crossover on standard changeover days (Mon/Fri).
-				// For other days (Tue/Wed), the adjacent booked day handles the transition.
-				if ( in_array( $day_of_week, array( 1, 5 ), true ) ) {
+				// Changeover: also last available before next booking.
+				if ( $is_next_booked ) {
+					$processed_day['is_checkin']     = true;
 					$processed_day['diagonal_style'] = 'halfafter halfbefore';
-				} else {
-					$processed_day['is_checkin']  = false;
-					$processed_day['is_checkout'] = false;
-				}
-			} elseif ( $has_checkin_transition ) {
-				// Transition from booked to available (green triangle - checkin day)
-				// Only show diagonal on standard changeover days (Mon/Fri).
-				// For Tue/Wed, the day is just available — no transition indicator needed.
-				if ( in_array( $day_of_week, array( 1, 5 ), true ) ) {
-					$processed_day['diagonal_style'] = 'halfafter';
-				} else {
-					$processed_day['is_checkin'] = false;
-				}
-			} elseif ( $has_checkout_transition ) {
-				// Transition from available to booked (red triangle - day before checkin)
-				// Only show diagonal on standard changeover days (Mon/Fri).
-				if ( in_array( $day_of_week, array( 1, 5 ), true ) ) {
-					$processed_day['diagonal_style'] = 'halfbefore';
-				} else {
-					$processed_day['is_checkout'] = false;
 				}
 			}
 		}
 
-		// LOGIC FOR BOOKED/BLOCKED DAYS
-		// Detect transition FROM booked TO available (checkout day - last night of booking)
+		// BOOKED days.
 		if ( 'booked' === $status ) {
-			// Check for transition to AVAILABLE (checkout day)
-			// This day is booked, next day is available → last night of booking, guests check out tomorrow
-
-			if ( $is_next_available ) {
-				$processed_day['is_checkout']    = true;
-				$processed_day['diagonal_style'] = 'halfafter'; // Green triangle on checkout day
+			// First booked day after available period = checkin (guests arriving).
+			if ( 'available' === $prev_day_status ) {
+				$processed_day['is_checkin']     = true;
+				$processed_day['diagonal_style'] = 'halfbefore';
+				$processed_day['bk_avail']       = true;
 			}
 		}
 
@@ -950,40 +881,25 @@ class House_Calendar_Manager {
 		$bookable_period_start = null;
 
 		foreach ( $availability as $date => &$day_data ) {
-			$day_of_week = (int) $day_data['day_of_week'];
-			$status      = $day_data['status'];
+			$status = $day_data['status'];
 
-			// Track start of bookable periods (available Mon/Fri).
-			if ( 'available' === $status && in_array( $day_of_week, array( 1, 5 ), true ) ) {
-				// This is a potential booking start date.
+			// Track start of bookable periods (any available day).
+			if ( 'available' === $status ) {
 				if ( null === $bookable_period_start ) {
-					$bookable_period_start = array(
-						'date'        => $date,
-						'day_of_week' => $day_of_week,
-					);
+					$bookable_period_start = $date;
 				}
 			}
 
-			// Check if this is a booked Mon/Fri that ends a bookable period.
-			if ( in_array( $day_of_week, array( 1, 5 ), true ) ) {
-				if ( 'booked' === $status || 'owner_blocked' === $status ) {
-					// Check if there was a bookable period before this.
-					if ( null !== $bookable_period_start ) {
-						// This booked day is the END of the bookable period (checkout day).
-						// Apply classes from the bookable period start.
-						$day_data['bk_avail']       = true;
-						$day_data['diagonal_style'] = 'halfbefore';
-						$day_data['is_checkout']    = true;
-						$day_data['bookable_from']  = $bookable_period_start['date'];
+			// Any booked/blocked day after an available period marks the checkout boundary.
+			if ( 'booked' === $status || 'owner_blocked' === $status ) {
+				if ( null !== $bookable_period_start ) {
+					$day_data['bk_avail']      = true;
+					$day_data['bookable_from'] = $bookable_period_start;
 
-						// Reset the bookable period tracker.
-						$bookable_period_start = null;
-					}
+					// Reset the bookable period tracker.
+					$bookable_period_start = null;
 				}
 			}
-
-			// Note: If we encounter a booked Tue/Wed/Thu/Sat/Sun, the bookable period continues through it.
-			// We don't reset the tracker unless we hit a booked Mon/Fri.
 		}
 	}
 
@@ -1137,11 +1053,6 @@ class House_Calendar_Manager {
 				}
 			}
 		}
-
-		// Step 2: Fix sandwiched available days
-		// Single 'A' days between booked days should be marked as 'B'
-		// since they can't be booked (minimum 2-night stay requirement)
-		$days = $this->fix_sandwiched_available_days( $days );
 
 		return $days;
 	}

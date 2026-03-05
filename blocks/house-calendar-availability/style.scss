@@ -91,13 +91,6 @@
 						box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 						cursor: pointer;
 					}
-					&.halfafter {
-						&.checkin-day {
-							background: #e3634b;
-							color: #fff;
-						}
-					}
-					
 					.booking-loader {
 						font-size: 0.6rem;
 						color: #fff;
@@ -115,31 +108,70 @@
 				color: #856404;
 			}
 			
-			// Kate & Tom's diagonal styling for check-in/checkout
-			&.halfafter::after {
-				content: '';
-				position: absolute;
-				z-index: -1;
-				bottom: 0;
-				right: 0;
-				width: 0;
-				height: 0;
-				border-style: solid;
-				border-width: 0 0 32px 32px;
-				border-color: transparent transparent #c5c951 transparent;
+			// Kate & Tom's diagonal styling for check-in/checkout.
+			// halfafter = bottom-right triangle, halfbefore = bottom-left triangle.
+			// Triangle color must contrast with the cell background:
+			// - On green (available) cells, draw red triangles.
+			// - On red (booked) cells, draw green triangles.
+
+			// Available cells: green background, red triangles for transitions.
+			&.bk_avail {
+				&.halfafter::after {
+					content: '';
+					position: absolute;
+					z-index: -1;
+					bottom: 0;
+					right: 0;
+					width: 0;
+					height: 0;
+					border-style: solid;
+					border-width: 0 0 32px 32px;
+					border-color: transparent transparent #e3634b transparent;
+					transform: rotate(180deg);
+				}
+
+				&.halfbefore::after {
+					content: '';
+					position: absolute;
+					z-index: -1;
+					bottom: 0;
+					left: 0;
+					width: 0;
+					height: 0;
+					border-style: solid;
+					border-width: 0 0 32px 32px;
+					border-color: transparent transparent #e3634b transparent;
+				}
 			}
-			
-			&.halfbefore::after {
-				content: '';
-				position: absolute;
-				z-index: -1;
-				bottom: 0;
-				left: 0;
-				width: 0;
-				height: 0;
-				border-style: solid;
-				border-width: 0 0 32px 32px;
-				border-color: transparent transparent #e3634b transparent;
+
+			// Booked cells: red background, green triangles for transitions.
+			&.bk_unav,
+			&.bk_blocked {
+				&.halfafter::after {
+					content: '';
+					position: absolute;
+					z-index: -1;
+					bottom: 0;
+					right: 0;
+					width: 0;
+					height: 0;
+					border-style: solid;
+					border-width: 0 0 32px 32px;
+					border-color: transparent transparent #c5c951 transparent;
+				}
+
+				&.halfbefore::after {
+					content: '';
+					position: absolute;
+					z-index: -1;
+					bottom: 0;
+					left: 0;
+					width: 0;
+					height: 0;
+					border-style: solid;
+					border-width: 0 0 32px 32px;
+					border-color: transparent transparent #c5c951 transparent;
+				}
 			}
 			
 			// Special styling for check-in days
