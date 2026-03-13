@@ -3,7 +3,7 @@
  */
 import { __ } from '@wordpress/i18n';
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, SelectControl } from '@wordpress/components';
+import { PanelBody, RangeControl, SelectControl } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { store as editorStore } from '@wordpress/editor';
@@ -73,6 +73,17 @@ export default function Edit({ attributes, setAttributes, context }) {
     return (
         <>
             <InspectorControls>
+                <PanelBody title={__('Load Settings', 'kate-toms-core')}>
+                    <RangeControl
+                        label={__('Houses per load', 'kate-toms-core')}
+                        value={postsPerPage}
+                        onChange={(value) => setAttributes({ postsPerPage: value })}
+                        min={10}
+                        max={50}
+                        step={10}
+                        help={__('Number of houses to load initially and on each scroll', 'kate-toms-core')}
+                    />
+                </PanelBody>
                 <PanelBody title={__('Query Settings', 'kate-toms-core')}>
                     <SelectControl
                         label={__('Order by', 'kate-toms-core')}
@@ -134,8 +145,12 @@ export default function Edit({ attributes, setAttributes, context }) {
                                 <strong> {order === 'desc' ? 'High to Low' : 'Low to High'}</strong>
                             </p>
 
+                            <p>
+                                {__('Houses per load:', 'kate-toms-core')} <strong>{postsPerPage}</strong>
+                            </p>
+
                             <div style={{ padding: '15px', background: '#e7f5ff', border: '1px solid #339af0', borderRadius: '4px' }}>
-                                <p><em>{__('Houses will be filtered based on availability between the dates and matching the selected periods. Preview shows configuration only - actual filtering happens on the frontend.', 'kate-toms-core')}</em></p>
+                                <p><em>{__('Houses will be filtered based on availability between the dates and matching the selected periods. Houses will load with infinite scroll on the frontend.', 'kate-toms-core')}</em></p>
                             </div>
                         </>
                     )}
