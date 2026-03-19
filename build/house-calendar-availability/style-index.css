@@ -1,1 +1,320 @@
-.house-calendar-availability{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,sans-serif;margin:2rem 0}.house-calendar-availability .calendar-container{background:#fff;border-radius:8px;overflow:hidden}.house-calendar-availability .calendar-container .kt-calendar-month{margin:2.5rem 0;overflow-x:auto}.house-calendar-availability .calendar-container .kt-calendar-month:not(:first-child){border-top:1px solid #dfdfdf}.house-calendar-availability .kt-calendar-month .month-header h2{color:#333;font-weight:400}.house-calendar-availability .kt-calendar-table{border:1px solid #dfdfdf;border-collapse:collapse;width:100%}.house-calendar-availability .kt-calendar-table th{font-size:.7rem;padding:4px 0}.house-calendar-availability .kt-calendar-table td{font-size:.7rem;position:relative;text-align:center}.house-calendar-availability .kt-calendar-table tr:nth-child(odd){background-color:#fff}.house-calendar-availability .kt-calendar-table tr:nth-child(2n){background-color:#f9f9f9}.house-calendar-availability .kt-calendar-table .day-headers th{background:#ddd;color:#000;font-weight:600;min-width:30px}.house-calendar-availability .kt-calendar-table .period-headers th{background:#f1f8ff;color:#34495e;font-size:.7rem;font-weight:600;padding:4px 2px;text-orientation:mixed;writing-mode:vertical-rl}.house-calendar-availability .kt-calendar-table .calendar-day{font-weight:600;height:30px;position:relative;width:30px;z-index:0}.house-calendar-availability .kt-calendar-table .calendar-day.bk_unknown{background:#f9f9f9;color:#cdcdcd}.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail{background:#c5c951;color:#fff}.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date{transition:all .2s ease}.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date:hover{background:#a8a540;box-shadow:0 2px 8px rgba(0,0,0,.2);cursor:pointer;transform:scale(1.1)}.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date .booking-loader{color:#fff;font-size:.6rem}.house-calendar-availability .kt-calendar-table .calendar-day.bk_unav{background:#e3634b;color:#fff}.house-calendar-availability .kt-calendar-table .calendar-day.bk_partial{background:#fff3cd;color:#856404}.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.halfafter:after{border-color:transparent transparent #e3634b;border-style:solid;border-width:0 0 32px 32px;bottom:0;content:"";height:0;position:absolute;right:0;transform:rotate(180deg);width:0;z-index:-1}.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.halfbefore:after{border-color:transparent transparent #e3634b;border-style:solid;border-width:0 0 32px 32px;bottom:0;content:"";height:0;left:0;position:absolute;width:0;z-index:-1}.house-calendar-availability .kt-calendar-table .calendar-day.bk_blocked.halfafter:after,.house-calendar-availability .kt-calendar-table .calendar-day.bk_unav.halfafter:after{border-color:transparent transparent #c5c951;border-style:solid;border-width:0 0 32px 32px;bottom:0;content:"";height:0;position:absolute;right:0;width:0;z-index:-1}.house-calendar-availability .kt-calendar-table .calendar-day.bk_blocked.halfbefore:after,.house-calendar-availability .kt-calendar-table .calendar-day.bk_unav.halfbefore:after{border-color:transparent transparent #c5c951;border-style:solid;border-width:0 0 32px 32px;bottom:0;content:"";height:0;left:0;position:absolute;width:0;z-index:-1}.house-calendar-availability .kt-calendar-table .calendar-day.today{background:#007bff!important;color:#fff!important;font-weight:700}.house-calendar-availability .kt-calendar-table .calendar-day.other-month{background:#f8f9fa;color:#6c757d}.house-calendar-availability .kt-calendar-table .calendar-day.past{background-color:#e9ecef!important;color:#6c757d!important;opacity:.5}.house-calendar-availability .kt-calendar-table .rate-cell{font-size:.75rem;min-width:90px;vertical-align:middle}.house-calendar-availability .kt-calendar-table .rate-cell.price{color:#333;font-weight:600}.house-calendar-availability .kt-calendar-table .rate-cell.from{color:#ffc107;font-size:.7rem;font-weight:600}.house-calendar-availability .kt-calendar-table .rate-cell.special1,.house-calendar-availability .kt-calendar-table .rate-cell.special2,.house-calendar-availability .kt-calendar-table .rate-cell.special3{color:#dc3545;font-size:.7rem;font-weight:600}.house-calendar-availability .kt-calendar-table .rate-cell.no,.house-calendar-availability .kt-calendar-table .rate-cell.unavailable{color:#cdcdcd}.house-calendar-availability .kt-calendar-table .rate-cell.previous{color:#17a2b8;font-style:italic}.house-calendar-availability .kt-calendar-table .rate-cell.unknown{background:#f8f9fa;color:#cdcdcd}.house-calendar-availability .kt-calendar-table .rate-cell.hidden{display:none}.house-calendar-availability .month-notes{padding:2rem 0 0}.house-calendar-availability .month-notes p{color:#6c757d;font-size:.8rem;line-height:1.4;margin:0}.house-calendar-availability .calendar-legend{background:#f8f9fa;border-top:1px solid #e9ecef;padding:1rem}.house-calendar-availability .calendar-legend h4{font-size:1rem;margin:0 0 1rem}.house-calendar-availability .calendar-legend .legend-grid{display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.house-calendar-availability .calendar-legend .legend-section h5{color:#495057;font-size:.9rem;margin:0 0 .5rem}.house-calendar-availability .calendar-legend .legend-section .legend-items{display:flex;flex-direction:column;gap:.5rem}.house-calendar-availability .calendar-legend .legend-item{align-items:center;display:flex;font-size:.8rem;gap:.5rem}.house-calendar-availability .calendar-legend .legend-color{border:1px solid #ccc;border-radius:4px;height:20px;position:relative;width:20px}.house-calendar-availability .calendar-legend .legend-color.available{background:#d4edda}.house-calendar-availability .calendar-legend .legend-color.booked{background:#f8d7da}.house-calendar-availability .calendar-legend .legend-color.partial{background:#fff3cd}.house-calendar-availability .calendar-legend .legend-color.checkin:after{border-color:transparent #28a745 transparent transparent;border-style:solid;border-width:0 10px 10px 0;content:"";height:0;position:absolute;right:0;top:0;width:0}.house-calendar-availability .calendar-legend .legend-color.checkout:after{border-color:#dc3545 transparent transparent;border-style:solid;border-width:10px 0 0 10px;content:"";height:0;left:0;position:absolute;top:0;width:0}.house-calendar-availability .offers-note{background:#e9ecef;border-top:1px solid #dee2e6;color:#6c757d;font-size:.8rem;padding:1rem}.house-calendar-availability .offers-note p{margin:.5rem 0}.house-calendar-availability .offers-note p:first-child{margin-top:0}.house-calendar-availability .offers-note p:last-child{margin-bottom:0}.house-calendar-availability .calendar-loading{padding:2rem;text-align:center}.house-calendar-availability .calendar-loading .loading-spinner{animation:spin 1s linear infinite;border:4px solid #f3f3f3;border-radius:50%;border-top-color:#007cba;height:40px;margin:0 auto 1rem;width:40px}@keyframes spin{0%{transform:rotate(0deg)}to{transform:rotate(1turn)}}@media(max-width:768px){.house-calendar-availability .kt-calendar-table{font-size:.8rem}.house-calendar-availability .kt-calendar-table td,.house-calendar-availability .kt-calendar-table th{padding:4px 2px}.house-calendar-availability .kt-calendar-table .period-headers th{font-size:.8rem}.house-calendar-availability .legend-grid{grid-template-columns:1fr}}
+/*!**********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/house-calendar-availability/style.scss ***!
+  \**********************************************************************************************************************************************************************************************************************************************************************/
+.house-calendar-availability {
+  margin: 2rem 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+.house-calendar-availability .calendar-container {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.house-calendar-availability .calendar-container .kt-calendar-month {
+  margin: 2.5rem 0;
+  overflow-x: auto;
+}
+.house-calendar-availability .calendar-container .kt-calendar-month:not(:first-child) {
+  border-top: 1px solid #dfdfdf;
+}
+.house-calendar-availability .kt-calendar-month .month-header h2 {
+  font-weight: normal;
+  color: #333;
+}
+.house-calendar-availability .kt-calendar-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid #dfdfdf;
+}
+.house-calendar-availability .kt-calendar-table th {
+  padding: 4px 0;
+  font-size: 0.7rem;
+}
+.house-calendar-availability .kt-calendar-table td {
+  text-align: center;
+  font-size: 0.7rem;
+  position: relative;
+}
+.house-calendar-availability .kt-calendar-table tr:nth-child(odd) {
+  background-color: #ffffff;
+}
+.house-calendar-availability .kt-calendar-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+.house-calendar-availability .kt-calendar-table .day-headers th {
+  background: #ddd;
+  font-weight: 600;
+  color: #000;
+  min-width: 30px;
+}
+.house-calendar-availability .kt-calendar-table .period-headers th {
+  background: #f1f8ff;
+  font-weight: 600;
+  color: #34495e;
+  font-size: 0.7rem;
+  padding: 4px 2px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day {
+  width: 30px;
+  height: 30px;
+  position: relative;
+  z-index: 0;
+  font-weight: 600;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_unknown {
+  color: #cdcdcd;
+  background: #f9f9f9;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail {
+  background: #c5c951;
+  color: #fff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date {
+  transition: all 0.2s ease;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date:hover {
+  background: #a8a540;
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.bookable-date .booking-loader {
+  font-size: 0.6rem;
+  color: #fff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_unav {
+  background: #e3634b;
+  color: #fff;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_partial {
+  background: #fff3cd;
+  color: #856404;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.halfafter::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 32px 32px;
+  border-color: transparent transparent #e3634b transparent;
+  transform: rotate(180deg);
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_avail.halfbefore::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 32px 32px;
+  border-color: transparent transparent #e3634b transparent;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_unav.halfafter::after, .house-calendar-availability .kt-calendar-table .calendar-day.bk_blocked.halfafter::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 32px 32px;
+  border-color: transparent transparent #c5c951 transparent;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.bk_unav.halfbefore::after, .house-calendar-availability .kt-calendar-table .calendar-day.bk_blocked.halfbefore::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 32px 32px;
+  border-color: transparent transparent #c5c951 transparent;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.today {
+  background: #007bff !important;
+  color: white !important;
+  font-weight: bold;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.other-month {
+  background: #f8f9fa;
+  color: #6c757d;
+}
+.house-calendar-availability .kt-calendar-table .calendar-day.past {
+  opacity: 0.5;
+  background-color: #e9ecef !important;
+  color: #6c757d !important;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell {
+  font-size: 0.75rem;
+  vertical-align: middle;
+  min-width: 90px;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell.price {
+  font-weight: 600;
+  color: #333;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell.from {
+  font-weight: 600;
+  color: #ffc107;
+  font-size: 0.7rem;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell.special1, .house-calendar-availability .kt-calendar-table .rate-cell.special2, .house-calendar-availability .kt-calendar-table .rate-cell.special3 {
+  font-weight: 600;
+  color: #dc3545;
+  font-size: 0.7rem;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell.no, .house-calendar-availability .kt-calendar-table .rate-cell.unavailable {
+  color: #cdcdcd;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell.previous {
+  color: #17a2b8;
+  font-style: italic;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell.unknown {
+  color: #cdcdcd;
+  background: #f8f9fa;
+}
+.house-calendar-availability .kt-calendar-table .rate-cell.hidden {
+  display: none;
+}
+.house-calendar-availability .month-notes {
+  padding: 2rem 0 0;
+}
+.house-calendar-availability .month-notes p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6c757d;
+  line-height: 1.4;
+}
+.house-calendar-availability .calendar-legend {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+}
+.house-calendar-availability .calendar-legend h4 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+}
+.house-calendar-availability .calendar-legend .legend-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.house-calendar-availability .calendar-legend .legend-section h5 {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.9rem;
+  color: #495057;
+}
+.house-calendar-availability .calendar-legend .legend-section .legend-items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.house-calendar-availability .calendar-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+.house-calendar-availability .calendar-legend .legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  position: relative;
+}
+.house-calendar-availability .calendar-legend .legend-color.available {
+  background: #d4edda;
+}
+.house-calendar-availability .calendar-legend .legend-color.booked {
+  background: #f8d7da;
+}
+.house-calendar-availability .calendar-legend .legend-color.partial {
+  background: #fff3cd;
+}
+.house-calendar-availability .calendar-legend .legend-color.checkin::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 10px 10px 0;
+  border-color: transparent #28a745 transparent transparent;
+}
+.house-calendar-availability .calendar-legend .legend-color.checkout::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 10px 0 0 10px;
+  border-color: #dc3545 transparent transparent transparent;
+}
+.house-calendar-availability .offers-note {
+  padding: 1rem;
+  background: #e9ecef;
+  border-top: 1px solid #dee2e6;
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+.house-calendar-availability .offers-note p {
+  margin: 0.5rem 0;
+}
+.house-calendar-availability .offers-note p:first-child {
+  margin-top: 0;
+}
+.house-calendar-availability .offers-note p:last-child {
+  margin-bottom: 0;
+}
+.house-calendar-availability .calendar-loading {
+  padding: 2rem;
+  text-align: center;
+}
+.house-calendar-availability .calendar-loading .loading-spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007cba;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 1rem;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 768px) {
+  .house-calendar-availability .kt-calendar-table {
+    font-size: 0.8rem;
+  }
+  .house-calendar-availability .kt-calendar-table th, .house-calendar-availability .kt-calendar-table td {
+    padding: 4px 2px;
+  }
+  .house-calendar-availability .kt-calendar-table .period-headers th {
+    font-size: 0.8rem;
+  }
+  .house-calendar-availability .legend-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/*# sourceMappingURL=style-index.css.map*/

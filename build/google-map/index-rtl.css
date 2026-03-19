@@ -1,1 +1,61 @@
-.wp-block-kate-toms-core-google-map .google-map-editor{background:#fff;border:1px solid #ddd;border-radius:8px;overflow:hidden}.wp-block-kate-toms-core-google-map .google-map-editor__map-container{border-radius:8px;overflow:hidden;position:relative}.wp-block-kate-toms-core-google-map .google-map-editor__map{border-radius:8px}.wp-block-kate-toms-core-google-map .google-map-editor__loading{align-items:center;background-color:#f8f9fa;color:#6c757d;display:flex;font-style:italic;height:300px;justify-content:center}.wp-block-kate-toms-core-google-map:not(.is-selected) .google-map-editor__map-container{pointer-events:none}.wp-block-kate-toms-core-google-map:not(.is-selected) .google-map-editor__map-container:after{background:hsla(0,0%,100%,.01);bottom:0;content:"";cursor:grab;right:0;position:absolute;left:0;top:0;z-index:100}.wp-block-kate-toms-core-google-map.is-selected .google-map-editor__map-container{pointer-events:auto}.wp-block-kate-toms-core-google-map.is-selected .google-map-editor{box-shadow:0 0 0 2px #0073aa}.components-panel__body .google-map-coordinates{background:#f8f9fa;border-radius:4px;color:#666;font-size:12px;margin-top:10px;padding:10px}.components-panel__body .google-map-coordinates strong{color:#333}
+/*!******************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/google-map/editor.scss ***!
+  \******************************************************************************************************************************************************************************************************************************************************/
+/**
+ * Editor styles for Google Map block
+ */
+.wp-block-kate-toms-core-google-map .google-map-editor {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+}
+.wp-block-kate-toms-core-google-map .google-map-editor__map-container {
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.wp-block-kate-toms-core-google-map .google-map-editor__map {
+  border-radius: 8px;
+}
+.wp-block-kate-toms-core-google-map .google-map-editor__loading {
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f9fa;
+  color: #6c757d;
+  font-style: italic;
+}
+.wp-block-kate-toms-core-google-map:not(.is-selected) .google-map-editor__map-container {
+  pointer-events: none;
+}
+.wp-block-kate-toms-core-google-map:not(.is-selected) .google-map-editor__map-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  background: rgba(255, 255, 255, 0.01);
+  cursor: grab;
+}
+.wp-block-kate-toms-core-google-map.is-selected .google-map-editor__map-container {
+  pointer-events: auto;
+}
+.wp-block-kate-toms-core-google-map.is-selected .google-map-editor {
+  box-shadow: 0 0 0 2px #0073aa;
+}
+
+.components-panel__body .google-map-coordinates {
+  margin-top: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #666;
+}
+.components-panel__body .google-map-coordinates strong {
+  color: #333;
+}
