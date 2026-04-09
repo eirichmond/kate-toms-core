@@ -16,6 +16,7 @@
     "packages-update": "wp-scripts packages-update",
     "plugin-zip": "wp-scripts plugin-zip",
     "test:e2e": "wp-scripts test-e2e",
+    "test:e2e:local": "playwright test --config=playwright.config.js",
     "test:unit": "wp-scripts test-unit-js",
     "phpcs": "vendor/bin/phpcs",
     "phpcbf": "vendor/bin/phpcbf"

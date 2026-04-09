@@ -46,6 +46,15 @@
 	}
 
 	/*
+	 * Every list in the drilldown should stretch to the panel width so
+	 * the li width:100% rule below has something to resolve against.
+	 */
+	.ktc-drilldown__panel > ul,
+	.ktc-drilldown__panel > ul > li {
+		width: 100%;
+	}
+
+	/*
 	 * Hide any `<ul>` nested inside a panel's direct-child list. A
 	 * single rule covers both cases:
 	 *   - Root panel: the direct child is the top nav ul; nested
@@ -54,40 +63,58 @@
 	 *     any further-nested uls inside its items are hidden.
 	 * Those hidden lists are still used by `buildChildPanel()` to clone
 	 * from when the user drills deeper.
+	 *
+	 * !important is required because core/navigation has its own mobile
+	 * overlay CSS that force-shows submenu containers (the "one long
+	 * expanded list" behaviour this whole feature is replacing).
 	 */
 	.ktc-drilldown__panel > ul ul {
-		display: none;
+		display: none !important;
 	}
 
 	/*
 	 * Hide core/navigation's own submenu toggle/icon so only our
 	 * chevron shows on parent rows. Both class names are covered
 	 * because core has shipped either depending on version.
+	 * !important defends against core's inline-overlay styling.
 	 */
 	.ktc-drilldown .wp-block-navigation__submenu-icon,
 	.ktc-drilldown .wp-block-navigation-submenu__toggle {
-		display: none;
+		display: none !important;
 	}
 
 	/*
-	 * Parent <li> must be positioned so the absolutely-positioned
-	 * chevron button can anchor to its right edge.
+	 * Parent <li> must be full-width AND positioned so the
+	 * absolutely-positioned chevron button can anchor to its right
+	 * edge. Core/navigation's mobile CSS sets
+	 * `display: flex; flex-direction: column` on nav items, which
+	 * collapses them to content width — the chevron then docks to the
+	 * end of the text label rather than the panel edge. Forcing 100%
+	 * width restores the full-row tap target.
 	 */
 	.ktc-drilldown li[data-drilldown-parent="true"] {
-		position: relative;
+		position: relative !important;
+		width: 100% !important;
+		min-height: 44px !important;
+		padding-right: 56px !important;
 	}
 
 	/*
 	 * Chevron button — right-aligned 44×44 minimum tap target that
 	 * shows the right-arrow.png icon. Transparent background so the
 	 * parent row's theme colours show through.
+	 *
+	 * Layout-critical properties use `!important` because core's
+	 * navigation block has higher-specificity rules on buttons inside
+	 * the responsive container that otherwise flatten the chevron back
+	 * into the document flow.
 	 */
 	.ktc-drilldown__chevron {
-		position: absolute;
-		top: 0;
-		right: 0;
-		bottom: 0;
-		display: inline-flex;
+		position: absolute !important;
+		top: 0 !important;
+		right: 0 !important;
+		bottom: 0 !important;
+		display: inline-flex !important;
 		align-items: center;
 		justify-content: center;
 		min-width: 44px;
@@ -97,6 +124,7 @@
 		border: 0;
 		color: inherit;
 		cursor: pointer;
+		z-index: 1;
 	}
 
 	.ktc-drilldown__chevron-icon {
@@ -152,6 +180,20 @@
 	.ktc-drilldown__view-parent a {
 		display: block;
 		padding: 0.75rem 1rem;
+	}
+
+	/*
+	 * Vertically centre the parent link/content so it aligns with the
+	 * chevron when the li is forced to the 44px minimum tap height.
+	 * Declared at the end of the @media block so stylelint's
+	 * `no-descending-specificity` rule stays happy — the lower-specificity
+	 * `.ktc-drilldown__view-parent a` above must come first.
+	 */
+	.ktc-drilldown li[data-drilldown-parent="true"] > a,
+	.ktc-drilldown li[data-drilldown-parent="true"] > .wp-block-navigation-item__content {
+		display: flex;
+		align-items: center;
+		min-height: 44px;
 	}
 }
 

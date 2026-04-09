@@ -171,7 +171,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 9. Testing
 
-- [ ] **9.1** Add a Playwright e2e test `tests/e2e/mobile-nav-drilldown.spec.js` that: sets viewport to 375×812, visits `/`, opens the mobile overlay, asserts chevrons on parent items, drills into "Houses" (or whichever parent is present on the site), asserts focus lands on the "View Houses" link, drills back, asserts focus returns to the original chevron.
+- [x] **9.1** Add a Playwright e2e test `tests/e2e/mobile-nav-drilldown.spec.js` that: sets viewport to 375×812, visits `/`, opens the mobile overlay, asserts chevrons on parent items, drills into "Houses" (or whichever parent is present on the site), asserts focus lands on the "View Houses" link, drills back, asserts focus returns to the original chevron.
   - What: Regression coverage for the core interaction.
   - Test: `npm run test:e2e` passes.
 
