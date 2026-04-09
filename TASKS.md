@@ -121,7 +121,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Announce level changes to screen reader users.
   - Test: With VoiceOver (macOS) active, drill into "Houses" → VO speaks "In submenu: Houses". Drill back → VO speaks "Top menu".
 
-- [ ] **6.2** Maintain `aria-expanded` on each chevron button: `true` while its child panel is part of the active drilldown path, `false` otherwise. Update in both `drillIn` and `drillBack`.
+- [x] **6.2** Maintain `aria-expanded` on each chevron button: `true` while its child panel is part of the active drilldown path, `false` otherwise. Update in both `drillIn` and `drillBack`.
   - What: Communicate state to assistive tech.
   - Test: Inspect a chevron after drilling into it → `aria-expanded="true"`. After drilling back → `aria-expanded="false"`.
 

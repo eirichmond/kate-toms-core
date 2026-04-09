@@ -583,6 +583,35 @@ function getActivePanel( track ) {
 }
 
 /**
+ * Sync every chevron's `aria-expanded` attribute to the current drill
+ * path — authoritative single source of truth.
+ *
+ * For each chevron in the track: find its parent `<li>`, look up its
+ * lazily-built panel in `childPanelCache`, and set `aria-expanded` to
+ * `true` iff that panel's id is currently on `state.drilldownPath`.
+ * Chevrons whose panels haven't been built yet (never drilled into)
+ * stay at `false`.
+ *
+ * Computing this from the path on every transition is more robust than
+ * flipping individual chevrons, because it stays correct for any
+ * future interaction that pops or pushes more than one level at a time.
+ *
+ * @param {HTMLElement} track The `.ktc-drilldown__track` element.
+ * @return {void}
+ */
+function syncChevronExpanded( track ) {
+	const chevrons = track.querySelectorAll( `.${ CHEVRON_CLASS }` );
+	chevrons.forEach( ( btn ) => {
+		const li = btn.parentElement;
+		const panel = li ? childPanelCache.get( li ) : null;
+		const expanded = !! (
+			panel && state.drilldownPath.includes( panel.id )
+		);
+		btn.setAttribute( 'aria-expanded', expanded ? 'true' : 'false' );
+	} );
+}
+
+/**
  * Mark every panel in the track either active (focusable, visible to
  * assistive tech) or inactive (`inert` + `aria-hidden="true"`).
  *
@@ -695,9 +724,9 @@ function drillBack( track ) {
 		announceLevelChange( wrapper );
 	}
 	updatePanelInertness( track );
+	syncChevronExpanded( track );
 
 	if ( trigger ) {
-		trigger.setAttribute( 'aria-expanded', 'false' );
 		trigger.focus();
 	}
 }
@@ -723,12 +752,9 @@ function drillIn( panel, triggerButton ) {
 	panelTriggers.set( panel, triggerButton );
 	state.drilldownPath.push( panel.id );
 
-	if ( triggerButton ) {
-		triggerButton.setAttribute( 'aria-expanded', 'true' );
-	}
-
 	applyWrapperTransform( wrapper );
 	updatePanelInertness( track );
+	syncChevronExpanded( track );
 	announceLevelChange( wrapper );
 	focusFirstIn( panel );
 }
@@ -930,11 +956,7 @@ function onOverlayClose( overlay ) {
 	state.drilldownPath.length = 0;
 	wrapper.style.transform = '';
 	updatePanelInertness( track );
-
-	const chevrons = wrapper.querySelectorAll( `.${ CHEVRON_CLASS }` );
-	chevrons.forEach( ( btn ) => {
-		btn.setAttribute( 'aria-expanded', 'false' );
-	} );
+	syncChevronExpanded( track );
 
 	// Clear the live region so the next open doesn't start with a
 	// stale "In submenu: X" announcement.
