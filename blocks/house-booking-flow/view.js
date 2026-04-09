@@ -117,7 +117,11 @@ class HouseBookingFlow {
 		.then(response => response.json())
 		.then(data => {
 			if (data.success) {
-				this.renderStep1(selectedDate, data.data.periods);
+				if (data.data.no_breaks) {
+					this.showNoBreaksMessage(data.data.message, data.data.date_formatted);
+				} else {
+					this.renderStep1(selectedDate, data.data.periods);
+				}
 			} else {
 				this.showError('Unable to load booking periods: ' + (data.data || 'Unknown error'));
 			}
@@ -128,6 +132,52 @@ class HouseBookingFlow {
 		});
 	}
 	
+	showNoBreaksMessage(message, dateFormatted) {
+		const selectedDate = this.parseDate(this.config.dateParam);
+		const weekNumber = this.config.weekParam || 1;
+
+		this.loadingEl.style.display = 'none';
+		this.errorEl.style.display = 'none';
+		this.containerEl.style.display = 'block';
+		this.containerEl.innerHTML = `
+			<div class="booking-progress-section">
+				<div class="progress-labels">
+					<p class="active">1. Select your booking</p>
+					<p>2. Personal details</p>
+					<p>3. All done</p>
+				</div>
+				<div class="progress">
+					<div class="bar bar-info" style="width: 33.33%;"></div>
+				</div>
+			</div>
+
+			<div class="booking-content">
+				<div class="booking-info">
+					<h2>Step 1: Select your booking</h2>
+					<ul>
+						<li><strong>Showing bookings beginning ${this.formatDate(selectedDate)} for ${this.config.houseName}</strong></li>
+						<li>Please choose the booking that you would like to make from the options to the right.</li>
+						<li>Week bookings usually begin on either a Friday or a Monday. If you would like to book a different period, please get in touch.</li>
+						<li>Weekend bookings are available from Friday.</li>
+						<li>The price includes all fees and taxes.</li>
+						<li>Pricing shown may be for the minimum group size, supplements may apply for extra guests.</li>
+					</ul>
+
+					<div class="booking_details">
+						<h3>Your Selection</h3>
+						<p><span class="label">House:</span> <strong>${this.config.houseName}</strong></p>
+						<p><span class="label">Date:</span> <strong>${this.formatDate(selectedDate)}</strong></p>
+					</div>
+				</div>
+
+				<div class="booking-options">
+					<h3>Available Booking Periods</h3>
+					<p class="no-periods">${message}</p>
+				</div>
+			</div>
+		`;
+	}
+
 	showLoading() {
 		this.errorEl.style.display = 'none';
 		this.containerEl.style.display = 'none';
@@ -168,7 +218,6 @@ class HouseBookingFlow {
 						<h3>Your Selection</h3>
 						<p><span class="label">House:</span> <strong>${this.config.houseName}</strong></p>
 						<p><span class="label">Date:</span> <strong>${this.formatDate(selectedDate)}</strong></p>
-						<p><span class="label">Week:</span> <strong>${weekNumber}</strong></p>
 					</div>
 				</div>
 				

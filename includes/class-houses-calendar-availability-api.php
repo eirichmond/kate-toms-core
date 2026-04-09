@@ -1372,53 +1372,89 @@ class House_Calendar_Manager {
 	 * @return array Available booking periods with pricing
 	 */
 	public function get_booking_periods_for_date( $property_id, $checkin_date ) {
-		$periods             = array();
-		$checkin_day_of_week = (int) $checkin_date->format( 'N' ); // 1=Monday, 7=Sunday
+		$periods = array();
 
-		// Get calendar data using the correct transient key
+		// Get calendar data using the correct transient key.
 		$transient_key = "kt_house_calendar_{$property_id}";
 		$calendar_data = get_transient( $transient_key );
 
 		if ( false === $calendar_data || ! isset( $calendar_data['availability'] ) ) {
-			// Try to fetch fresh data if cache miss
+			// Try to fetch fresh data if cache miss.
 			$calendar_data = $this->get_calendar_data( $property_id, $this->api_access_token );
 			if ( ! $calendar_data || ! isset( $calendar_data['availability'] ) ) {
 				return $periods;
 			}
 		}
 
-		// Check each stay duration to see if it's valid for this date
-		foreach ( $this->stay_durations as $period_key => $period_config ) {
-			$valid_start_days = is_array( $period_config['start_day'] )
-				? $period_config['start_day']
-				: array( $period_config['start_day'] );
+		// Determine eligible periods based on the clicked arrival day.
+		// Only periods starting ON this date are shown — no looking backwards.
+		//
+		// Arrival day rules:
+		// Friday    → 2-night weekend, 3-night weekend, week (7 nights)
+		// Saturday  → none
+		// Sunday    → none
+		// Monday    → 2-night midweek, midweek (4 nights), week (7 nights)
+		// Tuesday   → 2-night midweek
+		// Wednesday → 2-night midweek
+		// Thursday  → none
+		$arrival_day = (int) $checkin_date->format( 'N' ); // 1=Mon, 5=Fri, 7=Sun.
 
-			// Check if the checkin date falls on a valid start day for this period
-			if ( in_array( $checkin_day_of_week, $valid_start_days ) ) {
-				$checkout_date = clone $checkin_date;
-				$checkout_date->add( new DateInterval( 'P' . $period_config['nights'] . 'D' ) );
+		$eligible_periods = array();
 
-				// Check availability for all nights in this period
-				if ( $this->is_period_available_new( $checkin_date, $checkout_date, $calendar_data['availability'] ) ) {
-					$period_price = $this->calculate_period_price_new( $period_key, $checkin_date, $calendar_data );
+		switch ( $arrival_day ) {
+			case 5: // Friday.
+				$eligible_periods = array( '2-night-weekend', '3-night-weekend', 'week' );
+				break;
+			case 1: // Monday.
+				$eligible_periods = array( '2-night-midweek', 'midweek', 'week' );
+				break;
+			case 2: // Tuesday.
+			case 3: // Wednesday.
+				$eligible_periods = array( '2-night-midweek' );
+				break;
+			default:
+				// Saturday (6), Sunday (7), Thursday (4) — no breaks start on these days.
+				break;
+		}
 
-					if ( $period_price > 0 ) {
-						$periods[] = array(
-							'id'              => $period_key,
-							'name'            => $this->get_period_display_name( $period_key ),
-							'description'     => $this->get_period_description( $period_key, $checkin_date, $checkout_date ),
-							'checkin_date'    => $checkin_date->format( 'Y-m-d' ),
-							'checkout_date'   => $checkout_date->format( 'Y-m-d' ),
-							'nights'          => $period_config['nights'],
-							'price'           => $period_price,
-							'formatted_price' => '£' . number_format( $period_price ),
-						);
-					}
-				}
+		// Check each eligible period for availability and pricing.
+		foreach ( $eligible_periods as $period_key ) {
+			$period_config = $this->stay_durations[ $period_key ];
+			$checkout_date = clone $checkin_date;
+			$checkout_date->add( new DateInterval( 'P' . $period_config['nights'] . 'D' ) );
+
+			// All nights in the period must be available.
+			if ( ! $this->is_period_available_new( $checkin_date, $checkout_date, $calendar_data['availability'] ) ) {
+				continue;
+			}
+
+			$period_price = $this->calculate_period_price_new( $period_key, $checkin_date, $calendar_data );
+
+			if ( $period_price > 0 ) {
+				$periods[] = array(
+					'id'              => $period_key,
+					'name'            => $this->get_period_display_name( $period_key ),
+					'description'     => $this->get_period_description( $period_key, $checkin_date, $checkout_date ),
+					'checkin_date'    => $checkin_date->format( 'Y-m-d' ),
+					'checkout_date'   => $checkout_date->format( 'Y-m-d' ),
+					'nights'          => $period_config['nights'],
+					'price'           => $period_price,
+					'formatted_price' => '£' . number_format( $period_price ),
+				);
 			}
 		}
 
-		// If no periods found for the exact date, search for closest valid checkin dates
+		// If no eligible periods exist for this arrival day (Sat, Sun, Thu),
+		// return a message rather than searching for nearby dates.
+		if ( empty( $eligible_periods ) ) {
+			return array(
+				'no_breaks' => true,
+				'message'   => 'No breaks available from your chosen arrival day. Please get in touch to enquire or return and select another day',
+			);
+		}
+
+		// If eligible periods exist but none passed availability/price checks,
+		// search forward for the nearest valid checkin dates.
 		if ( empty( $periods ) ) {
 			$periods = $this->find_closest_booking_periods( $property_id, $checkin_date, $calendar_data );
 		}
@@ -1428,52 +1464,46 @@ class House_Calendar_Manager {
 
 	/**
 	 * Find closest available booking periods when the selected date is not a valid checkin day.
-	 * Searches up to 7 days before and after the selected date.
+	 * Only searches forward from the selected date — never backwards.
 	 *
 	 * @param string   $property_id The iPro Property ID
 	 * @param DateTime $selected_date The date the user clicked on
 	 * @param array    $calendar_data Calendar data with availability and rates
-	 * @return array Available booking periods from nearby checkin dates
+	 * @return array Available booking periods from nearby future checkin dates
 	 */
 	private function find_closest_booking_periods( $property_id, $selected_date, $calendar_data ) {
 		$all_periods   = array();
 		$checked_dates = array();
 
-		// Search up to 7 days before and after the selected date
-		for ( $days_offset = 0; $days_offset <= 7; $days_offset++ ) {
-			// Check dates before
-			if ( $days_offset > 0 ) {
-				$before_date = clone $selected_date;
-				$before_date->sub( new DateInterval( 'P' . $days_offset . 'D' ) );
-				$before_periods = $this->get_periods_for_specific_date( $before_date, $calendar_data );
+		// Calculate the end of the current booking week (Thursday).
+		// Booking weeks run Friday to Thursday.
+		$selected_day_of_week = (int) $selected_date->format( 'N' ); // 1=Mon, 4=Thu, 5=Fri, 7=Sun.
 
-				foreach ( $before_periods as $period ) {
-					$date_key = $period['checkin_date'];
-					if ( ! isset( $checked_dates[ $date_key ] ) ) {
-						$period['is_alternate']     = true;
-						$period['days_difference']  = -$days_offset;
-						$all_periods[]              = $period;
-						$checked_dates[ $date_key ] = true;
-					}
-				}
-			}
+		if ( $selected_day_of_week >= 5 ) {
+			// Fri(5), Sat(6), Sun(7) — Thursday is 6, 5, or 4 days ahead.
+			$days_to_thursday = 4 + ( 7 - $selected_day_of_week ); // Fri=6, Sat=5, Sun=4.
+		} else {
+			// Mon(1), Tue(2), Wed(3), Thu(4) — Thursday is 3, 2, 1, or 0 days ahead.
+			$days_to_thursday = 4 - $selected_day_of_week;
+		}
 
-			// Check dates after
-			$after_date = clone $selected_date;
-			$after_date->add( new DateInterval( 'P' . $days_offset . 'D' ) );
-			$after_periods = $this->get_periods_for_specific_date( $after_date, $calendar_data );
+		// Only search forward within the same booking week (up to Thursday).
+		for ( $days_offset = 1; $days_offset <= $days_to_thursday; $days_offset++ ) {
+			$future_date = clone $selected_date;
+			$future_date->add( new DateInterval( 'P' . $days_offset . 'D' ) );
+			$future_periods = $this->get_periods_for_specific_date( $future_date, $calendar_data );
 
-			foreach ( $after_periods as $period ) {
+			foreach ( $future_periods as $period ) {
 				$date_key = $period['checkin_date'];
 				if ( ! isset( $checked_dates[ $date_key ] ) ) {
-					$period['is_alternate']     = ( $days_offset > 0 );
-					$period['days_difference']  = $days_offset;
-					$all_periods[]              = $period;
+					$period['is_alternate']    = true;
+					$period['days_difference'] = $days_offset;
+					$all_periods[]             = $period;
 					$checked_dates[ $date_key ] = true;
 				}
 			}
 
-			// If we found some periods, return them (prioritize closest dates)
+			// Once we've found periods and checked at least 3 days out, stop.
 			if ( ! empty( $all_periods ) && $days_offset >= 3 ) {
 				break;
 			}
@@ -1716,19 +1746,18 @@ class House_Calendar_Manager {
 			'3-night-weekend' => 'Friday to Monday',
 			'week'            => '7 nights',
 			'midweek'         => 'Monday to Friday',
-			'2-night-midweek' => 'Midweek break',
 		);
 
 		if ( isset( $descriptions[ $period_key ] ) ) {
 			return $descriptions[ $period_key ];
 		}
 
-		// Generate dynamic description
+		// Generate dynamic description using actual checkin/checkout days.
+		// This covers 2-night-midweek which can start Mon, Tue or Wed.
 		$checkin_day  = $checkin_date->format( 'l' );
 		$checkout_day = $checkout_date->format( 'l' );
-		$nights       = $this->stay_durations[ $period_key ]['nights'];
 
-		return "{$checkin_day} to {$checkout_day} ({$nights} nights)";
+		return "{$checkin_day} to {$checkout_day}";
 	}
 
 	/**
@@ -1770,11 +1799,27 @@ class House_Calendar_Manager {
 			return;
 		}
 
-		$periods = $this->get_booking_periods_for_date( $property_id, $checkin_date );
+		$result = $this->get_booking_periods_for_date( $property_id, $checkin_date );
+
+		// Check if the arrival day has no eligible breaks (Sat, Sun, Thu).
+		if ( isset( $result['no_breaks'] ) && $result['no_breaks'] ) {
+			wp_send_json_success(
+				array(
+					'periods'        => array(),
+					'no_breaks'      => true,
+					'message'        => $result['message'],
+					'checkin_date'   => $checkin_date->format( 'Y-m-d' ),
+					'date_formatted' => $checkin_date->format( 'l, j F Y' ),
+					'property_id'    => $property_id,
+					'house_id'       => $house_post_id,
+				)
+			);
+			return;
+		}
 
 		wp_send_json_success(
 			array(
-				'periods'        => $periods,
+				'periods'        => $result,
 				'checkin_date'   => $checkin_date->format( 'Y-m-d' ),
 				'date_formatted' => $checkin_date->format( 'l, j F Y' ),
 				'property_id'    => $property_id,
