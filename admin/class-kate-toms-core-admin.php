@@ -180,10 +180,23 @@ class Kate_Toms_Core_Admin {
 				}
 			);
 
+			// Folders under build/ that are NOT real blocks and must be skipped
+			// by the auto-discovery registration.
+			//
+			// mobile-nav-drilldown is a build-pipeline stub: its block.json exists
+			// only so wp-scripts bundles view.js + style.css for the mobile drilldown
+			// enhancement of the core/navigation block. It has no editor UI, no
+			// render callback, and must never appear in the inserter.
+			$skip_folders = array( 'mobile-nav-drilldown' );
+
 			foreach ( $folders as $folder ) {
+				if ( in_array( $folder, $skip_folders, true ) ) {
+					continue;
+				}
+
 				$block_path = plugin_dir_path( __DIR__ ) . '/build/' . $folder;
 				error_log( 'Registering block: ' . $folder . ' from path: ' . $block_path );
-				
+
 				// Special handling for single-house-display
 				if ( $folder === 'single-house-display' ) {
 					$result = register_block_type( $block_path, array(

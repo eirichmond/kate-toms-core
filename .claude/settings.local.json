@@ -3,7 +3,9 @@
     "allow": [
       "Bash(mkdir:*)",
       "Bash(ls /Users/elliottrichmond/Documents/Sites/kateandtomsblocks/PRD*.md)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(vendor/bin/phpcs admin/class-kate-toms-core-admin.php)",
+      "Bash(wp eval:*)"
     ],
     "deny": []
   }

@@ -24,11 +24,11 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Confirm wp-scripts picks up the new directory via its block.json without any config changes.
   - Test: Build completes with zero errors. Built files exist at the paths above.
 
-- [ ] **1.3** Populate `blocks/mobile-nav-drilldown/view.js` with a minimal stub that imports `store` from `@wordpress/interactivity` and calls `store( 'core/navigation', {} )` with no state/actions. Add a `console.debug('[mobile-nav-drilldown] loaded')` for smoke verification.
+- [x] **1.3** Populate `blocks/mobile-nav-drilldown/view.js` with a minimal stub that imports `store` from `@wordpress/interactivity` and calls `store( 'core/navigation', {} )` with no state/actions. Add a `console.debug('[mobile-nav-drilldown] loaded')` for smoke verification.
   - What: Confirm the view module loads as a script module at runtime and successfully targets the core navigation store namespace.
   - Test: After task 2.x enqueues it, loading the site below 1100px and opening the mobile overlay shows the debug log in the browser console. (Parked until task 2.3 is done.)
 
-- [ ] **1.4** Explicitly prevent the stub `block.json` from registering as a usable block: do **not** call `register_block_type()` against `blocks/mobile-nav-drilldown/` anywhere. Add a one-line comment in `blocks/mobile-nav-drilldown/block.json` (or its README) explaining that this directory exists purely as a build-pipeline discovery hook.
+- [x] **1.4** Explicitly prevent the stub `block.json` from registering as a usable block: do **not** call `register_block_type()` against `blocks/mobile-nav-drilldown/` anywhere. Add a one-line comment in `blocks/mobile-nav-drilldown/block.json` (or its README) explaining that this directory exists purely as a build-pipeline discovery hook.
   - What: Prevent the stub block from accidentally showing up in the inserter.
   - Test: In the block editor, search the inserter for "mobile nav drilldown" — nothing should appear.
 
