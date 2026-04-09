@@ -4,3 +4,8 @@
  * Populated in section 7 of TASKS.md. All rules will be scoped under
  * @media (max-width: 1100px) so the desktop navigation stays untouched.
  */
+
+/* Placeholder — replaced in section 7. Ensures webpack emits style-index.css. */
+.ktc-drilldown {
+	/* noop */
+}

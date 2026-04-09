@@ -3,3 +3,4 @@
  *
  * Populated in task 1.3.
  */
+import './style.css';

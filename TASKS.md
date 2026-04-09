@@ -20,7 +20,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Piggyback on the existing `wp-scripts --source-path=blocks` discovery so no custom webpack config is needed. The block is never registered in PHP, only its view module + style are used.
   - Test: `ls blocks/mobile-nav-drilldown/` shows the four files.
 
-- [ ] **1.2** Run `npm run build` and verify the pipeline produces `build/mobile-nav-drilldown/view.js` and `build/mobile-nav-drilldown/style-index.css` (or equivalent), plus a generated `view.asset.php` file next to them.
+- [x] **1.2** Run `npm run build` and verify the pipeline produces `build/mobile-nav-drilldown/view.js` and `build/mobile-nav-drilldown/style-view.css`, plus a generated `view.asset.php` file next to them. (Note: wp-scripts emits the CSS as `style-view.css` because the JS entry is named `view`. Required a one-line `import './style.css';` inside `view.js` so webpack's CSS extractor picks it up — the stub block.json's `style` field alone doesn't trigger extraction without an `index.js` entry.)
   - What: Confirm wp-scripts picks up the new directory via its block.json without any config changes.
   - Test: Build completes with zero errors. Built files exist at the paths above.
 
@@ -44,7 +44,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 - [ ] **2.3** Register the view script module and style in `Kate_Toms_Core_Mobile_Nav::register()`:
   - `wp_register_script_module( 'kate-toms-core/mobile-nav-drilldown', plugins_url( 'build/mobile-nav-drilldown/view.js', KATE_TOMS_CORE_PLUGIN_FILE ), array( '@wordpress/interactivity' ), KATE_TOMS_CORE_VERSION );`
-  - `wp_register_style( 'kate-toms-core-mobile-nav-drilldown', plugins_url( 'build/mobile-nav-drilldown/style-index.css', KATE_TOMS_CORE_PLUGIN_FILE ), array(), KATE_TOMS_CORE_VERSION );`
+  - `wp_register_style( 'kate-toms-core-mobile-nav-drilldown', plugins_url( 'build/mobile-nav-drilldown/style-view.css', KATE_TOMS_CORE_PLUGIN_FILE ), array(), KATE_TOMS_CORE_VERSION );` (wp-scripts names the extracted CSS after the JS entry; our entry is `view.js`, hence `style-view.css` — verified in task 1.2)
   - Hook `register()` to `init`. Wire the class instantiation into `Kate_Toms_Core::define_public_hooks()` in `includes/class-kate-toms-core.php`.
   - What: Make the script module and stylesheet known to WordPress so they can be enqueued on demand.
   - Test: Page source on a nav-rendering page after task 2.4 includes both the view.js module tag and the stylesheet link.
