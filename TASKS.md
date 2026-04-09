@@ -69,7 +69,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 4. DOM Transform — Panels, Chevrons, Synthesised Parent Links
 
-- [ ] **4.1** In the init callback, wrap the top-level `<ul>` inside the overlay in a new stacking container `<div class="ktc-drilldown">` containing a flex row of panel wrappers. Move the existing `<ul>` into a `<div class="ktc-drilldown__panel" data-level="0">`. This must be idempotent — a second init must not double-wrap.
+- [x] **4.1** In the init callback, wrap the top-level `<ul>` inside the overlay in a new stacking container `<div class="ktc-drilldown">` containing a flex row of panel wrappers. Move the existing `<ul>` into a `<div class="ktc-drilldown__panel" data-level="0">`. This must be idempotent — a second init must not double-wrap.
   - What: Create the viewport inside which panels will slide.
   - Test: Open overlay → markup now contains the wrapper and the root panel. Close and reopen → still only one wrapper (no nesting).
 

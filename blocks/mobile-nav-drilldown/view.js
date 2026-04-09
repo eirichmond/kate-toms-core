@@ -35,6 +35,31 @@ const OVERLAY_SELECTOR = '.wp-block-navigation__responsive-container';
  */
 const OVERLAY_OPEN_CLASS = 'is-menu-open';
 
+/**
+ * CSS class applied to the drilldown stacking wrapper injected by this
+ * module around the overlay's root `<ul>`. Used both as a CSS hook and
+ * as an idempotency marker — if the wrapper is already present, the
+ * wrapping logic no-ops.
+ */
+const WRAPPER_CLASS = 'ktc-drilldown';
+
+/**
+ * CSS class applied to the flex row inside the wrapper that holds all
+ * panel elements side-by-side (root + any drilled children).
+ */
+const TRACK_CLASS = 'ktc-drilldown__track';
+
+/**
+ * CSS class applied to each panel (root and drilled).
+ */
+const PANEL_CLASS = 'ktc-drilldown__panel';
+
+/**
+ * Selector for the top-level `<ul>` inside a core navigation overlay.
+ * The core block renders the main menu as `ul.wp-block-navigation__container`.
+ */
+const ROOT_LIST_SELECTOR = 'ul.wp-block-navigation__container';
+
 const { state } = store( 'core/navigation', {
 	state: {
 		/**
@@ -65,6 +90,78 @@ const { state } = store( 'core/navigation', {
  */
 function isBelowBreakpoint() {
 	return window.matchMedia( `(max-width: ${ BREAKPOINT_PX }px)` ).matches;
+}
+
+/**
+ * Wrap the overlay's root `<ul>` in the drilldown stacking container.
+ *
+ * Idempotent: if a `.ktc-drilldown` wrapper already exists inside the
+ * overlay, returns the existing track element instead of re-wrapping.
+ *
+ * Resulting structure:
+ *
+ *   <div class="ktc-drilldown">
+ *     <div class="ktc-drilldown__track">
+ *       <div class="ktc-drilldown__panel" data-level="0">
+ *         <ul class="wp-block-navigation__container"> ... </ul>
+ *       </div>
+ *     </div>
+ *   </div>
+ *
+ * @param {HTMLElement} overlay The open overlay root element.
+ * @return {HTMLElement|null} The track element, or null if no root
+ *                            `<ul>` was found inside the overlay.
+ */
+function wrapOverlay( overlay ) {
+	const existingWrapper = overlay.querySelector( `.${ WRAPPER_CLASS }` );
+	if ( existingWrapper ) {
+		return existingWrapper.querySelector( `.${ TRACK_CLASS }` );
+	}
+
+	const rootList = overlay.querySelector( ROOT_LIST_SELECTOR );
+	if ( ! rootList ) {
+		return null;
+	}
+
+	const wrapper = document.createElement( 'div' );
+	wrapper.className = WRAPPER_CLASS;
+
+	const track = document.createElement( 'div' );
+	track.className = TRACK_CLASS;
+	wrapper.appendChild( track );
+
+	const rootPanel = document.createElement( 'div' );
+	rootPanel.className = PANEL_CLASS;
+	rootPanel.setAttribute( 'data-level', '0' );
+	track.appendChild( rootPanel );
+
+	// Insert the wrapper where the root list currently lives, then move
+	// the list into the root panel. Doing it in this order keeps focus
+	// and any observers on the list itself intact across the move.
+	rootList.parentNode.insertBefore( wrapper, rootList );
+	rootPanel.appendChild( rootList );
+
+	return track;
+}
+
+/**
+ * Undo `wrapOverlay()` — move the root list back out of the wrapper and
+ * remove the wrapper from the DOM. Used by `resetDrilldownState()` when
+ * the viewport crosses above the breakpoint.
+ *
+ * @return {void}
+ */
+function unwrapOverlays() {
+	const wrappers = document.querySelectorAll( `.${ WRAPPER_CLASS }` );
+	wrappers.forEach( ( wrapper ) => {
+		const rootList = wrapper.querySelector(
+			`[data-level="0"] ${ ROOT_LIST_SELECTOR }`
+		);
+		if ( rootList && wrapper.parentNode ) {
+			wrapper.parentNode.insertBefore( rootList, wrapper );
+		}
+		wrapper.remove();
+	} );
 }
 
 /**
@@ -102,6 +199,7 @@ function onOverlayOpen( overlay ) {
 	if ( ! isBelowBreakpoint() ) {
 		return;
 	}
+	wrapOverlay( overlay );
 	tagParentItems( overlay );
 }
 
@@ -152,6 +250,7 @@ function stripDrilldownAttributes() {
 function resetDrilldownState() {
 	state.drilldownPath.length = 0;
 	stripDrilldownAttributes();
+	unwrapOverlays();
 }
 
 /**
