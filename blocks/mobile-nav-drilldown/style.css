@@ -1,11 +1,47 @@
 /*
  * Mobile Nav Drilldown — frontend styles.
  *
- * Populated in section 7 of TASKS.md. All rules will be scoped under
- * @media (max-width: 1100px) so the desktop navigation stays untouched.
+ * All rules are scoped under @media (max-width: 1100px) so the desktop
+ * navigation (≥1100px) is never touched by this enhancement. The BEM
+ * class names match the constants declared in view.js.
  */
 
-/* Placeholder — replaced in section 7. Ensures webpack emits style-index.css. */
-.ktc-drilldown {
-	/* noop */
+@media (max-width: 1100px) {
+
+	/*
+	 * Wrapper — a horizontal viewport that clips the off-screen panels.
+	 * Inline style from drillIn()/drillBack() currently writes the
+	 * transform directly; task 7.2 refactors those helpers to write
+	 * the --ktc-drilldown-offset custom property instead, at which
+	 * point the CSS below becomes the single source of truth.
+	 */
+	.ktc-drilldown {
+		position: relative;
+		overflow: hidden;
+		width: 100%;
+		transform: translateX(var(--ktc-drilldown-offset, 0));
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/*
+	 * Track — flex row holding every panel side-by-side. Each panel is
+	 * exactly one wrapper width so translateX(-N * 100%) on the wrapper
+	 * moves the viewport exactly N panels to the left.
+	 */
+	.ktc-drilldown__track {
+		display: flex;
+		flex-wrap: nowrap;
+		align-items: flex-start;
+		width: 100%;
+	}
+
+	/*
+	 * Panels — fixed at 100% of the track's width, regardless of
+	 * content. `min-width: 0` lets long link labels truncate cleanly
+	 * instead of forcing the flex item wider than its allotted space.
+	 */
+	.ktc-drilldown__panel {
+		flex: 0 0 100%;
+		min-width: 0;
+	}
 }

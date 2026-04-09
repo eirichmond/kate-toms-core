@@ -131,7 +131,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 7. Styles & Animation
 
-- [ ] **7.1** Fill `assets/css/mobile-nav-drilldown.css` with the layout rules (scoped under `@media (max-width: 1100px)`): the `.ktc-drilldown` wrapper is `position: relative; overflow: hidden; width: 100%;`, the inner flex row holds panels side-by-side, each `.ktc-drilldown__panel` is `flex: 0 0 100%`. Wrapper uses `transform: translateX(var(--ktc-drilldown-offset, 0))` and a `transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)`.
+- [x] **7.1** Fill `assets/css/mobile-nav-drilldown.css` with the layout rules (scoped under `@media (max-width: 1100px)`): the `.ktc-drilldown` wrapper is `position: relative; overflow: hidden; width: 100%;`, the inner flex row holds panels side-by-side, each `.ktc-drilldown__panel` is `flex: 0 0 100%`. Wrapper uses `transform: translateX(var(--ktc-drilldown-offset, 0))` and a `transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)`.
   - What: Core sliding layout.
   - Test: Drill in → panel slides smoothly over 0.3s. Drill back → slides back smoothly. No layout jank.
 
