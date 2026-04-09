@@ -1475,8 +1475,20 @@ class House_Calendar_Manager {
 		$all_periods   = array();
 		$checked_dates = array();
 
-		// Search up to 7 days forward only from the selected date.
-		for ( $days_offset = 1; $days_offset <= 7; $days_offset++ ) {
+		// Calculate the end of the current booking week (Thursday).
+		// Booking weeks run Friday to Thursday.
+		$selected_day_of_week = (int) $selected_date->format( 'N' ); // 1=Mon, 4=Thu, 5=Fri, 7=Sun.
+
+		if ( $selected_day_of_week >= 5 ) {
+			// Fri(5), Sat(6), Sun(7) — Thursday is 6, 5, or 4 days ahead.
+			$days_to_thursday = 4 + ( 7 - $selected_day_of_week ); // Fri=6, Sat=5, Sun=4.
+		} else {
+			// Mon(1), Tue(2), Wed(3), Thu(4) — Thursday is 3, 2, 1, or 0 days ahead.
+			$days_to_thursday = 4 - $selected_day_of_week;
+		}
+
+		// Only search forward within the same booking week (up to Thursday).
+		for ( $days_offset = 1; $days_offset <= $days_to_thursday; $days_offset++ ) {
 			$future_date = clone $selected_date;
 			$future_date->add( new DateInterval( 'P' . $days_offset . 'D' ) );
 			$future_periods = $this->get_periods_for_specific_date( $future_date, $calendar_data );
