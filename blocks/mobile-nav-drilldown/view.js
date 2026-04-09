@@ -125,6 +125,12 @@ let panelIdCounter = 0;
 const MODULE_DATA_ID =
 	'wp-script-module-data-kate-toms-core/mobile-nav-drilldown';
 
+/**
+ * CSS class applied to the visually-hidden `aria-live="polite"` element
+ * that announces drilldown level changes to assistive tech.
+ */
+const LIVE_REGION_CLASS = 'ktc-drilldown__live-region';
+
 const { state } = store( 'core/navigation', {
 	state: {
 		/**
@@ -217,6 +223,23 @@ function wrapOverlay( overlay ) {
 
 	const wrapper = document.createElement( 'div' );
 	wrapper.className = WRAPPER_CLASS;
+
+	const liveRegion = document.createElement( 'div' );
+	liveRegion.className = LIVE_REGION_CLASS;
+	liveRegion.setAttribute( 'aria-live', 'polite' );
+	liveRegion.setAttribute( 'aria-atomic', 'true' );
+	// Inline visually-hidden styles so the region never shows even if
+	// task 7's CSS hasn't loaded. Task 7 may refine via the class.
+	liveRegion.style.position = 'absolute';
+	liveRegion.style.width = '1px';
+	liveRegion.style.height = '1px';
+	liveRegion.style.overflow = 'hidden';
+	liveRegion.style.clip = 'rect(0 0 0 0)';
+	liveRegion.style.whiteSpace = 'nowrap';
+	liveRegion.style.border = '0';
+	liveRegion.style.padding = '0';
+	liveRegion.style.margin = '-1px';
+	wrapper.appendChild( liveRegion );
 
 	const track = document.createElement( 'div' );
 	track.className = TRACK_CLASS;
@@ -585,6 +608,36 @@ function updatePanelInertness( track ) {
 }
 
 /**
+ * Update the wrapper's `aria-live` region with the current level label.
+ *
+ * Level 0 announces "Top menu"; deeper levels announce "In submenu:
+ * {parentLabel}" based on the currently-active panel's stored parent
+ * label. Silent if the wrapper has no live region (defensive).
+ *
+ * @param {HTMLElement} wrapper The `.ktc-drilldown` wrapper element.
+ * @return {void}
+ */
+function announceLevelChange( wrapper ) {
+	const liveRegion = wrapper.querySelector( `.${ LIVE_REGION_CLASS }` );
+	if ( ! liveRegion ) {
+		return;
+	}
+
+	if ( state.drilldownPath.length === 0 ) {
+		liveRegion.textContent = 'Top menu';
+		return;
+	}
+
+	const track = wrapper.querySelector( `.${ TRACK_CLASS }` );
+	if ( ! track ) {
+		return;
+	}
+	const active = getActivePanel( track );
+	const label = ( active && active.dataset.parentLabel ) || 'submenu';
+	liveRegion.textContent = `In submenu: ${ label }`;
+}
+
+/**
  * Move focus to the best starting element inside a panel.
  *
  * Preference order:
@@ -639,6 +692,7 @@ function drillBack( track ) {
 	const wrapper = track.closest( `.${ WRAPPER_CLASS }` );
 	if ( wrapper ) {
 		applyWrapperTransform( wrapper );
+		announceLevelChange( wrapper );
 	}
 	updatePanelInertness( track );
 
@@ -675,6 +729,7 @@ function drillIn( panel, triggerButton ) {
 
 	applyWrapperTransform( wrapper );
 	updatePanelInertness( track );
+	announceLevelChange( wrapper );
 	focusFirstIn( panel );
 }
 
@@ -880,6 +935,13 @@ function onOverlayClose( overlay ) {
 	chevrons.forEach( ( btn ) => {
 		btn.setAttribute( 'aria-expanded', 'false' );
 	} );
+
+	// Clear the live region so the next open doesn't start with a
+	// stale "In submenu: X" announcement.
+	const liveRegion = wrapper.querySelector( `.${ LIVE_REGION_CLASS }` );
+	if ( liveRegion ) {
+		liveRegion.textContent = '';
+	}
 }
 
 /**

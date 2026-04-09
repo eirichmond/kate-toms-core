@@ -117,7 +117,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 6. Accessibility Polish
 
-- [ ] **6.1** Add an off-screen `aria-live="polite"` element inside the drilldown wrapper. On every drill-in/drill-back, update its text content to `"In submenu: {currentPanelLabel}"` or `"Top menu"` at level 0.
+- [x] **6.1** Add an off-screen `aria-live="polite"` element inside the drilldown wrapper. On every drill-in/drill-back, update its text content to `"In submenu: {currentPanelLabel}"` or `"Top menu"` at level 0.
   - What: Announce level changes to screen reader users.
   - Test: With VoiceOver (macOS) active, drill into "Houses" → VO speaks "In submenu: Houses". Drill back → VO speaks "Top menu".
 
