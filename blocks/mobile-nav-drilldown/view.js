@@ -849,6 +849,40 @@ function onOverlayOpen( overlay ) {
 }
 
 /**
+ * Reset drilldown state when the overlay closes.
+ *
+ * Differs from `resetDrilldownState()` (used on breakpoint reset): this
+ * keeps the wrapper, built panels, and chevrons in place so reopening
+ * the overlay is instant. Only the drill path, transform, inertness,
+ * and `aria-expanded` states are rewound.
+ *
+ * Idempotent — safe to call on overlays that never had a wrapper
+ * injected (e.g. desktop-only navs, or the initial pre-open state).
+ *
+ * @param {HTMLElement} overlay The overlay that just closed.
+ * @return {void}
+ */
+function onOverlayClose( overlay ) {
+	const wrapper = overlay.querySelector( `.${ WRAPPER_CLASS }` );
+	if ( ! wrapper ) {
+		return;
+	}
+	const track = wrapper.querySelector( `.${ TRACK_CLASS }` );
+	if ( ! track ) {
+		return;
+	}
+
+	state.drilldownPath.length = 0;
+	wrapper.style.transform = '';
+	updatePanelInertness( track );
+
+	const chevrons = wrapper.querySelectorAll( `.${ CHEVRON_CLASS }` );
+	chevrons.forEach( ( btn ) => {
+		btn.setAttribute( 'aria-expanded', 'false' );
+	} );
+}
+
+/**
  * Observe an overlay element for `is-menu-open` class toggles.
  *
  * @param {HTMLElement} overlay The overlay to watch.
@@ -858,6 +892,8 @@ function observeOverlay( overlay ) {
 	const observer = new MutationObserver( () => {
 		if ( overlay.classList.contains( OVERLAY_OPEN_CLASS ) ) {
 			onOverlayOpen( overlay );
+		} else {
+			onOverlayClose( overlay );
 		}
 	} );
 	observer.observe( overlay, {

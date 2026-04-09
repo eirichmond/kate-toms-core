@@ -111,7 +111,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Full keyboard parity per WCAG.
   - Test: Walk through the menu keyboard-only with no mouse: tab to chevron, Enter drills in; Escape drills back; ArrowRight/ArrowLeft behave as specified; final Escape at root closes the overlay.
 
-- [ ] **5.5** Reset drilldown state to level 0 when the overlay closes (`isMenuOpen` becomes false). Strip any transform and re-enable the root panel.
+- [x] **5.5** Reset drilldown state to level 0 when the overlay closes (`isMenuOpen` becomes false). Strip any transform and re-enable the root panel.
   - What: Reopening the menu should always start at root.
   - Test: Drill into level 2, close the overlay, reopen → root panel is visible, no transform applied, no inert on root.
 
