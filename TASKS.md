@@ -125,7 +125,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Communicate state to assistive tech.
   - Test: Inspect a chevron after drilling into it → `aria-expanded="true"`. After drilling back → `aria-expanded="false"`.
 
-- [ ] **6.3** Confirm `inert` is set on all non-active panels, not just the immediately previous one. (E.g. at level 3, levels 0/1/2 are all inert.) Audit `drillIn` and `drillBack` loops accordingly.
+- [x] **6.3** Confirm `inert` is set on all non-active panels, not just the immediately previous one. (E.g. at level 3, levels 0/1/2 are all inert.) Audit `drillIn` and `drillBack` loops accordingly.
   - What: Prevent focus escape from non-visible ancestors.
   - Test: Drill to level 3, press Tab repeatedly → focus cycles only within the level-3 panel, never escapes to level 0/1/2 items.
 

@@ -615,9 +615,10 @@ function syncChevronExpanded( track ) {
  * Mark every panel in the track either active (focusable, visible to
  * assistive tech) or inactive (`inert` + `aria-hidden="true"`).
  *
- * Task 6.3 already-correct behaviour: all non-active panels get inert
- * regardless of whether they're ancestors or siblings of the active
- * panel, so focus can never escape to off-screen items.
+ * Every non-active panel — ancestors AND siblings of the active panel —
+ * gets both `inert` and `aria-hidden`, so keyboard focus and assistive
+ * tech cursors can never escape to off-screen items regardless of how
+ * deep the drill path is. At level N, panels 0..N-1 are all inert.
  *
  * @param {HTMLElement} track The `.ktc-drilldown__track` element.
  * @return {void}
