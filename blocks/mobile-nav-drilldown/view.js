@@ -6,7 +6,7 @@
  * as a script module and enqueued by Kate_Toms_Core_Mobile_Nav only on
  * pages that render a core/navigation block.
  */
-/* global MutationObserver */
+/* global MutationObserver, Element */
 import { store } from '@wordpress/interactivity';
 import './style.css';
 
@@ -232,6 +232,12 @@ function wrapOverlay( overlay ) {
 	// and any observers on the list itself intact across the move.
 	rootList.parentNode.insertBefore( wrapper, rootList );
 	rootPanel.appendChild( rootList );
+
+	// Keyboard shortcuts are scoped to the wrapper — removing the
+	// wrapper (via unwrapOverlays) removes the listener with it.
+	wrapper.addEventListener( 'keydown', ( event ) => {
+		onWrapperKeydown( event, wrapper );
+	} );
 
 	return track;
 }
@@ -688,6 +694,87 @@ function onChevronClick( parentLi, triggerButton ) {
 		return;
 	}
 	drillIn( panel, triggerButton );
+}
+
+/**
+ * Ignore keyboard shortcuts when focus is inside a form control. Prevents
+ * us from hijacking arrow keys during typing — search boxes inside a
+ * navigation submenu (unlikely but possible) must still behave normally.
+ *
+ * @param {EventTarget|null} target The focused element.
+ * @return {boolean} True if keyboard shortcuts should be ignored.
+ */
+function isTypingTarget( target ) {
+	if ( ! target || ! ( target instanceof Element ) ) {
+		return false;
+	}
+	if ( target.isContentEditable ) {
+		return true;
+	}
+	const tag = target.tagName;
+	return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+/**
+ * Handle keydown events inside a drilldown wrapper.
+ *
+ * Shortcuts:
+ *   - Escape inside a drilled panel → drillBack. At level 0 the event
+ *     is intentionally NOT consumed, so core/navigation's own
+ *     close-overlay handler still runs.
+ *   - ArrowRight on a focused element inside a parent `<li>` that has
+ *     a chevron → drillIn that parent.
+ *   - ArrowLeft inside any drilled panel (not the root) → drillBack.
+ *
+ * @param {KeyboardEvent} event   The keydown event.
+ * @param {HTMLElement}   wrapper The `.ktc-drilldown` wrapper element
+ *                                the listener is attached to.
+ * @return {void}
+ */
+function onWrapperKeydown( event, wrapper ) {
+	if ( isTypingTarget( event.target ) ) {
+		return;
+	}
+
+	const track = wrapper.querySelector( `.${ TRACK_CLASS }` );
+	if ( ! track ) {
+		return;
+	}
+
+	if ( event.key === 'Escape' ) {
+		if ( state.drilldownPath.length > 0 ) {
+			event.preventDefault();
+			event.stopPropagation();
+			drillBack( track );
+		}
+		return;
+	}
+
+	if ( event.key === 'ArrowRight' ) {
+		const li = event.target.closest( 'li[data-drilldown-parent="true"]' );
+		if ( ! li || ! wrapper.contains( li ) ) {
+			return;
+		}
+		const chevron = li.querySelector( `:scope > .${ CHEVRON_CLASS }` );
+		if ( ! chevron ) {
+			return;
+		}
+		event.preventDefault();
+		onChevronClick( li, chevron );
+		return;
+	}
+
+	if ( event.key === 'ArrowLeft' ) {
+		if ( state.drilldownPath.length === 0 ) {
+			return;
+		}
+		const panel = event.target.closest( `.${ PANEL_CLASS }` );
+		if ( ! panel || panel.getAttribute( 'data-level' ) === '0' ) {
+			return;
+		}
+		event.preventDefault();
+		drillBack( track );
+	}
 }
 
 /**

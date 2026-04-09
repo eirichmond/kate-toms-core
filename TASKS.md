@@ -103,7 +103,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Visible and accessible back affordance per PRD, reusing the single arrow asset.
   - Test: Drill to level 1 → back button reads "← Menu" with a visually left-pointing arrow. Drill to level 2 under "Houses" → back button reads "← Houses" and `aria-label` is "Back to Houses". Network tab shows `right-arrow.png` loaded only once (not twice).
 
-- [ ] **5.4** Keyboard parity:
+- [x] **5.4** Keyboard parity:
   - `Enter` / `Space` on a chevron → drillIn (native button behaviour covers this, just make sure the chevron is a real `<button>`).
   - `Escape` inside a drilled panel → drillBack; at level 0, let the event fall through to the core navigation block's existing close handler.
   - `ArrowRight` on a focused `li` whose child is a chevron → drillIn.
