@@ -165,7 +165,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Confirm PRD non-goal that unchanged items stay unchanged.
   - Test: Tap a top-level item that has no children → navigates directly to its URL, no drill-in attempt.
 
-- [ ] **8.4** Pure-container parents (href="#" or missing): no "View [Parent]" link is synthesised; the parent is accessed only via drill-in.
+- [x] **8.4** Pure-container parents (href="#" or missing): no "View [Parent]" link is synthesised; the parent is accessed only via drill-in.
   - What: Covered by 4.4 logic, but verify explicitly.
   - Test: Create a test menu with a no-href parent → open overlay → drill in → first item is the actual first child, not a synthesised link.
 
