@@ -147,7 +147,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Respect motion-reduction preference per PRD.
   - Test: DevTools → Rendering → Emulate CSS media feature `prefers-reduced-motion: reduce`. Drill in → panel swaps instantly, no slide.
 
-- [ ] **7.5** Sanity-check that no styles leak above 1100px (desktop nav must be untouched). Any selector not inside `@media (max-width: 1100px)` should be justified in a comment, or removed.
+- [x] **7.5** Sanity-check that no styles leak above 1100px (desktop nav must be untouched). Any selector not inside `@media (max-width: 1100px)` should be justified in a comment, or removed.
   - What: Enforce the "desktop untouched" non-goal.
   - Test: Resize browser to 1200px → desktop nav renders exactly as it did before this work (diff against a pre-feature screenshot if possible).
 
