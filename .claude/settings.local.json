@@ -6,7 +6,8 @@
       "Bash(npm run:*)",
       "Bash(vendor/bin/phpcs admin/class-kate-toms-core-admin.php)",
       "Bash(wp eval:*)",
-      "Bash(vendor/bin/phpcs includes/mobile-nav/class-kate-toms-core-mobile-nav.php)"
+      "Bash(vendor/bin/phpcs includes/mobile-nav/class-kate-toms-core-mobile-nav.php)",
+      "Bash(curl -sk https://kateandtomsblocks.test/)"
     ],
     "deny": []
   }

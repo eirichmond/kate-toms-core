@@ -49,7 +49,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Make the script module and stylesheet known to WordPress so they can be enqueued on demand.
   - Test: Page source on a nav-rendering page after task 2.4 includes both the view.js module tag and the stylesheet link.
 
-- [ ] **2.4** Add a `filter( 'render_block_core/navigation' )` callback in the same class that, on first invocation per request, calls `wp_enqueue_script_module( 'kate-toms-core/mobile-nav-drilldown' )` and `wp_enqueue_style( 'kate-toms-core-mobile-nav-drilldown' )`. Use a static flag so it only enqueues once per request.
+- [x] **2.4** Add a `filter( 'render_block_core/navigation' )` callback in the same class that, on first invocation per request, calls `wp_enqueue_script_module( 'kate-toms-core/mobile-nav-drilldown' )` and `wp_enqueue_style( 'kate-toms-core-mobile-nav-drilldown' )`. Use a static flag so it only enqueues once per request.
   - What: Load the enhancement only on pages that actually render a core navigation block, and only once.
   - Test: Visit a page with a nav block below 1100px → the built view.js and CSS appear in the page source. Visit a page with no nav block (create a minimal test page if needed) → neither appears. The `console.debug` from task 1.3 fires on the nav page.
 
