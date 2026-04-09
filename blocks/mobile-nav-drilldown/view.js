@@ -81,6 +81,12 @@ const PANEL_HEADER_CLASS = 'ktc-drilldown__panel-header';
 const BACK_BUTTON_CLASS = 'ktc-drilldown__back';
 
 /**
+ * CSS class applied to the synthesised "View [Parent]" list item that
+ * keeps the parent link reachable from inside its own drilled submenu.
+ */
+const VIEW_PARENT_CLASS = 'ktc-drilldown__view-parent';
+
+/**
  * Per-`<li>` cache of lazily-built child panels. Using WeakMap means
  * entries are automatically garbage-collected when the `<li>` is removed
  * from the DOM (e.g. by unwrapOverlays during a breakpoint reset).
@@ -268,6 +274,62 @@ function getParentLabel( li ) {
 }
 
 /**
+ * Extract the linkable `href` for a parent `<li>`, if it has one.
+ *
+ * Returns `null` for pure-container parents — items whose direct `<a>`
+ * either doesn't exist or points at `#` / `javascript:` / an empty
+ * string. Those cases must not produce a synthesised "View [Parent]"
+ * entry because the link would be dead.
+ *
+ * @param {HTMLElement} li The parent list item.
+ * @return {string|null} The parent URL, or `null` if not linkable.
+ */
+function getParentHref( li ) {
+	const link = li.querySelector( ':scope > a' );
+	if ( ! link ) {
+		return null;
+	}
+	const href = link.getAttribute( 'href' );
+	if ( ! href ) {
+		return null;
+	}
+	const trimmed = href.trim();
+	if ( trimmed === '' || trimmed === '#' ) {
+		return null;
+	}
+	if ( trimmed.toLowerCase().startsWith( 'javascript:' ) ) {
+		return null;
+	}
+	return trimmed;
+}
+
+/**
+ * Build a synthesised "View [Parent Label]" list item for the top of a
+ * cloned child submenu. Returns `null` if the parent has no usable href
+ * so callers can simply skip the prepend.
+ *
+ * @param {HTMLElement} parentLi The parent list item being drilled into.
+ * @return {HTMLLIElement|null} The synthesised list item, or null.
+ */
+function createViewParentItem( parentLi ) {
+	const href = getParentHref( parentLi );
+	if ( ! href ) {
+		return null;
+	}
+
+	const label = getParentLabel( parentLi );
+	const li = document.createElement( 'li' );
+	li.className = VIEW_PARENT_CLASS;
+
+	const link = document.createElement( 'a' );
+	link.href = href;
+	link.textContent = `View ${ label }`;
+	li.appendChild( link );
+
+	return li;
+}
+
+/**
  * Build a drilldown chevron `<button>` for a parent item.
  *
  * The button contains an `<img>` using the `arrowSrc` provided by the
@@ -387,7 +449,13 @@ function buildChildPanel( parentLi ) {
 		sourceLevel === 0 ? 'Menu' : sourcePanel.dataset.parentLabel || 'Menu';
 
 	panel.appendChild( createPanelHeader( backLabel ) );
-	panel.appendChild( sourceList.cloneNode( true ) );
+
+	const clonedList = sourceList.cloneNode( true );
+	const viewParentItem = createViewParentItem( parentLi );
+	if ( viewParentItem ) {
+		clonedList.insertBefore( viewParentItem, clonedList.firstChild );
+	}
+	panel.appendChild( clonedList );
 
 	track.appendChild( panel );
 	childPanelCache.set( parentLi, panel );

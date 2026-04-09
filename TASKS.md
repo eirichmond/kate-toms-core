@@ -81,7 +81,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Build drilled levels on demand, reuse across opens.
   - Test: Tap a chevron → a new panel appears in the DOM next to the root panel. Tap the same chevron again after drilling out → no duplicate panel is created (check DOM node count).
 
-- [ ] **4.4** At the top of every lazily-built child panel's cloned `<ul>`, prepend a synthesised `<li class="ktc-drilldown__view-parent"><a href="{parentHref}">View {parentLabel}</a></li>`. Skip this synthesis if the parent link has no `href` (pure non-linking parent).
+- [x] **4.4** At the top of every lazily-built child panel's cloned `<ul>`, prepend a synthesised `<li class="ktc-drilldown__view-parent"><a href="{parentHref}">View {parentLabel}</a></li>`. Skip this synthesis if the parent link has no `href` (pure non-linking parent).
   - What: Keep the parent destination reachable from inside its own submenu.
   - Test: Drill into a parent that has both a URL and children → first item is "View [Parent]" linking to the parent URL. Drill into a pure-container parent with no href → no synthesised item.
 
