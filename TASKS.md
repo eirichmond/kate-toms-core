@@ -55,7 +55,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 3. Interactivity Store Extension — State & Detection
 
-- [ ] **3.1** In `view.js`, extend `store( 'core/navigation', {} )` with a `state` object exposing `drilldownPath` (array of panel ids) and a derived `state.isDrilldown` (boolean: `path.length > 0`). Wire no actions yet.
+- [x] **3.1** In `view.js`, extend `store( 'core/navigation', {} )` with a `state` object exposing `drilldownPath` (array of panel ids) and a derived `state.isDrilldown` (boolean: `path.length > 0`). Wire no actions yet.
   - What: Establish the reactive state shape the rest of the logic will mutate.
   - Test: In DevTools, after the overlay opens, manually mutate the store from the console and confirm the state is readable.
 
