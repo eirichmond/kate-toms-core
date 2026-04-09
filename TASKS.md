@@ -143,7 +143,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Visual polish matching the overlay's existing design language.
   - Test: Visual check on an iPhone-sized viewport. All tap targets meet minimum size.
 
-- [ ] **7.4** Add a `@media (prefers-reduced-motion: reduce)` block that sets `.ktc-drilldown` wrapper transition to `none`.
+- [x] **7.4** Add a `@media (prefers-reduced-motion: reduce)` block that sets `.ktc-drilldown` wrapper transition to `none`.
   - What: Respect motion-reduction preference per PRD.
   - Test: DevTools → Rendering → Emulate CSS media feature `prefers-reduced-motion: reduce`. Drill in → panel swaps instantly, no slide.
 

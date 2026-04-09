@@ -154,3 +154,19 @@
 		padding: 0.75rem 1rem;
 	}
 }
+
+/*
+ * Reduced-motion override. Users who've asked their OS to minimise
+ * animation get an instant panel swap instead of the 0.3s slide. This
+ * rule lives outside the max-width media query so it applies at any
+ * viewport where the drilldown might be active — the `.ktc-drilldown`
+ * wrapper itself only exists below 1100px, so there is no risk of it
+ * leaking into desktop nav.
+ */
+@media (prefers-reduced-motion: reduce) {
+
+	.ktc-drilldown {
+		transition: none;
+	}
+}
+
