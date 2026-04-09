@@ -161,7 +161,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Avoid progressive DOM bloat.
   - Test: Open/close the overlay 5 times. DOM node count inside the overlay stays constant (check via `document.querySelectorAll('.ktc-drilldown__chevron').length`).
 
-- [ ] **8.3** Leaf items pass-through: menu items with no children must render as plain links with no chevron and no altered behaviour.
+- [x] **8.3** Leaf items pass-through: menu items with no children must render as plain links with no chevron and no altered behaviour.
   - What: Confirm PRD non-goal that unchanged items stay unchanged.
   - Test: Tap a top-level item that has no children → navigates directly to its URL, no drill-in attempt.
 
