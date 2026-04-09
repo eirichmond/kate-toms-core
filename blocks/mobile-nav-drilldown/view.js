@@ -81,6 +81,13 @@ const PANEL_HEADER_CLASS = 'ktc-drilldown__panel-header';
 const BACK_BUTTON_CLASS = 'ktc-drilldown__back';
 
 /**
+ * CSS class applied to the back button's `<img>`. Task 7.3 rotates it
+ * 180° via CSS so the same `right-arrow.png` asset is reused for both
+ * forward (chevron) and back-button directions.
+ */
+const BACK_ICON_CLASS = 'ktc-drilldown__back-icon';
+
+/**
  * CSS class applied to the synthesised "View [Parent]" list item that
  * keeps the parent link reachable from inside its own drilled submenu.
  */
@@ -375,24 +382,38 @@ function createChevronButton( parentLabel, arrowSrc ) {
 }
 
 /**
- * Build a minimal back-button element for a child panel header.
+ * Build the back-button element for a child panel header.
  *
- * Task 5.3 refines this to use the arrow image rotated 180° and computes
- * the grandparent label. For now the button carries a plain text label
- * so task 4.3's structural check has something to assert against.
+ * Reuses the same `right-arrow.png` asset injected in task 4.2 and
+ * relies on the CSS rotation applied by task 7.3 to flip it to point
+ * left. If `arrowSrc` isn't available from module data (the PHP filter
+ * didn't run), the button falls back to a text arrow glyph so the
+ * control is still usable.
  *
  * The click handler resolves its own track via `closest()` so the
  * button is self-contained — callers don't need to pass a reference.
  *
- * @param {string} label Visible text after the arrow glyph.
+ * @param {string} label Visible text shown after the arrow.
  * @return {HTMLButtonElement} The back button.
  */
 function createBackButton( label ) {
 	const btn = document.createElement( 'button' );
 	btn.type = 'button';
 	btn.className = BACK_BUTTON_CLASS;
-	btn.textContent = `\u2190 ${ label }`;
 	btn.setAttribute( 'aria-label', `Back to ${ label }` );
+
+	const { arrowSrc } = getModuleData();
+	if ( arrowSrc ) {
+		const img = document.createElement( 'img' );
+		img.src = arrowSrc;
+		img.alt = '';
+		img.className = BACK_ICON_CLASS;
+		btn.appendChild( img );
+		btn.appendChild( document.createTextNode( ` ${ label }` ) );
+	} else {
+		btn.textContent = `\u2190 ${ label }`;
+	}
+
 	btn.addEventListener( 'click', ( event ) => {
 		event.preventDefault();
 		event.stopPropagation();

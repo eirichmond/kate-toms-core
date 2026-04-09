@@ -99,7 +99,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: The matching drill-back interaction with correct focus restoration.
   - Test: Drill into level 2, press back → slides back to level 1, focus returns to the chevron of the row you drilled from.
 
-- [ ] **5.3** Render the back button inside each drilled panel's header as `<button class="ktc-drilldown__back"><img alt="" class="ktc-drilldown__back-icon" /> {label}</button>` where label is `"Menu"` at level 1 and the grandparent's label at level ≥ 2. The `<img>` reuses the same `right-arrow.png` URL from task 4.2 and is rotated 180° via CSS (`.ktc-drilldown__back-icon { transform: rotate(180deg); }`) so there's only one asset on the wire. `aria-label` on the button is `"Back to {label}"`.
+- [x] **5.3** Render the back button inside each drilled panel's header as `<button class="ktc-drilldown__back"><img alt="" class="ktc-drilldown__back-icon" /> {label}</button>` where label is `"Menu"` at level 1 and the grandparent's label at level ≥ 2. The `<img>` reuses the same `right-arrow.png` URL from task 4.2 and is rotated 180° via CSS (`.ktc-drilldown__back-icon { transform: rotate(180deg); }`) so there's only one asset on the wire. `aria-label` on the button is `"Back to {label}"`.
   - What: Visible and accessible back affordance per PRD, reusing the single arrow asset.
   - Test: Drill to level 1 → back button reads "← Menu" with a visually left-pointing arrow. Drill to level 2 under "Houses" → back button reads "← Houses" and `aria-label` is "Back to Houses". Network tab shows `right-arrow.png` loaded only once (not twice).
 
