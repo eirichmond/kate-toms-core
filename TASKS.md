@@ -175,7 +175,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Regression coverage for the core interaction.
   - Test: `npm run test:e2e` passes.
 
-- [ ] **9.2** Add a second Playwright test covering three-level drilldown if the live menu has a 3-deep path; otherwise skip with a `test.skip()` and a comment explaining why.
+- [x] **9.2** Add a second Playwright test covering three-level drilldown if the live menu has a 3-deep path; otherwise skip with a `test.skip()` and a comment explaining why.
   - What: Guard arbitrary-depth behaviour.
   - Test: `npm run test:e2e` passes (or skips cleanly).
 

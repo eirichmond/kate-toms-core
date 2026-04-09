@@ -9,30 +9,31 @@
 @media (max-width: 1100px) {
 
 	/*
-	 * Wrapper — a horizontal viewport that clips the off-screen panels.
-	 * Inline style from drillIn()/drillBack() currently writes the
-	 * transform directly; task 7.2 refactors those helpers to write
-	 * the --ktc-drilldown-offset custom property instead, at which
-	 * point the CSS below becomes the single source of truth.
+	 * Wrapper — the fixed-width horizontal viewport. `overflow: hidden`
+	 * clips off-screen panels. The wrapper itself never moves; the
+	 * TRACK inside it slides on drill-in/drill-back.
 	 */
 	.ktc-drilldown {
 		position: relative;
 		overflow: hidden;
 		width: 100%;
-		transform: translateX(var(--ktc-drilldown-offset, 0));
-		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	/*
 	 * Track — flex row holding every panel side-by-side. Each panel is
-	 * exactly one wrapper width so translateX(-N * 100%) on the wrapper
-	 * moves the viewport exactly N panels to the left.
+	 * exactly one wrapper width. Translating the track by -N * 100%
+	 * slides panel N into the wrapper's viewport from the right. The
+	 * --ktc-drilldown-offset custom property is written on the wrapper
+	 * by applyWrapperTransform() and cascades into the track via CSS
+	 * inheritance.
 	 */
 	.ktc-drilldown__track {
 		display: flex;
 		flex-wrap: nowrap;
 		align-items: flex-start;
 		width: 100%;
+		transform: translateX(var(--ktc-drilldown-offset, 0));
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	/*
@@ -207,7 +208,7 @@
  */
 @media (prefers-reduced-motion: reduce) {
 
-	.ktc-drilldown {
+	.ktc-drilldown__track {
 		transition: none;
 	}
 }
