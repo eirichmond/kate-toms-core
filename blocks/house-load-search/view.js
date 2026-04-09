@@ -1,9 +1,9 @@
 /**
  * WordPress dependencies
  */
-import { store, getContext, getElement } from "@wordpress/interactivity";
+import { store, getContext, getElement } from '@wordpress/interactivity';
 
-store("kate-toms-house-load-search", {
+store( 'kate-toms-house-load-search', {
 	actions: {
 		/**
 		 * Check if we should load more houses based on scroll position.
@@ -13,21 +13,23 @@ store("kate-toms-house-load-search", {
 			const context = getContext();
 			const { ref } = getElement();
 
-			if (context.isLoading || !context.hasMore) {
+			if ( context.isLoading || ! context.hasMore ) {
 				return;
 			}
 
 			// Find the sentinel within this block instance.
-			const wrapper = ref.closest('.house-load-search');
-			const sentinel = wrapper?.querySelector('.house-load-search-sentinel');
-			if (!sentinel) {
+			const wrapper = ref.closest( '.house-load-search' );
+			const sentinel = wrapper?.querySelector(
+				'.house-load-search-sentinel'
+			);
+			if ( ! sentinel ) {
 				return;
 			}
 
 			const rect = sentinel.getBoundingClientRect();
 			const inViewport = rect.top <= window.innerHeight + 200;
 
-			if (inViewport) {
+			if ( inViewport ) {
 				actions.loadMore();
 			}
 		},
@@ -40,7 +42,7 @@ store("kate-toms-house-load-search", {
 			const context = getContext();
 			const { ref } = getElement();
 
-			if (context.isLoading || !context.hasMore) {
+			if ( context.isLoading || ! context.hasMore ) {
 				return;
 			}
 
@@ -48,71 +50,96 @@ store("kate-toms-house-load-search", {
 
 			try {
 				const nextPage = context.currentPage + 1;
-				const params = new URLSearchParams({
+				const params = new URLSearchParams( {
 					page: nextPage,
 					per_page: context.postsPerPage,
-				});
+				} );
 
-				if (context.locationTermIds && context.locationTermIds.length > 0) {
-					params.set('locations', context.locationTermIds.join(','));
+				if (
+					context.locationTermIds &&
+					context.locationTermIds.length > 0
+				) {
+					params.set(
+						'locations',
+						context.locationTermIds.join( ',' )
+					);
 				}
 
-				if (context.featureTermIds && context.featureTermIds.length > 0) {
-					params.set('features', context.featureTermIds.join(','));
+				if (
+					context.featureTermIds &&
+					context.featureTermIds.length > 0
+				) {
+					params.set(
+						'features',
+						context.featureTermIds.join( ',' )
+					);
 				}
 
-				if (context.sizeTermIds && context.sizeTermIds.length > 0) {
-					params.set('sizes', context.sizeTermIds.join(','));
+				if ( context.sizeTermIds && context.sizeTermIds.length > 0 ) {
+					params.set( 'sizes', context.sizeTermIds.join( ',' ) );
 				}
 
-				if (context.typeTermIds && context.typeTermIds.length > 0) {
-					params.set('types', context.typeTermIds.join(','));
+				if ( context.typeTermIds && context.typeTermIds.length > 0 ) {
+					params.set( 'types', context.typeTermIds.join( ',' ) );
 				}
 
-				if (context.occasionTermIds && context.occasionTermIds.length > 0) {
-					params.set('occasions', context.occasionTermIds.join(','));
+				if (
+					context.occasionTermIds &&
+					context.occasionTermIds.length > 0
+				) {
+					params.set(
+						'occasions',
+						context.occasionTermIds.join( ',' )
+					);
 				}
 
-				const apiUrl = `/wp-json/kate-toms/v1/houses-load?${params.toString()}`;
-				const response = await fetch(apiUrl);
+				const apiUrl = `/wp-json/kate-toms/v1/houses-load?${ params.toString() }`;
+				const response = await fetch( apiUrl );
 
-				if (!response.ok) {
-					throw new Error(`API Error: ${response.status}`);
+				if ( ! response.ok ) {
+					throw new Error( `API Error: ${ response.status }` );
 				}
 
 				const data = await response.json();
 
-				if (!data.success) {
-					throw new Error("Invalid response from API");
+				if ( ! data.success ) {
+					throw new Error( 'Invalid response from API' );
 				}
 
 				// Find the results container within this block instance.
-				const wrapper = ref.closest('.house-load-search');
-				const resultsContainer = wrapper?.querySelector('.house-load-search-results');
+				const wrapper = ref.closest( '.house-load-search' );
+				const resultsContainer = wrapper?.querySelector(
+					'.house-load-search-results'
+				);
 
-				if (resultsContainer && data.data && data.data.html) {
-					const temp = document.createElement('div');
+				if ( resultsContainer && data.data && data.data.html ) {
+					const temp = document.createElement( 'div' );
 					temp.innerHTML = data.data.html;
 
-					while (temp.firstChild) {
-						resultsContainer.appendChild(temp.firstChild);
+					while ( temp.firstChild ) {
+						resultsContainer.appendChild( temp.firstChild );
 					}
 				}
 
 				context.currentPage = nextPage;
 
-				if (data.data.hasMore === false || nextPage >= context.totalPages) {
+				if (
+					data.data.hasMore === false ||
+					nextPage >= context.totalPages
+				) {
 					context.hasMore = false;
 
-					if (data.data.adverts) {
-						const advertsContainer = wrapper?.querySelector('.house-load-search-adverts');
-						if (advertsContainer) {
+					if ( data.data.adverts ) {
+						const advertsContainer = wrapper?.querySelector(
+							'.house-load-search-adverts'
+						);
+						if ( advertsContainer ) {
 							advertsContainer.innerHTML = data.data.adverts;
 						}
 					}
 				}
-			} catch (error) {
-				console.error('Error loading more houses:', error);
+			} catch ( error ) {
+				console.error( 'Error loading more houses:', error );
 			} finally {
 				context.isLoading = false;
 			}
@@ -129,17 +156,21 @@ store("kate-toms-house-load-search", {
 
 			// The sentinel is the element with data-wp-init, so ref IS the sentinel.
 			const sentinel = ref;
-			if (!sentinel) {
+			if ( ! sentinel ) {
 				return;
 			}
 
 			const observer = new IntersectionObserver(
-				(entries) => {
-					entries.forEach((entry) => {
-						if (entry.isIntersecting && !context.isLoading && context.hasMore) {
+				( entries ) => {
+					entries.forEach( ( entry ) => {
+						if (
+							entry.isIntersecting &&
+							! context.isLoading &&
+							context.hasMore
+						) {
 							actions.loadMore();
 						}
-					});
+					} );
 				},
 				{
 					rootMargin: '200px',
@@ -147,12 +178,12 @@ store("kate-toms-house-load-search", {
 				}
 			);
 
-			observer.observe(sentinel);
+			observer.observe( sentinel );
 
 			context.observer = observer;
 		},
 	},
-});
+} );
 
 // Store reference so callbacks can call actions.
-const { actions } = store("kate-toms-house-load-search");
+const { actions } = store( 'kate-toms-house-load-search' );

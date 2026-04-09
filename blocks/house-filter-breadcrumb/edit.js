@@ -17,10 +17,7 @@ export default function Edit() {
 					height="16"
 					aria-hidden="true"
 				>
-					<path
-						d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"
-						fill="#999"
-					/>
+					<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" fill="#999" />
 				</svg>
 				<span>Sleeps 2-10</span>
 			</span>

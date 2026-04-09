@@ -11,30 +11,31 @@ import { useBlockProps, RichText, InnerBlocks } from '@wordpress/block-editor';
  * be combined into the final markup, which is then serialized by the block
  * editor into `post_content`.
  *
+ * @param  root0
+ * @param  root0.attributes
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#save
  *
  * @return {Element} Element to render.
  */
-export default function save({ attributes }) {
+export default function save( { attributes } ) {
 	const { question, isOpen } = attributes;
-	const blockProps = useBlockProps.save({
-		className: `wp-block-kate-toms-core-kateandtoms-faqs ${isOpen ? 'is-open' : ''}`
-	});
+	const blockProps = useBlockProps.save( {
+		className: `wp-block-kate-toms-core-kateandtoms-faqs ${
+			isOpen ? 'is-open' : ''
+		}`,
+	} );
 
 	return (
-		<div {...blockProps}>
-			<div 
+		<div { ...blockProps }>
+			<div
 				className="faq-question"
 				role="button"
 				tabIndex="0"
-				aria-expanded={isOpen}
+				aria-expanded={ isOpen }
 			>
 				<div className="faq-question-content">
-					<RichText.Content
-						tagName="h3"
-						value={question}
-					/>
-					<span className="faq-icon">{isOpen ? '−' : '+'}</span>
+					<RichText.Content tagName="h3" value={ question } />
+					<span className="faq-icon">{ isOpen ? '−' : '+' }</span>
 				</div>
 			</div>
 			<div className="faq-answer">

@@ -77,7 +77,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Give users the affordance to drill in, reusing the existing PNG asset.
   - Test: Each parent row visually shows a right-pointing arrow. Keyboard-tabbing through the menu stops on each chevron in order. Network tab confirms `right-arrow.png` is loaded once.
 
-- [ ] **4.3** Lazily build child panels on first drill-in: when a chevron is activated for the first time, create a new `<div class="ktc-drilldown__panel" data-level="N">` containing (a) a back button header and (b) a cloned/detached `<ul>` of the child submenu. Append it to the wrapper from 4.1. Cache the panel DOM node on the parent `li` so repeat drills reuse it.
+- [x] **4.3** Lazily build child panels on first drill-in: when a chevron is activated for the first time, create a new `<div class="ktc-drilldown__panel" data-level="N">` containing (a) a back button header and (b) a cloned/detached `<ul>` of the child submenu. Append it to the wrapper from 4.1. Cache the panel DOM node on the parent `li` so repeat drills reuse it.
   - What: Build drilled levels on demand, reuse across opens.
   - Test: Tap a chevron → a new panel appears in the DOM next to the root panel. Tap the same chevron again after drilling out → no duplicate panel is created (check DOM node count).
 

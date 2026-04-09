@@ -1,9 +1,9 @@
 /**
  * WordPress dependencies
  */
-import { store, getContext, getElement } from "@wordpress/interactivity";
+import { store, getContext, getElement } from '@wordpress/interactivity';
 
-store("kate-toms-house-seasonal-landing-pages", {
+store( 'kate-toms-house-seasonal-landing-pages', {
 	actions: {
 		/**
 		 * Check if we should load more houses based on scroll position.
@@ -12,21 +12,23 @@ store("kate-toms-house-seasonal-landing-pages", {
 			const context = getContext();
 			const { ref } = getElement();
 
-			if (context.isLoading || !context.hasMore) {
+			if ( context.isLoading || ! context.hasMore ) {
 				return;
 			}
 
 			// Find the sentinel within this block instance.
-			const wrapper = ref.closest('.house-seasonal-landing-pages');
-			const sentinel = wrapper?.querySelector('.house-seasonal-sentinel');
-			if (!sentinel) {
+			const wrapper = ref.closest( '.house-seasonal-landing-pages' );
+			const sentinel = wrapper?.querySelector(
+				'.house-seasonal-sentinel'
+			);
+			if ( ! sentinel ) {
 				return;
 			}
 
 			const rect = sentinel.getBoundingClientRect();
 			const inViewport = rect.top <= window.innerHeight + 200;
 
-			if (inViewport) {
+			if ( inViewport ) {
 				actions.loadMore();
 			}
 		},
@@ -38,7 +40,7 @@ store("kate-toms-house-seasonal-landing-pages", {
 			const context = getContext();
 			const { ref } = getElement();
 
-			if (context.isLoading || !context.hasMore) {
+			if ( context.isLoading || ! context.hasMore ) {
 				return;
 			}
 
@@ -50,61 +52,68 @@ store("kate-toms-house-seasonal-landing-pages", {
 				// Calculate the slice of house IDs for the next page.
 				const start = context.currentPage * context.postsPerPage;
 				const end = start + context.postsPerPage;
-				const houseIds = context.allHouseIds.slice(start, end);
+				const houseIds = context.allHouseIds.slice( start, end );
 
-				if (houseIds.length === 0) {
+				if ( houseIds.length === 0 ) {
 					context.hasMore = false;
 					return;
 				}
 
-				const params = new URLSearchParams({
-					house_ids: houseIds.join(','),
+				const params = new URLSearchParams( {
+					house_ids: houseIds.join( ',' ),
 					pattern_style: context.patternStyle,
 					beginning_date: context.beginningDate,
 					ending_date: context.endingDate,
 					title_bg_color: context.titleBgColor,
-				});
+				} );
 
-				const apiUrl = `/wp-json/kate-toms/v1/houses-seasonal-load?${params.toString()}`;
-				const response = await fetch(apiUrl);
+				const apiUrl = `/wp-json/kate-toms/v1/houses-seasonal-load?${ params.toString() }`;
+				const response = await fetch( apiUrl );
 
-				if (!response.ok) {
-					throw new Error(`API Error: ${response.status}`);
+				if ( ! response.ok ) {
+					throw new Error( `API Error: ${ response.status }` );
 				}
 
 				const data = await response.json();
 
-				if (!data.success) {
-					throw new Error("Invalid response from API");
+				if ( ! data.success ) {
+					throw new Error( 'Invalid response from API' );
 				}
 
 				// Find the results container within this block instance.
-				const wrapper = ref.closest('.house-seasonal-landing-pages');
-				const resultsContainer = wrapper?.querySelector('.house-seasonal-results');
+				const wrapper = ref.closest( '.house-seasonal-landing-pages' );
+				const resultsContainer = wrapper?.querySelector(
+					'.house-seasonal-results'
+				);
 
-				if (resultsContainer && data.data && data.data.html) {
-					const temp = document.createElement('div');
+				if ( resultsContainer && data.data && data.data.html ) {
+					const temp = document.createElement( 'div' );
 					temp.innerHTML = data.data.html;
 
-					while (temp.firstChild) {
-						resultsContainer.appendChild(temp.firstChild);
+					while ( temp.firstChild ) {
+						resultsContainer.appendChild( temp.firstChild );
 					}
 				}
 
 				context.currentPage = nextPage;
 
-				if (data.data.hasMore === false || nextPage >= context.totalPages) {
+				if (
+					data.data.hasMore === false ||
+					nextPage >= context.totalPages
+				) {
 					context.hasMore = false;
 
-					if (data.data.adverts) {
-						const advertsContainer = wrapper?.querySelector('.house-seasonal-adverts');
-						if (advertsContainer) {
+					if ( data.data.adverts ) {
+						const advertsContainer = wrapper?.querySelector(
+							'.house-seasonal-adverts'
+						);
+						if ( advertsContainer ) {
 							advertsContainer.innerHTML = data.data.adverts;
 						}
 					}
 				}
-			} catch (error) {
-				console.error('Error loading more seasonal houses:', error);
+			} catch ( error ) {
+				console.error( 'Error loading more seasonal houses:', error );
 			} finally {
 				context.isLoading = false;
 			}
@@ -121,17 +130,21 @@ store("kate-toms-house-seasonal-landing-pages", {
 
 			// The sentinel is the element with data-wp-init, so ref IS the sentinel.
 			const sentinel = ref;
-			if (!sentinel) {
+			if ( ! sentinel ) {
 				return;
 			}
 
 			const observer = new IntersectionObserver(
-				(entries) => {
-					entries.forEach((entry) => {
-						if (entry.isIntersecting && !context.isLoading && context.hasMore) {
+				( entries ) => {
+					entries.forEach( ( entry ) => {
+						if (
+							entry.isIntersecting &&
+							! context.isLoading &&
+							context.hasMore
+						) {
 							actions.loadMore();
 						}
-					});
+					} );
 				},
 				{
 					rootMargin: '200px',
@@ -139,12 +152,12 @@ store("kate-toms-house-seasonal-landing-pages", {
 				}
 			);
 
-			observer.observe(sentinel);
+			observer.observe( sentinel );
 
 			context.observer = observer;
 		},
 	},
-});
+} );
 
 // Store reference so callbacks can call actions.
-const { actions } = store("kate-toms-house-seasonal-landing-pages");
+const { actions } = store( 'kate-toms-house-seasonal-landing-pages' );

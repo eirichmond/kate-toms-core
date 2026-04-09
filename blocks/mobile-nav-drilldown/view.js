@@ -71,6 +71,25 @@ const CHEVRON_CLASS = 'ktc-drilldown__chevron';
 const CHEVRON_ICON_CLASS = 'ktc-drilldown__chevron-icon';
 
 /**
+ * CSS class applied to the header bar inside each drilled child panel.
+ */
+const PANEL_HEADER_CLASS = 'ktc-drilldown__panel-header';
+
+/**
+ * CSS class applied to the back button inside a child panel header.
+ */
+const BACK_BUTTON_CLASS = 'ktc-drilldown__back';
+
+/**
+ * Per-`<li>` cache of lazily-built child panels. Using WeakMap means
+ * entries are automatically garbage-collected when the `<li>` is removed
+ * from the DOM (e.g. by unwrapOverlays during a breakpoint reset).
+ *
+ * @type {WeakMap<HTMLElement, HTMLElement>}
+ */
+const childPanelCache = new WeakMap();
+
+/**
  * DOM id of the `<script type="application/json">` tag WordPress prints
  * for this module's `script_module_data_{id}` filter return value.
  */
@@ -276,12 +295,125 @@ function createChevronButton( parentLabel, arrowSrc ) {
 }
 
 /**
+ * Build a minimal back-button element for a child panel header.
+ *
+ * Task 5.3 refines this to use the arrow image rotated 180° and computes
+ * the grandparent label. For now the button carries a plain text label
+ * so task 4.3's structural check has something to assert against.
+ *
+ * @param {string} label Visible text after the arrow glyph.
+ * @return {HTMLButtonElement} The back button.
+ */
+function createBackButton( label ) {
+	const btn = document.createElement( 'button' );
+	btn.type = 'button';
+	btn.className = BACK_BUTTON_CLASS;
+	btn.textContent = `\u2190 ${ label }`;
+	btn.setAttribute( 'aria-label', `Back to ${ label }` );
+	return btn;
+}
+
+/**
+ * Build the header row that sits at the top of every drilled panel.
+ *
+ * @param {string} backLabel Label shown on the back button.
+ * @return {HTMLElement} The header element containing the back button.
+ */
+function createPanelHeader( backLabel ) {
+	const header = document.createElement( 'div' );
+	header.className = PANEL_HEADER_CLASS;
+	header.appendChild( createBackButton( backLabel ) );
+	return header;
+}
+
+/**
+ * Lazily build the child panel for a given parent `<li>`.
+ *
+ * On first call: clones the parent's nested `<ul>`, wraps it in a new
+ * panel element with a header, appends the panel to the overlay's track,
+ * and caches the result on the parent via `childPanelCache`. Subsequent
+ * calls return the cached element directly.
+ *
+ * Cloning (not detaching) is deliberate: `unwrapOverlays()` moves the
+ * root `<ul>` back out of the wrapper and destroys the wrapper + panels.
+ * If we detached the child `<ul>`s, they would be lost on resize-above
+ * cleanup. Cloning leaves the original tree intact.
+ *
+ * @param {HTMLElement} parentLi Parent list item whose submenu is being
+ *                               drilled into. Must be inside an overlay
+ *                               that has already been wrapped.
+ * @return {HTMLElement|null} The panel element, or null if the overlay
+ *                            structure isn't ready or there's no child
+ *                            list to drill into.
+ */
+function buildChildPanel( parentLi ) {
+	const cached = childPanelCache.get( parentLi );
+	if ( cached ) {
+		return cached;
+	}
+
+	const sourceList = Array.from( parentLi.children ).find(
+		( child ) => child.tagName === 'UL'
+	);
+	if ( ! sourceList ) {
+		return null;
+	}
+
+	const sourcePanel = parentLi.closest( `.${ PANEL_CLASS }` );
+	const track = parentLi.closest( `.${ TRACK_CLASS }` );
+	if ( ! sourcePanel || ! track ) {
+		return null;
+	}
+
+	const sourceLevel = Number.parseInt(
+		sourcePanel.getAttribute( 'data-level' ) || '0',
+		10
+	);
+	const newLevel = sourceLevel + 1;
+
+	const panel = document.createElement( 'div' );
+	panel.className = PANEL_CLASS;
+	panel.setAttribute( 'data-level', String( newLevel ) );
+
+	// Record the parent label on the panel so task 5.3 can look it up
+	// when rendering the back button of a further-nested child panel.
+	const parentLabel = getParentLabel( parentLi );
+	panel.dataset.parentLabel = parentLabel;
+
+	// Level-1 panels go back to "Menu"; deeper panels go back to the
+	// label of the source panel's own parent (resolved via data set
+	// earlier for that source panel). Task 5.3 will refine this.
+	const backLabel =
+		sourceLevel === 0 ? 'Menu' : sourcePanel.dataset.parentLabel || 'Menu';
+
+	panel.appendChild( createPanelHeader( backLabel ) );
+	panel.appendChild( sourceList.cloneNode( true ) );
+
+	track.appendChild( panel );
+	childPanelCache.set( parentLi, panel );
+
+	return panel;
+}
+
+/**
+ * Chevron click handler — for now just materialises the child panel
+ * (idempotent via the cache) so task 4.3's DOM check passes. Task 5.1
+ * extends this to also run the drillIn slide transition and focus work.
+ *
+ * @param {HTMLElement} parentLi The parent list item whose chevron was
+ *                               clicked.
+ * @return {void}
+ */
+function onChevronClick( parentLi ) {
+	buildChildPanel( parentLi );
+}
+
+/**
  * Inject a chevron button into every tagged parent `<li>` in the overlay.
  *
  * Idempotent: if a chevron already exists inside the `<li>`, skips it.
- * The chevron is appended as the last direct child of the `<li>`, which
- * places it after any existing link/toggle and before any nested `<ul>`
- * (lists are moved into child panels later in task 4.3).
+ * The chevron is appended as the last direct child of the `<li>` and is
+ * wired to `onChevronClick()`.
  *
  * No-op if `arrowSrc` is missing from the module data (e.g. the PHP
  * filter didn't run) — better to render nothing than to produce broken
@@ -305,6 +437,11 @@ function injectChevrons( overlay ) {
 		}
 		const label = getParentLabel( li );
 		const button = createChevronButton( label, arrowSrc );
+		button.addEventListener( 'click', ( event ) => {
+			event.preventDefault();
+			event.stopPropagation();
+			onChevronClick( li );
+		} );
 		li.appendChild( button );
 	} );
 }

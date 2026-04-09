@@ -1,8 +1,8 @@
-import { registerBlockType } from "@wordpress/blocks";
+import { registerBlockType } from '@wordpress/blocks';
 
-import Edit from "./edit";
-import "./style.scss";
+import Edit from './edit';
+import './style.scss';
 
-registerBlockType("kate-toms-core/availability-notes", {
+registerBlockType( 'kate-toms-core/availability-notes', {
 	edit: Edit,
-}); 
+} );

@@ -26,7 +26,7 @@ const { state } = store( 'kate-toms-house-filter', {
 			return feature ? state.featureLabelMap[ feature ] || '' : '';
 		},
 		get hasBreadcrumbs() {
-			return !!(
+			return !! (
 				state.activeSizeLabel ||
 				state.activeLocalLabel ||
 				state.activeFeatureLabel

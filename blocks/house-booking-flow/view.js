@@ -2,138 +2,154 @@
  * House Booking Flow Block Frontend Script
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener( 'DOMContentLoaded', function () {
 	// Initialize all booking flow blocks on the page
-	const bookingBlocks = document.querySelectorAll('.house-booking-flow');
-	
-	bookingBlocks.forEach(initializeBookingFlow);
-});
+	const bookingBlocks = document.querySelectorAll( '.house-booking-flow' );
 
-function initializeBookingFlow(blockElement) {
+	bookingBlocks.forEach( initializeBookingFlow );
+} );
+
+function initializeBookingFlow( blockElement ) {
 	const blockId = blockElement.id;
-	const dataVarName = 'bookingFlowData_' + blockId.replace(/-/g, '_');
-	
+	const dataVarName = 'bookingFlowData_' + blockId.replace( /-/g, '_' );
+
 	// Get the localized data
-	if (!window[dataVarName]) {
-		showError(blockElement, 'Configuration error: Missing booking data');
+	if ( ! window[ dataVarName ] ) {
+		showError( blockElement, 'Configuration error: Missing booking data' );
 		return;
 	}
-	
-	const config = window[dataVarName];
-	const bookingFlow = new HouseBookingFlow(blockElement, config);
+
+	const config = window[ dataVarName ];
+	const bookingFlow = new HouseBookingFlow( blockElement, config );
 	bookingFlow.init();
 }
 
 class HouseBookingFlow {
-	constructor(element, config) {
+	constructor( element, config ) {
 		this.element = element;
 		this.config = config;
-		
+
 		// Get DOM elements
-		this.loadingEl = element.querySelector('.booking-loading');
-		this.errorEl = element.querySelector('.booking-error');
-		this.containerEl = element.querySelector('.booking-container');
-		
-		console.log('Booking flow initialized with config:', config);
+		this.loadingEl = element.querySelector( '.booking-loading' );
+		this.errorEl = element.querySelector( '.booking-error' );
+		this.containerEl = element.querySelector( '.booking-container' );
+
+		console.log( 'Booking flow initialized with config:', config );
 	}
-	
+
 	init() {
 		// Check if we have the required URL parameters
-		if (!this.config.dateParam) {
-			this.showError('No date specified. Please select a date from the availability calendar.');
+		if ( ! this.config.dateParam ) {
+			this.showError(
+				'No date specified. Please select a date from the availability calendar.'
+			);
 			return;
 		}
-		
+
 		// Parse and validate the date
-		const selectedDate = this.parseDate(this.config.dateParam);
-		if (!selectedDate) {
-			this.showError('Invalid date format. Please select a date from the calendar.');
+		const selectedDate = this.parseDate( this.config.dateParam );
+		if ( ! selectedDate ) {
+			this.showError(
+				'Invalid date format. Please select a date from the calendar.'
+			);
 			return;
 		}
-		
+
 		// Process the booking flow
-		this.processStep1(selectedDate);
+		this.processStep1( selectedDate );
 	}
-	
-	parseDate(dateParam) {
+
+	parseDate( dateParam ) {
 		// Parse dd-mm-yyyy format
-		const match = dateParam.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-		if (!match) {
+		const match = dateParam.match( /^(\d{1,2})-(\d{1,2})-(\d{4})$/ );
+		if ( ! match ) {
 			return null;
 		}
-		
-		const day = parseInt(match[1]);
-		const month = parseInt(match[2]) - 1; // JavaScript months are 0-indexed
-		const year = parseInt(match[3]);
-		
-		const date = new Date(year, month, day);
-		
+
+		const day = parseInt( match[ 1 ] );
+		const month = parseInt( match[ 2 ] ) - 1; // JavaScript months are 0-indexed
+		const year = parseInt( match[ 3 ] );
+
+		const date = new Date( year, month, day );
+
 		// Validate the date is real
-		if (date.getDate() !== day || date.getMonth() !== month || date.getFullYear() !== year) {
+		if (
+			date.getDate() !== day ||
+			date.getMonth() !== month ||
+			date.getFullYear() !== year
+		) {
 			return null;
 		}
-		
+
 		return date;
 	}
-	
+
 	formatDateForBooking() {
 		// Format the checkin date as 'Friday, 26 September 2025'
-		const selectedDate = this.parseDate(this.config.dateParam);
-		if (!selectedDate) {
+		const selectedDate = this.parseDate( this.config.dateParam );
+		if ( ! selectedDate ) {
 			return '';
 		}
-		
-		const options = { 
-			weekday: 'long', 
-			day: 'numeric', 
-			month: 'long', 
-			year: 'numeric' 
+
+		const options = {
+			weekday: 'long',
+			day: 'numeric',
+			month: 'long',
+			year: 'numeric',
 		};
-		
-		return selectedDate.toLocaleDateString('en-GB', options);
+
+		return selectedDate.toLocaleDateString( 'en-GB', options );
 	}
-	
-	processStep1(selectedDate) {
-		console.log('Processing step 1 for date:', selectedDate);
-		
+
+	processStep1( selectedDate ) {
+		console.log( 'Processing step 1 for date:', selectedDate );
+
 		// Fetch real booking periods from the API
-		this.fetchBookingPeriods(selectedDate);
+		this.fetchBookingPeriods( selectedDate );
 	}
-	
-	fetchBookingPeriods(selectedDate) {
+
+	fetchBookingPeriods( selectedDate ) {
 		// Show loading state
 		this.showLoading();
-		
+
 		const formData = new FormData();
-		formData.append('action', 'get_booking_periods');
-		formData.append('house_id', this.config.houseId);
-		formData.append('date', this.config.dateParam);
-		formData.append('nonce', this.config.nonce);
-		
-		fetch(this.config.ajaxUrl, {
+		formData.append( 'action', 'get_booking_periods' );
+		formData.append( 'house_id', this.config.houseId );
+		formData.append( 'date', this.config.dateParam );
+		formData.append( 'nonce', this.config.nonce );
+
+		fetch( this.config.ajaxUrl, {
 			method: 'POST',
-			body: formData
-		})
-		.then(response => response.json())
-		.then(data => {
-			if (data.success) {
-				if (data.data.no_breaks) {
-					this.showNoBreaksMessage(data.data.message, data.data.date_formatted);
+			body: formData,
+		} )
+			.then( ( response ) => response.json() )
+			.then( ( data ) => {
+				if ( data.success ) {
+					if ( data.data.no_breaks ) {
+						this.showNoBreaksMessage(
+							data.data.message,
+							data.data.date_formatted
+						);
+					} else {
+						this.renderStep1( selectedDate, data.data.periods );
+					}
 				} else {
-					this.renderStep1(selectedDate, data.data.periods);
+					this.showError(
+						'Unable to load booking periods: ' +
+							( data.data || 'Unknown error' )
+					);
 				}
-			} else {
-				this.showError('Unable to load booking periods: ' + (data.data || 'Unknown error'));
-			}
-		})
-		.catch(error => {
-			console.error('Booking periods fetch error:', error);
-			this.showError('Failed to load booking options. Please try again.');
-		});
+			} )
+			.catch( ( error ) => {
+				console.error( 'Booking periods fetch error:', error );
+				this.showError(
+					'Failed to load booking options. Please try again.'
+				);
+			} );
 	}
-	
-	showNoBreaksMessage(message, dateFormatted) {
-		const selectedDate = this.parseDate(this.config.dateParam);
+
+	showNoBreaksMessage( message, dateFormatted ) {
+		const selectedDate = this.parseDate( this.config.dateParam );
 		const weekNumber = this.config.weekParam || 1;
 
 		this.loadingEl.style.display = 'none';
@@ -155,7 +171,9 @@ class HouseBookingFlow {
 				<div class="booking-info">
 					<h2>Step 1: Select your booking</h2>
 					<ul>
-						<li><strong>Showing bookings beginning ${this.formatDate(selectedDate)} for ${this.config.houseName}</strong></li>
+						<li><strong>Showing bookings beginning ${ this.formatDate(
+							selectedDate
+						) } for ${ this.config.houseName }</strong></li>
 						<li>Please choose the booking that you would like to make from the options to the right.</li>
 						<li>Week bookings usually begin on either a Friday or a Monday. If you would like to book a different period, please get in touch.</li>
 						<li>Weekend bookings are available from Friday.</li>
@@ -165,14 +183,18 @@ class HouseBookingFlow {
 
 					<div class="booking_details">
 						<h3>Your Selection</h3>
-						<p><span class="label">House:</span> <strong>${this.config.houseName}</strong></p>
-						<p><span class="label">Date:</span> <strong>${this.formatDate(selectedDate)}</strong></p>
+						<p><span class="label">House:</span> <strong>${
+							this.config.houseName
+						}</strong></p>
+						<p><span class="label">Date:</span> <strong>${ this.formatDate(
+							selectedDate
+						) }</strong></p>
 					</div>
 				</div>
 
 				<div class="booking-options">
 					<h3>Available Booking Periods</h3>
-					<p class="no-periods">${message}</p>
+					<p class="no-periods">${ message }</p>
 				</div>
 			</div>
 		`;
@@ -183,13 +205,14 @@ class HouseBookingFlow {
 		this.containerEl.style.display = 'none';
 		this.loadingEl.style.display = 'block';
 	}
-	
-	renderStep1(selectedDate, periods = null) {
+
+	renderStep1( selectedDate, periods = null ) {
 		const weekNumber = this.config.weekParam || 1;
-		
+
 		// Use real periods or fallback to sample data for development
-		const periodsToRender = periods || this.getSamplePeriods(selectedDate);
-		
+		const periodsToRender =
+			periods || this.getSamplePeriods( selectedDate );
+
 		const html = `
 			<div class="booking-progress-section">
 				<div class="progress-labels">
@@ -206,7 +229,9 @@ class HouseBookingFlow {
 				<div class="booking-info">
 					<h2>Step 1: Select your booking</h2>
 					<ul>
-						<li><strong>Showing bookings beginning ${this.formatDate(selectedDate)} for ${this.config.houseName}</strong></li>
+						<li><strong>Showing bookings beginning ${ this.formatDate(
+							selectedDate
+						) } for ${ this.config.houseName }</strong></li>
 						<li>Please choose the booking that you would like to make from the options to the right.</li>
 						<li>Week bookings usually begin on either a Friday or a Monday. If you would like to book a different period, please get in touch.</li>
 						<li>Weekend bookings are available from Friday.</li>
@@ -216,26 +241,30 @@ class HouseBookingFlow {
 					
 					<div class="booking_details">
 						<h3>Your Selection</h3>
-						<p><span class="label">House:</span> <strong>${this.config.houseName}</strong></p>
-						<p><span class="label">Date:</span> <strong>${this.formatDate(selectedDate)}</strong></p>
+						<p><span class="label">House:</span> <strong>${
+							this.config.houseName
+						}</strong></p>
+						<p><span class="label">Date:</span> <strong>${ this.formatDate(
+							selectedDate
+						) }</strong></p>
 					</div>
 				</div>
 				
 				<div class="booking-options">
 					<h3>Available Booking Periods</h3>
-					${this.renderBookingPeriodsFromAPI(periodsToRender)}
+					${ this.renderBookingPeriodsFromAPI( periodsToRender ) }
 				</div>
 			</div>
 		`;
-		
+
 		this.containerEl.innerHTML = html;
 		this.showContainer();
-		
+
 		// Add event listeners for period selection
 		this.addPeriodEventListeners();
 	}
-	
-	getSamplePeriods(selectedDate) {
+
+	getSamplePeriods( selectedDate ) {
 		// Fallback sample periods for development/testing
 		return [
 			{
@@ -244,8 +273,12 @@ class HouseBookingFlow {
 				description: 'Friday to Sunday',
 				formatted_price: '£850',
 				nights: 2,
-				checkin_date: selectedDate.toISOString().split('T')[0],
-				checkout_date: new Date(selectedDate.getTime() + (2 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+				checkin_date: selectedDate.toISOString().split( 'T' )[ 0 ],
+				checkout_date: new Date(
+					selectedDate.getTime() + 2 * 24 * 60 * 60 * 1000
+				)
+					.toISOString()
+					.split( 'T' )[ 0 ],
 			},
 			{
 				id: '3-night-weekend',
@@ -253,8 +286,12 @@ class HouseBookingFlow {
 				description: 'Friday to Monday',
 				formatted_price: '£1,200',
 				nights: 3,
-				checkin_date: selectedDate.toISOString().split('T')[0],
-				checkout_date: new Date(selectedDate.getTime() + (3 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
+				checkin_date: selectedDate.toISOString().split( 'T' )[ 0 ],
+				checkout_date: new Date(
+					selectedDate.getTime() + 3 * 24 * 60 * 60 * 1000
+				)
+					.toISOString()
+					.split( 'T' )[ 0 ],
 			},
 			{
 				id: 'week',
@@ -262,86 +299,99 @@ class HouseBookingFlow {
 				description: '7 nights',
 				formatted_price: '£2,100',
 				nights: 7,
-				checkin_date: selectedDate.toISOString().split('T')[0],
-				checkout_date: new Date(selectedDate.getTime() + (7 * 24 * 60 * 60 * 1000)).toISOString().split('T')[0]
-			}
+				checkin_date: selectedDate.toISOString().split( 'T' )[ 0 ],
+				checkout_date: new Date(
+					selectedDate.getTime() + 7 * 24 * 60 * 60 * 1000
+				)
+					.toISOString()
+					.split( 'T' )[ 0 ],
+			},
 		];
 	}
-	
-	renderBookingPeriodsFromAPI(periods) {
-		if (!periods || periods.length === 0) {
+
+	renderBookingPeriodsFromAPI( periods ) {
+		if ( ! periods || periods.length === 0 ) {
 			return '<p class="no-periods">No booking periods available for this date. Please try a different date or contact us directly.</p>';
 		}
-		
-		return periods.map(period => {
-			const checkinDate = new Date(period.checkin_date);
-			const checkoutDate = new Date(period.checkout_date);
-			
-			return `
-				<div class="booking-period" data-period-id="${period.id}">
+
+		return periods
+			.map( ( period ) => {
+				const checkinDate = new Date( period.checkin_date );
+				const checkoutDate = new Date( period.checkout_date );
+
+				return `
+				<div class="booking-period" data-period-id="${ period.id }">
 					<div class="period-details">
-						<h4>${period.name}</h4>
-						<p class="period-description">${period.description}</p>
+						<h4>${ period.name }</h4>
+						<p class="period-description">${ period.description }</p>
 						<p class="period-dates">
-							Check-in: ${this.formatDate(checkinDate)}<br>
-							Check-out: ${this.formatDate(checkoutDate)}
+							Check-in: ${ this.formatDate( checkinDate ) }<br>
+							Check-out: ${ this.formatDate( checkoutDate ) }
 						</p>
 					</div>
 					<div class="period-price">
-						${period.formatted_price}
+						${ period.formatted_price }
 					</div>
 				</div>
 			`;
-		}).join('');
+			} )
+			.join( '' );
 	}
-	
+
 	addPeriodEventListeners() {
-		const periodElements = this.containerEl.querySelectorAll('.booking-period');
-		
-		periodElements.forEach(element => {
-			element.addEventListener('click', () => {
+		const periodElements =
+			this.containerEl.querySelectorAll( '.booking-period' );
+
+		periodElements.forEach( ( element ) => {
+			element.addEventListener( 'click', () => {
 				const periodId = element.dataset.periodId;
-				console.log('Selected period:', periodId);
-				
+				console.log( 'Selected period:', periodId );
+
 				// Store selected period info
 				this.selectedPeriod = {
 					id: periodId,
-					element: element
+					element,
 				};
-				
+
 				// Add selected styling
-				periodElements.forEach(el => el.classList.remove('selected'));
-				element.classList.add('selected');
-				
+				periodElements.forEach( ( el ) =>
+					el.classList.remove( 'selected' )
+				);
+				element.classList.add( 'selected' );
+
 				// Proceed to step 2
 				this.proceedToStep2();
-			});
-		});
+			} );
+		} );
 	}
-	
+
 	proceedToStep2() {
-		if (!this.selectedPeriod) {
-			this.showError('Please select a booking period first');
+		if ( ! this.selectedPeriod ) {
+			this.showError( 'Please select a booking period first' );
 			return;
 		}
-		
+
 		// Get period details from the selected element
 		const periodElement = this.selectedPeriod.element;
-		const periodName = periodElement.querySelector('h4').textContent;
-		const periodDescription = periodElement.querySelector('.period-description').textContent;
-		const periodDates = periodElement.querySelector('.period-dates').textContent;
-		const periodPrice = periodElement.querySelector('.period-price').textContent;
-		
-		this.renderStep2({
+		const periodName = periodElement.querySelector( 'h4' ).textContent;
+		const periodDescription = periodElement.querySelector(
+			'.period-description'
+		).textContent;
+		const periodDates =
+			periodElement.querySelector( '.period-dates' ).textContent;
+		const periodPrice =
+			periodElement.querySelector( '.period-price' ).textContent;
+
+		this.renderStep2( {
 			id: this.selectedPeriod.id,
 			name: periodName,
 			description: periodDescription,
 			dates: periodDates,
-			price: periodPrice
-		});
+			price: periodPrice,
+		} );
 	}
-	
-	renderStep2(selectedPeriod) {
+
+	renderStep2( selectedPeriod ) {
 		const html = `
 			<div class="booking-progress-section">
 				<div class="progress-labels">
@@ -361,11 +411,21 @@ class HouseBookingFlow {
 					
 					<div class="booking_details">
 						<h3>Your Selected Booking</h3>
-						<p><span class="label">House:</span> <strong>${this.config.houseName}</strong></p>
-						<p><span class="label">Period:</span> <strong>${selectedPeriod.name}</strong></p>
-						<p><span class="label">Description:</span> <strong>${selectedPeriod.description}</strong></p>
-						<p><span class="label">Dates:</span> <strong>${selectedPeriod.dates}</strong></p>
-						<p><span class="label">Price:</span> <strong>${selectedPeriod.price}</strong></p>
+						<p><span class="label">House:</span> <strong>${
+							this.config.houseName
+						}</strong></p>
+						<p><span class="label">Period:</span> <strong>${
+							selectedPeriod.name
+						}</strong></p>
+						<p><span class="label">Description:</span> <strong>${
+							selectedPeriod.description
+						}</strong></p>
+						<p><span class="label">Dates:</span> <strong>${
+							selectedPeriod.dates
+						}</strong></p>
+						<p><span class="label">Price:</span> <strong>${
+							selectedPeriod.price
+						}</strong></p>
 					</div>
 				</div>
 				
@@ -523,11 +583,11 @@ class HouseBookingFlow {
 						
 						<!-- Hidden fields for iPro API compatibility -->
 						<div style="display: none;">
-							<input type="hidden" name="property_name" value="${this.config.houseName}">
-							<input type="hidden" name="date_from" value="${this.formatDateForBooking()}">
-							<input type="hidden" name="period" value="${selectedPeriod.name}">
+							<input type="hidden" name="property_name" value="${ this.config.houseName }">
+							<input type="hidden" name="date_from" value="${ this.formatDateForBooking() }">
+							<input type="hidden" name="period" value="${ selectedPeriod.name }">
 							<input type="hidden" name="salutation" value="">
-							<input type="hidden" name="post_id" value="${this.config.houseId}">
+							<input type="hidden" name="post_id" value="${ this.config.houseId }">
 						</div>
 						
 						<div class="form-actions">
@@ -542,98 +602,107 @@ class HouseBookingFlow {
 				</div>
 			</div>
 		`;
-		
+
 		this.containerEl.innerHTML = html;
 		this.showContainer();
-		
+
 		// Add event listeners for step 2
 		this.addStep2EventListeners();
 	}
-	
+
 	addStep2EventListeners() {
-		const form = this.containerEl.querySelector('#personal-details-form');
-		const backButton = this.containerEl.querySelector('#back-to-step1');
-		const petsInput = this.containerEl.querySelector('#number-of-pets');
-		const petDetails = this.containerEl.querySelector('#pet-details');
-		
+		const form = this.containerEl.querySelector( '#personal-details-form' );
+		const backButton = this.containerEl.querySelector( '#back-to-step1' );
+		const petsInput = this.containerEl.querySelector( '#number-of-pets' );
+		const petDetails = this.containerEl.querySelector( '#pet-details' );
+
 		// Handle form submission
-		form.addEventListener('submit', (e) => {
+		form.addEventListener( 'submit', ( e ) => {
 			e.preventDefault();
-			this.handleStep2Submission(e);
-		});
-		
+			this.handleStep2Submission( e );
+		} );
+
 		// Handle back button
-		backButton.addEventListener('click', () => {
+		backButton.addEventListener( 'click', () => {
 			this.goBackToStep1();
-		});
-		
+		} );
+
 		// Handle pet details conditional display
-		if (petsInput && petDetails) {
-			petsInput.addEventListener('input', (e) => {
-				const petsCount = parseInt(e.target.value) || 0;
-				if (petsCount > 0) {
+		if ( petsInput && petDetails ) {
+			petsInput.addEventListener( 'input', ( e ) => {
+				const petsCount = parseInt( e.target.value ) || 0;
+				if ( petsCount > 0 ) {
 					petDetails.style.display = 'block';
 				} else {
 					petDetails.style.display = 'none';
 				}
-			});
+			} );
 		}
 	}
-	
+
 	goBackToStep1() {
 		// Re-render step 1 with the previously fetched periods
-		const selectedDate = this.parseDate(this.config.dateParam);
-		if (selectedDate) {
-			this.fetchBookingPeriods(selectedDate);
+		const selectedDate = this.parseDate( this.config.dateParam );
+		if ( selectedDate ) {
+			this.fetchBookingPeriods( selectedDate );
 		}
 	}
-	
-	handleStep2Submission(event) {
+
+	handleStep2Submission( event ) {
 		const form = event.target;
-		const formData = new FormData(form);
-		
+		const formData = new FormData( form );
+
 		// Basic validation
-		if (!this.validateStep2Form(form)) {
+		if ( ! this.validateStep2Form( form ) ) {
 			return;
 		}
-		
+
 		// Show loading state
 		this.showStep2Loading();
-		
+
 		// Add booking-specific data
-		formData.append('action', 'submit_booking_enquiry');
-		formData.append('house_id', this.config.houseId);
-		formData.append('selected_period', this.selectedPeriod.id);
-		formData.append('checkin_date', this.config.dateParam);
-		formData.append('nonce', this.config.nonce);
-		
+		formData.append( 'action', 'submit_booking_enquiry' );
+		formData.append( 'house_id', this.config.houseId );
+		formData.append( 'selected_period', this.selectedPeriod.id );
+		formData.append( 'checkin_date', this.config.dateParam );
+		formData.append( 'nonce', this.config.nonce );
+
 		// Submit form
-		fetch(this.config.ajaxUrl, {
+		fetch( this.config.ajaxUrl, {
 			method: 'POST',
-			body: formData
-		})
-		.then(response => response.json())
-		.then(data => {
-			if (data.success) {
-				this.renderStep3(data.data);
-			} else {
-				this.showStep2Error(data.data || 'Unable to submit booking enquiry. Please try again.');
-			}
-		})
-		.catch(error => {
-			console.error('Booking submission error:', error);
-			this.showStep2Error('Failed to submit booking enquiry. Please check your connection and try again.');
-		});
+			body: formData,
+		} )
+			.then( ( response ) => response.json() )
+			.then( ( data ) => {
+				if ( data.success ) {
+					this.renderStep3( data.data );
+				} else {
+					this.showStep2Error(
+						data.data ||
+							'Unable to submit booking enquiry. Please try again.'
+					);
+				}
+			} )
+			.catch( ( error ) => {
+				console.error( 'Booking submission error:', error );
+				this.showStep2Error(
+					'Failed to submit booking enquiry. Please check your connection and try again.'
+				);
+			} );
 	}
-	
-	validateStep2Form(form) {
+
+	validateStep2Form( form ) {
 		let isValid = true;
 		const errors = [];
-		
+
 		// Clear previous errors
-		form.querySelectorAll('.field-error').forEach(error => error.remove());
-		form.querySelectorAll('.form-field.error').forEach(field => field.classList.remove('error'));
-		
+		form.querySelectorAll( '.field-error' ).forEach( ( error ) =>
+			error.remove()
+		);
+		form.querySelectorAll( '.form-field.error' ).forEach( ( field ) =>
+			field.classList.remove( 'error' )
+		);
+
 		// Required fields validation
 		const requiredFields = [
 			{ name: 'first-name', label: 'First Name' },
@@ -648,89 +717,100 @@ class HouseBookingFlow {
 			{ name: 'number-of-infants', label: 'Number of Infants' },
 			{ name: 'nature-of-stay', label: 'Nature of Stay/Occasion' },
 			{ name: 'age-range-from', label: 'Age Range From' },
-			{ name: 'age-range-to', label: 'Age Range To' }
+			{ name: 'age-range-to', label: 'Age Range To' },
 		];
-		
-		requiredFields.forEach(field => {
-			const input = form.querySelector(`[name="${field.name}"]`);
-			if (input) {
+
+		requiredFields.forEach( ( field ) => {
+			const input = form.querySelector( `[name="${ field.name }"]` );
+			if ( input ) {
 				const value = input.value.trim();
-				if (!value) {
-					this.addFieldError(input, `${field.label} is required`);
+				if ( ! value ) {
+					this.addFieldError( input, `${ field.label } is required` );
 					isValid = false;
 				}
 			}
-		});
-		
+		} );
+
 		// Email validation
-		const emailInput = form.querySelector('[name="email"]');
-		if (emailInput) {
+		const emailInput = form.querySelector( '[name="email"]' );
+		if ( emailInput ) {
 			const emailValue = emailInput.value.trim();
-			if (emailValue && !this.isValidEmail(emailValue)) {
-				this.addFieldError(emailInput, 'Please enter a valid email address');
+			if ( emailValue && ! this.isValidEmail( emailValue ) ) {
+				this.addFieldError(
+					emailInput,
+					'Please enter a valid email address'
+				);
 				isValid = false;
 			}
 		}
-		
+
 		// Phone validation (basic)
-		const phoneInput = form.querySelector('[name="mobile"]');
-		if (phoneInput) {
+		const phoneInput = form.querySelector( '[name="mobile"]' );
+		if ( phoneInput ) {
 			const phoneValue = phoneInput.value.trim();
-			if (phoneValue && phoneValue.length < 10) {
-				this.addFieldError(phoneInput, 'Please enter a valid phone number');
+			if ( phoneValue && phoneValue.length < 10 ) {
+				this.addFieldError(
+					phoneInput,
+					'Please enter a valid phone number'
+				);
 				isValid = false;
 			}
 		}
-		
-		if (!isValid) {
+
+		if ( ! isValid ) {
 			// Scroll to first error
-			const firstError = form.querySelector('.form-field.error');
-			if (firstError) {
-				firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			const firstError = form.querySelector( '.form-field.error' );
+			if ( firstError ) {
+				firstError.scrollIntoView( {
+					behavior: 'smooth',
+					block: 'center',
+				} );
 			}
 		}
-		
+
 		return isValid;
 	}
-	
-	addFieldError(input, message) {
-		const fieldContainer = input.closest('.form-field');
-		fieldContainer.classList.add('error');
-		
-		const errorEl = document.createElement('span');
+
+	addFieldError( input, message ) {
+		const fieldContainer = input.closest( '.form-field' );
+		fieldContainer.classList.add( 'error' );
+
+		const errorEl = document.createElement( 'span' );
 		errorEl.className = 'field-error';
 		errorEl.textContent = message;
-		fieldContainer.appendChild(errorEl);
+		fieldContainer.appendChild( errorEl );
 	}
-	
-	isValidEmail(email) {
+
+	isValidEmail( email ) {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-		return emailRegex.test(email);
+		return emailRegex.test( email );
 	}
-	
+
 	showStep2Loading() {
-		const submitButton = this.containerEl.querySelector('#submit-booking');
-		const backButton = this.containerEl.querySelector('#back-to-step1');
-		
+		const submitButton =
+			this.containerEl.querySelector( '#submit-booking' );
+		const backButton = this.containerEl.querySelector( '#back-to-step1' );
+
 		submitButton.disabled = true;
 		submitButton.innerHTML = '<span class="spinner"></span> Submitting...';
 		backButton.disabled = true;
 	}
-	
-	showStep2Error(message) {
-		const submitButton = this.containerEl.querySelector('#submit-booking');
-		const backButton = this.containerEl.querySelector('#back-to-step1');
-		
+
+	showStep2Error( message ) {
+		const submitButton =
+			this.containerEl.querySelector( '#submit-booking' );
+		const backButton = this.containerEl.querySelector( '#back-to-step1' );
+
 		// Reset buttons
 		submitButton.disabled = false;
 		submitButton.innerHTML = 'Submit Booking Enquiry →';
 		backButton.disabled = false;
-		
+
 		// Show error message
-		this.showError(message);
+		this.showError( message );
 	}
-	
-	renderStep3(responseData) {
+
+	renderStep3( responseData ) {
 		const html = `
 			<div class="booking-progress-section">
 				<div class="progress-labels">
@@ -755,11 +835,15 @@ class HouseBookingFlow {
 					<h2>Booking Enquiry Submitted!</h2>
 					<p>Thank you for your booking enquiry. We've received your request and will be in touch shortly.</p>
 					
-					${responseData.reference_number ? `
+					${
+						responseData.reference_number
+							? `
 						<div class="reference-number">
-							<p><strong>Reference Number:</strong> ${responseData.reference_number}</p>
+							<p><strong>Reference Number:</strong> ${ responseData.reference_number }</p>
 						</div>
-					` : ''}
+					`
+							: ''
+					}
 					
 					<div class="next-steps">
 						<h3>What happens next?</h3>
@@ -778,41 +862,41 @@ class HouseBookingFlow {
 					</div>
 					
 					<div class="form-actions">
-						<a href="${this.config.housesUrl || '/houses/'}" class="btn btn-primary">
+						<a href="${ this.config.housesUrl || '/houses/' }" class="btn btn-primary">
 							Browse Other Properties
 						</a>
 					</div>
 				</div>
 			</div>
 		`;
-		
+
 		this.containerEl.innerHTML = html;
 		this.showContainer();
 	}
-	
-	formatDate(date) {
-		return date.toLocaleDateString('en-GB', {
+
+	formatDate( date ) {
+		return date.toLocaleDateString( 'en-GB', {
 			weekday: 'long',
 			day: 'numeric',
 			month: 'long',
-			year: 'numeric'
-		});
+			year: 'numeric',
+		} );
 	}
-	
-	showError(message) {
-		console.error('Booking flow error:', message);
-		
+
+	showError( message ) {
+		console.error( 'Booking flow error:', message );
+
 		this.loadingEl.style.display = 'none';
 		this.containerEl.style.display = 'none';
-		
-		const errorMessage = this.errorEl.querySelector('.error-message');
-		if (errorMessage) {
+
+		const errorMessage = this.errorEl.querySelector( '.error-message' );
+		if ( errorMessage ) {
 			errorMessage.textContent = message;
 		}
-		
+
 		this.errorEl.style.display = 'block';
 	}
-	
+
 	showContainer() {
 		this.loadingEl.style.display = 'none';
 		this.errorEl.style.display = 'none';
@@ -821,15 +905,17 @@ class HouseBookingFlow {
 }
 
 // Helper function for error display
-function showError(element, message) {
-	const loadingEl = element.querySelector('.booking-loading');
-	const errorEl = element.querySelector('.booking-error');
-	
-	if (loadingEl) loadingEl.style.display = 'none';
-	if (errorEl) {
+function showError( element, message ) {
+	const loadingEl = element.querySelector( '.booking-loading' );
+	const errorEl = element.querySelector( '.booking-error' );
+
+	if ( loadingEl ) {
+		loadingEl.style.display = 'none';
+	}
+	if ( errorEl ) {
 		errorEl.style.display = 'block';
-		const errorMsg = errorEl.querySelector('.error-message');
-		if (errorMsg) {
+		const errorMsg = errorEl.querySelector( '.error-message' );
+		if ( errorMsg ) {
 			errorMsg.textContent = message;
 		}
 	}
