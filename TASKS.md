@@ -42,7 +42,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Scaffolding the class so the loader has something to hook onto.
   - Test: `wp eval 'var_dump( class_exists( "Kate_Toms_Core_Mobile_Nav" ) );'` prints `bool(true)`.
 
-- [ ] **2.3** Register the view script module and style in `Kate_Toms_Core_Mobile_Nav::register()`:
+- [x] **2.3** Register the view script module and style in `Kate_Toms_Core_Mobile_Nav::register()`:
   - `wp_register_script_module( 'kate-toms-core/mobile-nav-drilldown', plugins_url( 'build/mobile-nav-drilldown/view.js', KATE_TOMS_CORE_PLUGIN_FILE ), array( '@wordpress/interactivity' ), KATE_TOMS_CORE_VERSION );`
   - `wp_register_style( 'kate-toms-core-mobile-nav-drilldown', plugins_url( 'build/mobile-nav-drilldown/style-view.css', KATE_TOMS_CORE_PLUGIN_FILE ), array(), KATE_TOMS_CORE_VERSION );` (wp-scripts names the extracted CSS after the JS entry; our entry is `view.js`, hence `style-view.css` — verified in task 1.2)
   - Hook `register()` to `init`. Wire the class instantiation into `Kate_Toms_Core::define_public_hooks()` in `includes/class-kate-toms-core.php`.

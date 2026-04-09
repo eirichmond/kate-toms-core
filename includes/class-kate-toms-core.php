@@ -236,6 +236,11 @@ class Kate_Toms_Core {
 		$this->loader->add_filter( 'wp_calculate_image_srcset', $plugin_public, 'kate_toms_replace_image_srcset_url', 10, 5 );
 		$this->loader->add_filter( 'get_terms', $plugin_public, 'filter_bedroom_terms', 10, 3 );
 
+		// Mobile Nav Drilldown enhancement — registers the view script module
+		// and stylesheet on init. Conditional enqueue is wired in task 2.4.
+		$plugin_mobile_nav = new Kate_Toms_Core_Mobile_Nav();
+		$this->loader->add_action( 'init', $plugin_mobile_nav, 'register_assets' );
+
 	}
 
 	/**
