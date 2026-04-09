@@ -157,7 +157,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Prevent chevrons or wrappers being injected into the desktop nav DOM even though its media query hides it.
   - Test: At <1100px, open overlay → inspect the desktop nav's (hidden) markup → it has no `ktc-drilldown` wrappers or chevrons on its items.
 
-- [ ] **8.2** Idempotency: closing and reopening the overlay must not re-wrap, re-inject chevrons, or re-synthesise "View [Parent]" links.
+- [x] **8.2** Idempotency: closing and reopening the overlay must not re-wrap, re-inject chevrons, or re-synthesise "View [Parent]" links.
   - What: Avoid progressive DOM bloat.
   - Test: Open/close the overlay 5 times. DOM node count inside the overlay stays constant (check via `document.querySelectorAll('.ktc-drilldown__chevron').length`).
 
