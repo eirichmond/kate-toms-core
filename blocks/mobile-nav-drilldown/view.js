@@ -124,6 +124,60 @@ function observeOverlay( overlay ) {
 }
 
 /**
+ * Remove every `data-drilldown-parent` marker from the document.
+ *
+ * Called when the viewport crosses above the drilldown breakpoint, so
+ * leftover markers don't confuse later tasks (e.g. chevron injection)
+ * if the user resizes back below the breakpoint.
+ *
+ * @return {void}
+ */
+function stripDrilldownAttributes() {
+	const tagged = document.querySelectorAll( '[data-drilldown-parent]' );
+	tagged.forEach( ( li ) => {
+		li.removeAttribute( 'data-drilldown-parent' );
+	} );
+}
+
+/**
+ * Reset all drilldown state: empty the path stack and strip markers.
+ *
+ * Mutates `state.drilldownPath` in place (via `length = 0`) so
+ * Interactivity's reactive tracking picks up the change. Replacing the
+ * array with a new reference can miss reactivity depending on how the
+ * store proxy was set up.
+ *
+ * @return {void}
+ */
+function resetDrilldownState() {
+	state.drilldownPath.length = 0;
+	stripDrilldownAttributes();
+}
+
+/**
+ * Wire a listener that cleans up drilldown state when the viewport
+ * crosses above the breakpoint. Below-the-breakpoint transitions
+ * intentionally do nothing — the next overlay open will re-tag via
+ * the MutationObserver.
+ *
+ * @return {void}
+ */
+function watchBreakpoint() {
+	const mql = window.matchMedia( `(max-width: ${ BREAKPOINT_PX }px)` );
+	const handler = ( event ) => {
+		if ( ! event.matches ) {
+			resetDrilldownState();
+		}
+	};
+	if ( typeof mql.addEventListener === 'function' ) {
+		mql.addEventListener( 'change', handler );
+	} else {
+		// Safari < 14 fallback.
+		mql.addListener( handler );
+	}
+}
+
+/**
  * Initialise observers for every navigation overlay currently in the DOM.
  *
  * @return {void}
@@ -131,6 +185,7 @@ function observeOverlay( overlay ) {
 function init() {
 	const overlays = document.querySelectorAll( OVERLAY_SELECTOR );
 	overlays.forEach( observeOverlay );
+	watchBreakpoint();
 }
 
 if ( document.readyState === 'loading' ) {

@@ -63,7 +63,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Identify parent items without modifying structure yet.
   - Test: Open the mobile overlay, inspect the DOM, and confirm every parent-with-children `li` has `data-drilldown-parent="true"` and leaf items do not.
 
-- [ ] **3.3** Gate the entire drilldown initialisation behind `window.matchMedia('(max-width: 1100px)').matches`. Attach a `change` listener that, when crossing the breakpoint, resets any drilldown state and strips the data attributes. Define the `1100` constant once at the top of `view.js`.
+- [x] **3.3** Gate the entire drilldown initialisation behind `window.matchMedia('(max-width: 1100px)').matches`. Attach a `change` listener that, when crossing the breakpoint, resets any drilldown state and strips the data attributes. Define the `1100` constant once at the top of `view.js`.
   - What: Ensure desktop navigation is never touched and resize-across-breakpoint behaves cleanly.
   - Test: Open overlay at 900px → attributes present. Resize browser to 1200px → the header's mobile overlay hides (existing behaviour) and the data attributes are removed. Resize back → behaviour re-initialises.
 
