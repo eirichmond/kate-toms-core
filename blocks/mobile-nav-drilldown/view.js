@@ -96,6 +96,22 @@ const VIEW_PARENT_CLASS = 'ktc-drilldown__view-parent';
 const childPanelCache = new WeakMap();
 
 /**
+ * Per-panel record of the chevron button that triggered its drill-in.
+ * Used by `drillBack` (task 5.2) to restore focus to the originating
+ * chevron when the user pops back up the stack.
+ *
+ * @type {WeakMap<HTMLElement, HTMLElement>}
+ */
+const panelTriggers = new WeakMap();
+
+/**
+ * Monotonic counter for generating stable, unique child panel ids.
+ * Ids are pushed onto `state.drilldownPath` so the stack can identify
+ * which panel is active at each level.
+ */
+let panelIdCounter = 0;
+
+/**
  * DOM id of the `<script type="application/json">` tag WordPress prints
  * for this module's `script_module_data_{id}` filter return value.
  */
@@ -435,7 +451,9 @@ function buildChildPanel( parentLi ) {
 	);
 	const newLevel = sourceLevel + 1;
 
+	panelIdCounter += 1;
 	const panel = document.createElement( 'div' );
+	panel.id = `ktc-drilldown-panel-${ panelIdCounter }`;
 	panel.className = PANEL_CLASS;
 	panel.setAttribute( 'data-level', String( newLevel ) );
 
@@ -472,16 +490,136 @@ function buildChildPanel( parentLi ) {
 }
 
 /**
- * Chevron click handler — for now just materialises the child panel
- * (idempotent via the cache) so task 4.3's DOM check passes. Task 5.1
- * extends this to also run the drillIn slide transition and focus work.
+ * Apply the current drill level's horizontal offset to the wrapper.
  *
- * @param {HTMLElement} parentLi The parent list item whose chevron was
- *                               clicked.
+ * Each drilled level shifts the track left by one viewport-width of the
+ * wrapper (-N * 100%). Task 7.1 adds the CSS transition; task 7.2 moves
+ * this assignment onto a CSS custom property instead of inline transform.
+ *
+ * @param {HTMLElement} wrapper The `.ktc-drilldown` wrapper element.
  * @return {void}
  */
-function onChevronClick( parentLi ) {
-	buildChildPanel( parentLi );
+function applyWrapperTransform( wrapper ) {
+	const level = state.drilldownPath.length;
+	wrapper.style.transform = `translateX(-${ level * 100 }%)`;
+}
+
+/**
+ * Find the panel that is currently "active" (visible and interactive).
+ *
+ * Level 0: the root panel. Level ≥ 1: the panel whose id matches the
+ * last entry on `state.drilldownPath`.
+ *
+ * @param {HTMLElement} track The `.ktc-drilldown__track` element.
+ * @return {HTMLElement|null} The active panel, or null if not found.
+ */
+function getActivePanel( track ) {
+	if ( state.drilldownPath.length === 0 ) {
+		return track.querySelector( `.${ PANEL_CLASS }[data-level="0"]` );
+	}
+	const activeId = state.drilldownPath[ state.drilldownPath.length - 1 ];
+	return track.querySelector( `#${ activeId }` );
+}
+
+/**
+ * Mark every panel in the track either active (focusable, visible to
+ * assistive tech) or inactive (`inert` + `aria-hidden="true"`).
+ *
+ * Task 6.3 already-correct behaviour: all non-active panels get inert
+ * regardless of whether they're ancestors or siblings of the active
+ * panel, so focus can never escape to off-screen items.
+ *
+ * @param {HTMLElement} track The `.ktc-drilldown__track` element.
+ * @return {void}
+ */
+function updatePanelInertness( track ) {
+	const active = getActivePanel( track );
+	const panels = track.querySelectorAll( `.${ PANEL_CLASS }` );
+	panels.forEach( ( panel ) => {
+		if ( panel === active ) {
+			panel.removeAttribute( 'inert' );
+			panel.removeAttribute( 'aria-hidden' );
+		} else {
+			panel.setAttribute( 'inert', '' );
+			panel.setAttribute( 'aria-hidden', 'true' );
+		}
+	} );
+}
+
+/**
+ * Move focus to the best starting element inside a panel.
+ *
+ * Preference order:
+ *   1. The synthesised "View [Parent]" link at the top of the list.
+ *   2. The first anchor or button inside the panel's `<ul>`.
+ *   3. The back button in the panel header.
+ *
+ * @param {HTMLElement} panel The panel to focus into.
+ * @return {void}
+ */
+function focusFirstIn( panel ) {
+	const viewParent = panel.querySelector( `.${ VIEW_PARENT_CLASS } a` );
+	if ( viewParent ) {
+		viewParent.focus();
+		return;
+	}
+	const firstItemLink = panel.querySelector( 'ul a, ul button' );
+	if ( firstItemLink ) {
+		firstItemLink.focus();
+		return;
+	}
+	const back = panel.querySelector( `.${ BACK_BUTTON_CLASS }` );
+	if ( back ) {
+		back.focus();
+	}
+}
+
+/**
+ * Drill in to a child panel: push its id on the path stack, slide the
+ * wrapper, update inertness, and move focus.
+ *
+ * Records the triggering chevron on the panel via `panelTriggers` so
+ * the matching drill-back (task 5.2) can restore focus correctly.
+ *
+ * @param {HTMLElement} panel         The panel being drilled into.
+ * @param {HTMLElement} triggerButton The chevron that initiated the drill.
+ * @return {void}
+ */
+function drillIn( panel, triggerButton ) {
+	const track = panel.closest( `.${ TRACK_CLASS }` );
+	const wrapper = panel.closest( `.${ WRAPPER_CLASS }` );
+	if ( ! track || ! wrapper ) {
+		return;
+	}
+
+	panelTriggers.set( panel, triggerButton );
+	state.drilldownPath.push( panel.id );
+
+	if ( triggerButton ) {
+		triggerButton.setAttribute( 'aria-expanded', 'true' );
+	}
+
+	applyWrapperTransform( wrapper );
+	updatePanelInertness( track );
+	focusFirstIn( panel );
+}
+
+/**
+ * Chevron click handler — materialises the target child panel (if not
+ * already cached) and drills into it.
+ *
+ * @param {HTMLElement} parentLi      The parent list item whose chevron
+ *                                    was clicked.
+ * @param {HTMLElement} triggerButton The chevron button itself, used for
+ *                                    focus restoration on drill-back.
+ * @return {void}
+ */
+function onChevronClick( parentLi, triggerButton ) {
+	const panel = buildChildPanel( parentLi );
+	if ( ! panel ) {
+		return;
+	}
+	drillIn( panel, triggerButton );
 }
 
 /**
@@ -506,7 +644,7 @@ function injectChevronsInList( list, arrowSrc ) {
 		button.addEventListener( 'click', ( event ) => {
 			event.preventDefault();
 			event.stopPropagation();
-			onChevronClick( li );
+			onChevronClick( li, button );
 		} );
 		li.appendChild( button );
 	} );

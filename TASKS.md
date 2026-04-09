@@ -91,7 +91,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 5. Interactions — Drill In, Drill Back, Keyboard, Escape
 
-- [ ] **5.1** Implement the `drillIn` action: on chevron click, push the target panel id onto `state.drilldownPath`, apply `transform: translateX(-{level * 100%})` to the wrapper, set the previous panel's `inert` + `aria-hidden="true"`, unset those on the new panel, and move focus to the new panel's first focusable element (the "View [Parent]" link, or first menu item if no synthesised link).
+- [x] **5.1** Implement the `drillIn` action: on chevron click, push the target panel id onto `state.drilldownPath`, apply `transform: translateX(-{level * 100%})` to the wrapper, set the previous panel's `inert` + `aria-hidden="true"`, unset those on the new panel, and move focus to the new panel's first focusable element (the "View [Parent]" link, or first menu item if no synthesised link).
   - What: The core drill-in interaction.
   - Test: Click a chevron → panel slides in, focus lands on "View [Parent]", previous panel becomes inert (keyboard Tab skips it, screen reader cannot reach it).
 
