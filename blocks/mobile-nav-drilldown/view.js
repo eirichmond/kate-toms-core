@@ -234,17 +234,19 @@ function unwrapOverlays() {
 }
 
 /**
- * Tag every `<li>` inside the given overlay that directly contains a
+ * Tag every direct-child `<li>` of the given `<ul>` that contains a
  * nested `<ul>` with `data-drilldown-parent="true"`.
  *
- * Scans recursively so nested submenus also get their parents marked.
- * Safe to call multiple times — the attribute is idempotent.
+ * Deliberately scoped to ONE level (`:scope > li`): deeper levels are
+ * processed only when their own drilled panel is built, so the clone
+ * we copy into a new panel never carries chevrons for deeper levels
+ * (whose click listeners would be lost by `cloneNode`).
  *
- * @param {HTMLElement} overlay The open overlay root element.
+ * @param {HTMLElement} list The `<ul>` whose immediate children to scan.
  * @return {void}
  */
-function tagParentItems( overlay ) {
-	const items = overlay.querySelectorAll( 'li' );
+function tagParentItemsInList( list ) {
+	const items = list.querySelectorAll( ':scope > li' );
 	items.forEach( ( li ) => {
 		const hasChildList = Array.from( li.children ).some(
 			( child ) => child.tagName === 'UL'
@@ -460,6 +462,12 @@ function buildChildPanel( parentLi ) {
 	track.appendChild( panel );
 	childPanelCache.set( parentLi, panel );
 
+	// Process this level so any parents inside the cloned list get
+	// their own chevrons. Deeper levels are only built on subsequent
+	// drills, so the clone we just appended never contains orphaned
+	// (listener-less) chevrons from levels deeper than this one.
+	processListLevel( clonedList );
+
 	return panel;
 }
 
@@ -477,27 +485,17 @@ function onChevronClick( parentLi ) {
 }
 
 /**
- * Inject a chevron button into every tagged parent `<li>` in the overlay.
+ * Inject a chevron button into every tagged direct-child `<li>` of the
+ * given `<ul>`. Idempotent: `<li>`s that already have a chevron are
+ * skipped.
  *
- * Idempotent: if a chevron already exists inside the `<li>`, skips it.
- * The chevron is appended as the last direct child of the `<li>` and is
- * wired to `onChevronClick()`.
- *
- * No-op if `arrowSrc` is missing from the module data (e.g. the PHP
- * filter didn't run) — better to render nothing than to produce broken
- * image icons.
- *
- * @param {HTMLElement} overlay The open overlay root element.
+ * @param {HTMLElement} list     The `<ul>` whose children to scan.
+ * @param {string}      arrowSrc Absolute URL of the chevron image.
  * @return {void}
  */
-function injectChevrons( overlay ) {
-	const { arrowSrc } = getModuleData();
-	if ( ! arrowSrc ) {
-		return;
-	}
-
-	const parents = overlay.querySelectorAll(
-		'li[data-drilldown-parent="true"]'
+function injectChevronsInList( list, arrowSrc ) {
+	const parents = list.querySelectorAll(
+		':scope > li[data-drilldown-parent="true"]'
 	);
 	parents.forEach( ( li ) => {
 		if ( li.querySelector( `:scope > .${ CHEVRON_CLASS }` ) ) {
@@ -515,6 +513,27 @@ function injectChevrons( overlay ) {
 }
 
 /**
+ * Process one level of a `<ul>`: tag parent items and inject chevrons
+ * on direct children only. Called once per level — by `onOverlayOpen`
+ * for the root list, and by `buildChildPanel` for each newly-cloned
+ * list as the user drills deeper. This is how the drilldown supports
+ * arbitrary nesting depth without pre-building everything up front.
+ *
+ * No-op if the `arrowSrc` module data isn't available.
+ *
+ * @param {HTMLElement} list The `<ul>` to process.
+ * @return {void}
+ */
+function processListLevel( list ) {
+	const { arrowSrc } = getModuleData();
+	if ( ! arrowSrc ) {
+		return;
+	}
+	tagParentItemsInList( list );
+	injectChevronsInList( list, arrowSrc );
+}
+
+/**
  * Handle overlay open: tag parent items so later tasks can target them.
  *
  * Called by the MutationObserver when the overlay gains `is-menu-open`.
@@ -528,8 +547,12 @@ function onOverlayOpen( overlay ) {
 		return;
 	}
 	wrapOverlay( overlay );
-	tagParentItems( overlay );
-	injectChevrons( overlay );
+	const rootList = overlay.querySelector(
+		`.${ PANEL_CLASS }[data-level="0"] ${ ROOT_LIST_SELECTOR }`
+	);
+	if ( rootList ) {
+		processListLevel( rootList );
+	}
 }
 
 /**

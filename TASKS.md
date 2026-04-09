@@ -85,7 +85,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Keep the parent destination reachable from inside its own submenu.
   - Test: Drill into a parent that has both a URL and children → first item is "View [Parent]" linking to the parent URL. Drill into a pure-container parent with no href → no synthesised item.
 
-- [ ] **4.5** Recursion sanity check: the same init logic must run on every nested `<ul>` so a level-2 submenu that has its own children also gets chevrons and lazily builds level-3 panels. Make sure the transform from 4.2 and 4.3 walks down recursively (or re-runs against each newly-built panel after insertion).
+- [x] **4.5** Recursion sanity check: the same init logic must run on every nested `<ul>` so a level-2 submenu that has its own children also gets chevrons and lazily builds level-3 panels. Make sure the transform from 4.2 and 4.3 walks down recursively (or re-runs against each newly-built panel after insertion).
   - What: Support arbitrary nesting depth per PRD.
   - Test: On a 3-level menu path (e.g. Houses → Cotswolds → Luxury), verify chevrons appear at every level that has children and a level-3 panel can be opened.
 
