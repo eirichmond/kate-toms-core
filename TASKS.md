@@ -38,7 +38,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Resolve the PRD's plugin-file reference question so subsequent URL helpers work cleanly.
   - Test: `wp eval 'var_dump( defined( "KATE_TOMS_CORE_PLUGIN_FILE" ) && is_string( KATE_TOMS_CORE_PLUGIN_FILE ) );'` prints `bool(true)`.
 
-- [ ] **2.2** Create `includes/mobile-nav/class-kate-toms-core-mobile-nav.php` with an empty class `Kate_Toms_Core_Mobile_Nav` exposing a public `register()` method. Include the file from `kate-toms-core.php` (alongside the other `require_once` includes in the bootstrap).
+- [x] **2.2** Create `includes/mobile-nav/class-kate-toms-core-mobile-nav.php` with an empty class `Kate_Toms_Core_Mobile_Nav` exposing a public `register()` method. Include the file from `kate-toms-core.php` (alongside the other `require_once` includes in the bootstrap).
   - What: Scaffolding the class so the loader has something to hook onto.
   - Test: `wp eval 'var_dump( class_exists( "Kate_Toms_Core_Mobile_Nav" ) );'` prints `bool(true)`.
 

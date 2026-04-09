@@ -78,6 +78,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 require plugin_dir_path( __FILE__ ) . 'includes/class-kate-toms-core.php';
 
 /**
+ * Mobile Nav Drilldown enhancement class — wired into the public hooks
+ * in Kate_Toms_Core::define_public_hooks().
+ */
+require_once plugin_dir_path( __FILE__ ) . 'includes/mobile-nav/class-kate-toms-core-mobile-nav.php';
+
+/**
  * Begins execution of the plugin.
  *
  * Since everything within the plugin is registered via hooks,
