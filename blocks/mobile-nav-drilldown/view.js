@@ -381,6 +381,9 @@ function createChevronButton( parentLabel, arrowSrc ) {
  * the grandparent label. For now the button carries a plain text label
  * so task 4.3's structural check has something to assert against.
  *
+ * The click handler resolves its own track via `closest()` so the
+ * button is self-contained — callers don't need to pass a reference.
+ *
  * @param {string} label Visible text after the arrow glyph.
  * @return {HTMLButtonElement} The back button.
  */
@@ -390,6 +393,14 @@ function createBackButton( label ) {
 	btn.className = BACK_BUTTON_CLASS;
 	btn.textContent = `\u2190 ${ label }`;
 	btn.setAttribute( 'aria-label', `Back to ${ label }` );
+	btn.addEventListener( 'click', ( event ) => {
+		event.preventDefault();
+		event.stopPropagation();
+		const track = btn.closest( `.${ TRACK_CLASS }` );
+		if ( track ) {
+			drillBack( track );
+		}
+	} );
 	return btn;
 }
 
@@ -571,6 +582,42 @@ function focusFirstIn( panel ) {
 	const back = panel.querySelector( `.${ BACK_BUTTON_CLASS }` );
 	if ( back ) {
 		back.focus();
+	}
+}
+
+/**
+ * Drill back one level: pop the path stack, reverse the slide, update
+ * inertness, and restore focus to the chevron that opened the panel
+ * we just left.
+ *
+ * No-op if we're already at the root (`state.drilldownPath` is empty);
+ * callers relying on Escape fall-through at root should check the path
+ * length themselves and not delegate to this function (see task 5.4).
+ *
+ * @param {HTMLElement} track The `.ktc-drilldown__track` element.
+ * @return {void}
+ */
+function drillBack( track ) {
+	if ( state.drilldownPath.length === 0 ) {
+		return;
+	}
+
+	// Capture the panel and trigger we're leaving BEFORE mutating the
+	// path, because `getActivePanel` reads from `state.drilldownPath`.
+	const leavingPanel = getActivePanel( track );
+	const trigger = leavingPanel ? panelTriggers.get( leavingPanel ) : null;
+
+	state.drilldownPath.pop();
+
+	const wrapper = track.closest( `.${ WRAPPER_CLASS }` );
+	if ( wrapper ) {
+		applyWrapperTransform( wrapper );
+	}
+	updatePanelInertness( track );
+
+	if ( trigger ) {
+		trigger.setAttribute( 'aria-expanded', 'false' );
+		trigger.focus();
 	}
 }
 

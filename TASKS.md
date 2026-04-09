@@ -95,7 +95,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: The core drill-in interaction.
   - Test: Click a chevron → panel slides in, focus lands on "View [Parent]", previous panel becomes inert (keyboard Tab skips it, screen reader cannot reach it).
 
-- [ ] **5.2** Implement the `drillBack` action triggered by the back button at the top of each drilled panel. Pops one level off `state.drilldownPath`, reverses the transform and inert/aria states, and restores focus to the chevron button that originally opened the now-leaving panel (cache the triggering element on drill-in).
+- [x] **5.2** Implement the `drillBack` action triggered by the back button at the top of each drilled panel. Pops one level off `state.drilldownPath`, reverses the transform and inert/aria states, and restores focus to the chevron button that originally opened the now-leaving panel (cache the triggering element on drill-in).
   - What: The matching drill-back interaction with correct focus restoration.
   - Test: Drill into level 2, press back → slides back to level 1, focus returns to the chevron of the row you drilled from.
 
