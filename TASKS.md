@@ -59,7 +59,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Establish the reactive state shape the rest of the logic will mutate.
   - Test: In DevTools, after the overlay opens, manually mutate the store from the console and confirm the state is readable.
 
-- [ ] **3.2** Add a callback (using `callbacks.init` or a `data-wp-watch` equivalent attached from JS) that runs when the core nav overlay opens (`state.core.navigation.isMenuOpen === true`) and below 1100px. In that callback, query all `li` elements inside the open overlay's `ul` that directly contain a nested `ul`, and tag them with a `data-drilldown-parent="true"` attribute.
+- [x] **3.2** Add a callback (using `callbacks.init` or a `data-wp-watch` equivalent attached from JS) that runs when the core nav overlay opens (`state.core.navigation.isMenuOpen === true`) and below 1100px. In that callback, query all `li` elements inside the open overlay's `ul` that directly contain a nested `ul`, and tag them with a `data-drilldown-parent="true"` attribute.
   - What: Identify parent items without modifying structure yet.
   - Test: Open the mobile overlay, inspect the DOM, and confirm every parent-with-children `li` has `data-drilldown-parent="true"` and leaf items do not.
 
