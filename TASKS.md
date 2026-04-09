@@ -135,7 +135,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Core sliding layout.
   - Test: Drill in → panel slides smoothly over 0.3s. Drill back → slides back smoothly. No layout jank.
 
-- [ ] **7.2** JS writes the `--ktc-drilldown-offset` custom property (e.g. `--ktc-drilldown-offset: -100%` at level 1) on the wrapper instead of setting `style.transform` directly. Update `drillIn`/`drillBack` accordingly.
+- [x] **7.2** JS writes the `--ktc-drilldown-offset` custom property (e.g. `--ktc-drilldown-offset: -100%` at level 1) on the wrapper instead of setting `style.transform` directly. Update `drillIn`/`drillBack` accordingly.
   - What: Keeps the animation definition in CSS where `prefers-reduced-motion` overrides can target it.
   - Test: Drill in → computed style on the wrapper shows the transform resolving via the custom property.
 

@@ -7,7 +7,6 @@
  * pages that render a core/navigation block.
  */
 /* global MutationObserver, Element */
-import { store } from '@wordpress/interactivity';
 import './style.css';
 
 // eslint-disable-next-line no-console
@@ -131,28 +130,27 @@ const MODULE_DATA_ID =
  */
 const LIVE_REGION_CLASS = 'ktc-drilldown__live-region';
 
-const { state } = store( 'core/navigation', {
-	state: {
-		/**
-		 * Stack of panel ids representing the current drilldown position.
-		 *
-		 * Level 0 = root panel (empty array). Each drill-in pushes an id,
-		 * each drill-back pops one.
-		 *
-		 * @type {string[]}
-		 */
-		drilldownPath: [],
-
-		/**
-		 * Derived: are we currently inside a drilled panel?
-		 *
-		 * @return {boolean} True if at least one level deep.
-		 */
-		get isDrilldown() {
-			return state.drilldownPath.length > 0;
-		},
-	},
-} );
+/**
+ * Local drilldown state.
+ *
+ * We deliberately do NOT register this on the Interactivity API store.
+ * The core/navigation store is registered as a *locked* private store
+ * by core's own view module, so calling `store('core/navigation', ...)`
+ * from an external module throws "Cannot lock a public store" in debug
+ * builds and silently fights for ownership in production. Since no
+ * reactive subscription actually reads these fields — everything is
+ * driven imperatively from the MutationObserver and event listeners —
+ * a plain object is simpler and conflict-free.
+ *
+ * @type {{ drilldownPath: string[] }}
+ */
+const state = {
+	/**
+	 * Stack of panel ids representing the current drilldown position.
+	 * Level 0 = root panel (empty array). Drill-in pushes; drill-back pops.
+	 */
+	drilldownPath: [],
+};
 
 /**
  * Check whether the viewport is currently below the drilldown breakpoint.
@@ -553,16 +551,19 @@ function buildChildPanel( parentLi ) {
 /**
  * Apply the current drill level's horizontal offset to the wrapper.
  *
- * Each drilled level shifts the track left by one viewport-width of the
- * wrapper (-N * 100%). Task 7.1 adds the CSS transition; task 7.2 moves
- * this assignment onto a CSS custom property instead of inline transform.
+ * Writes the `--ktc-drilldown-offset` CSS custom property, which the
+ * stylesheet uses inside `transform: translateX(var(...))`. Driving the
+ * offset through a custom property (instead of inline `style.transform`)
+ * keeps the animation definition entirely in CSS, so the
+ * `prefers-reduced-motion` override in task 7.4 can disable the
+ * transition without any JS changes.
  *
  * @param {HTMLElement} wrapper The `.ktc-drilldown` wrapper element.
  * @return {void}
  */
 function applyWrapperTransform( wrapper ) {
 	const level = state.drilldownPath.length;
-	wrapper.style.transform = `translateX(-${ level * 100 }%)`;
+	wrapper.style.setProperty( '--ktc-drilldown-offset', `-${ level * 100 }%` );
 }
 
 /**
@@ -955,7 +956,7 @@ function onOverlayClose( overlay ) {
 	}
 
 	state.drilldownPath.length = 0;
-	wrapper.style.transform = '';
+	wrapper.style.removeProperty( '--ktc-drilldown-offset' );
 	updatePanelInertness( track );
 	syncChevronExpanded( track );
 
