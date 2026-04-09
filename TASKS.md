@@ -139,7 +139,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Keeps the animation definition in CSS where `prefers-reduced-motion` overrides can target it.
   - Test: Drill in → computed style on the wrapper shows the transform resolving via the custom property.
 
-- [ ] **7.3** Style the chevron button (right-pointing, `currentColor`, adequate tap target ≥44×44px), the back button (left-chevron + label, full-width tap target at the top of drilled panels), and the synthesised "View [Parent]" row (visually distinct from normal items — e.g. subtle emphasis).
+- [x] **7.3** Style the chevron button (right-pointing, `currentColor`, adequate tap target ≥44×44px), the back button (left-chevron + label, full-width tap target at the top of drilled panels), and the synthesised "View [Parent]" row (visually distinct from normal items — e.g. subtle emphasis).
   - What: Visual polish matching the overlay's existing design language.
   - Test: Visual check on an iPhone-sized viewport. All tap targets meet minimum size.
 

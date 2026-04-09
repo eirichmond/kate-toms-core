@@ -44,4 +44,113 @@
 		flex: 0 0 100%;
 		min-width: 0;
 	}
+
+	/*
+	 * Hide any `<ul>` nested inside a panel's direct-child list. A
+	 * single rule covers both cases:
+	 *   - Root panel: the direct child is the top nav ul; nested
+	 *     submenu-containers inside items are hidden.
+	 *   - Drilled panel: the direct child is a cloned submenu ul;
+	 *     any further-nested uls inside its items are hidden.
+	 * Those hidden lists are still used by `buildChildPanel()` to clone
+	 * from when the user drills deeper.
+	 */
+	.ktc-drilldown__panel > ul ul {
+		display: none;
+	}
+
+	/*
+	 * Hide core/navigation's own submenu toggle/icon so only our
+	 * chevron shows on parent rows. Both class names are covered
+	 * because core has shipped either depending on version.
+	 */
+	.ktc-drilldown .wp-block-navigation__submenu-icon,
+	.ktc-drilldown .wp-block-navigation-submenu__toggle {
+		display: none;
+	}
+
+	/*
+	 * Parent <li> must be positioned so the absolutely-positioned
+	 * chevron button can anchor to its right edge.
+	 */
+	.ktc-drilldown li[data-drilldown-parent="true"] {
+		position: relative;
+	}
+
+	/*
+	 * Chevron button — right-aligned 44×44 minimum tap target that
+	 * shows the right-arrow.png icon. Transparent background so the
+	 * parent row's theme colours show through.
+	 */
+	.ktc-drilldown__chevron {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
+		padding: 0 1rem;
+		background: transparent;
+		border: 0;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.ktc-drilldown__chevron-icon {
+		width: 12px;
+		height: auto;
+		pointer-events: none;
+	}
+
+	/*
+	 * Panel header — full-width back row at the top of each drilled
+	 * panel, with a subtle separator underneath.
+	 */
+	.ktc-drilldown__panel-header {
+		border-bottom: 1px solid currentcolor;
+		margin-bottom: 0.5rem;
+		opacity: 0.95;
+	}
+
+	/*
+	 * Back button — full-width tap target, flex row so the rotated
+	 * arrow image and label sit side-by-side.
+	 */
+	.ktc-drilldown__back {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		width: 100%;
+		min-height: 44px;
+		padding: 0.75rem 1rem;
+		font: inherit;
+		color: inherit;
+		text-align: left;
+		background: transparent;
+		border: 0;
+		cursor: pointer;
+	}
+
+	.ktc-drilldown__back-icon {
+		width: 12px;
+		height: auto;
+		transform: rotate(180deg);
+		pointer-events: none;
+	}
+
+	/*
+	 * Synthesised "View [Parent]" row — bolder than normal items so
+	 * users can tell it apart from the regular submenu links below.
+	 */
+	.ktc-drilldown__view-parent {
+		font-weight: 600;
+	}
+
+	.ktc-drilldown__view-parent a {
+		display: block;
+		padding: 0.75rem 1rem;
+	}
 }
