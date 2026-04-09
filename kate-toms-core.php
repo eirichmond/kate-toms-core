@@ -37,6 +37,15 @@ if ( ! defined( 'WPINC' ) ) {
 define( 'KATE_TOMS_CORE_VERSION', '1.0.0' );
 
 /**
+ * Absolute path to this plugin's main file.
+ *
+ * Used as a stable reference for plugins_url() / plugin_dir_path() /
+ * plugin_dir_url() calls made from other files inside the plugin, so those
+ * callers don't have to know their own depth relative to the plugin root.
+ */
+define( 'KATE_TOMS_CORE_PLUGIN_FILE', __FILE__ );
+
+/**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-kate-toms-core-activator.php
  */

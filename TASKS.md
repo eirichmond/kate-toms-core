@@ -34,7 +34,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 2. PHP Enqueue Layer
 
-- [ ] **2.1** Define a new constant `KATE_TOMS_CORE_PLUGIN_FILE` in `kate-toms-core.php` (top of the file, alongside `KATE_TOMS_CORE_VERSION`) set to `__FILE__`. This gives the rest of the codebase a stable reference for `plugins_url()` / `plugin_dir_path()` calls regardless of which file they live in.
+- [x] **2.1** Define a new constant `KATE_TOMS_CORE_PLUGIN_FILE` in `kate-toms-core.php` (top of the file, alongside `KATE_TOMS_CORE_VERSION`) set to `__FILE__`. This gives the rest of the codebase a stable reference for `plugins_url()` / `plugin_dir_path()` calls regardless of which file they live in.
   - What: Resolve the PRD's plugin-file reference question so subsequent URL helpers work cleanly.
   - Test: `wp eval 'var_dump( defined( "KATE_TOMS_CORE_PLUGIN_FILE" ) && is_string( KATE_TOMS_CORE_PLUGIN_FILE ) );'` prints `bool(true)`.
 
