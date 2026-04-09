@@ -922,6 +922,18 @@ function onOverlayOpen( overlay ) {
 	if ( ! isBelowBreakpoint() ) {
 		return;
 	}
+
+	// Defensive guard for multi-navigation pages: if the overlay has a
+	// zero bounding box, an ancestor is `display: none` (the theme hides
+	// the desktop nav's markup on mobile viewports via its own class).
+	// Skip those overlays so the desktop nav's hidden DOM never gets
+	// wrapped, tagged, or chevroned — even if its `is-menu-open` class
+	// were somehow toggled by a third party.
+	const rect = overlay.getBoundingClientRect();
+	if ( rect.width === 0 && rect.height === 0 ) {
+		return;
+	}
+
 	wrapOverlay( overlay );
 	const rootList = overlay.querySelector(
 		`.${ PANEL_CLASS }[data-level="0"] ${ ROOT_LIST_SELECTOR }`

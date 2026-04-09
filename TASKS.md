@@ -153,7 +153,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
 
 ## 8. Edge Cases
 
-- [ ] **8.1** Multiple navigation blocks on a page: the header template has both a desktop and a mobile navigation block. Verify init only runs against the one currently rendering the open overlay (use the actual overlay element as the query root, not `document`).
+- [x] **8.1** Multiple navigation blocks on a page: the header template has both a desktop and a mobile navigation block. Verify init only runs against the one currently rendering the open overlay (use the actual overlay element as the query root, not `document`).
   - What: Prevent chevrons or wrappers being injected into the desktop nav DOM even though its media query hides it.
   - Test: At <1100px, open overlay → inspect the desktop nav's (hidden) markup → it has no `ktc-drilldown` wrappers or chevrons on its items.
 
