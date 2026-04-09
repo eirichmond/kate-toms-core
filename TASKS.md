@@ -73,7 +73,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Create the viewport inside which panels will slide.
   - Test: Open overlay → markup now contains the wrapper and the root panel. Close and reopen → still only one wrapper (no nesting).
 
-- [ ] **4.2** For each `li[data-drilldown-parent]`, inject a chevron `<button class="ktc-drilldown__chevron" aria-expanded="false">` as a sibling of the link, containing an `<img>` sourced from `public/assets/images/right-arrow.png` (served from the plugin URL — pass the URL from PHP into the view module via a script-module localization or a `data-ktc-drilldown-arrow-src` attribute on the overlay's root). The `<img>` has `alt=""` (decorative — the button's `aria-label` carries meaning) and the button has `aria-label="Show submenu for {parentText}"`.
+- [x] **4.2** For each `li[data-drilldown-parent]`, inject a chevron `<button class="ktc-drilldown__chevron" aria-expanded="false">` as a sibling of the link, containing an `<img>` sourced from `public/assets/images/right-arrow.png` (served from the plugin URL — pass the URL from PHP into the view module via a script-module localization or a `data-ktc-drilldown-arrow-src` attribute on the overlay's root). The `<img>` has `alt=""` (decorative — the button's `aria-label` carries meaning) and the button has `aria-label="Show submenu for {parentText}"`.
   - What: Give users the affordance to drill in, reusing the existing PNG asset.
   - Test: Each parent row visually shows a right-pointing arrow. Keyboard-tabbing through the menu stops on each chevron in order. Network tab confirms `right-arrow.png` is loaded once.
 

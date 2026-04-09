@@ -7,7 +7,8 @@
       "Bash(vendor/bin/phpcs admin/class-kate-toms-core-admin.php)",
       "Bash(wp eval:*)",
       "Bash(vendor/bin/phpcs includes/mobile-nav/class-kate-toms-core-mobile-nav.php)",
-      "Bash(curl -sk https://kateandtomsblocks.test/)"
+      "Bash(curl -sk https://kateandtomsblocks.test/)",
+      "Bash(curl -skI https://kateandtomsblocks.test/wp-content/plugins/kate-toms-core/public/assets/images/right-arrow.png)"
     ],
     "deny": []
   }

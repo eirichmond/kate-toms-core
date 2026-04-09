@@ -60,6 +60,23 @@ const PANEL_CLASS = 'ktc-drilldown__panel';
  */
 const ROOT_LIST_SELECTOR = 'ul.wp-block-navigation__container';
 
+/**
+ * CSS class applied to the chevron button injected on parent items.
+ */
+const CHEVRON_CLASS = 'ktc-drilldown__chevron';
+
+/**
+ * CSS class applied to the `<img>` inside the chevron button.
+ */
+const CHEVRON_ICON_CLASS = 'ktc-drilldown__chevron-icon';
+
+/**
+ * DOM id of the `<script type="application/json">` tag WordPress prints
+ * for this module's `script_module_data_{id}` filter return value.
+ */
+const MODULE_DATA_ID =
+	'wp-script-module-data-kate-toms-core/mobile-nav-drilldown';
+
 const { state } = store( 'core/navigation', {
 	state: {
 		/**
@@ -90,6 +107,33 @@ const { state } = store( 'core/navigation', {
  */
 function isBelowBreakpoint() {
 	return window.matchMedia( `(max-width: ${ BREAKPOINT_PX }px)` ).matches;
+}
+
+/**
+ * Read the runtime data WordPress injected for this script module.
+ *
+ * Returns an object — currently carries only `arrowSrc`, the absolute
+ * URL of the chevron PNG. Cached after first read since the `<script>`
+ * tag is static.
+ *
+ * @return {{ arrowSrc?: string }} The parsed module data, or `{}` on error.
+ */
+let cachedModuleData = null;
+function getModuleData() {
+	if ( cachedModuleData !== null ) {
+		return cachedModuleData;
+	}
+	const el = document.getElementById( MODULE_DATA_ID );
+	if ( ! el ) {
+		cachedModuleData = {};
+		return cachedModuleData;
+	}
+	try {
+		cachedModuleData = JSON.parse( el.textContent ) || {};
+	} catch ( err ) {
+		cachedModuleData = {};
+	}
+	return cachedModuleData;
 }
 
 /**
@@ -187,6 +231,85 @@ function tagParentItems( overlay ) {
 }
 
 /**
+ * Extract a human-readable label for a parent `<li>`.
+ *
+ * Walks the direct children and returns the text content of the first
+ * anchor or the first text-bearing element. Falls back to the `<li>`'s
+ * own `textContent` (trimmed) if nothing better can be found.
+ *
+ * @param {HTMLElement} li The parent list item.
+ * @return {string} Trimmed label text, or an empty string.
+ */
+function getParentLabel( li ) {
+	const link = li.querySelector( ':scope > a' );
+	if ( link && link.textContent ) {
+		return link.textContent.trim();
+	}
+	return ( li.textContent || '' ).trim();
+}
+
+/**
+ * Build a drilldown chevron `<button>` for a parent item.
+ *
+ * The button contains an `<img>` using the `arrowSrc` provided by the
+ * PHP side via script module data. The `<img>` itself is marked
+ * decorative (`alt=""`); the button carries the accessible label.
+ *
+ * @param {string} parentLabel Trimmed label of the parent item.
+ * @param {string} arrowSrc    Absolute URL of the chevron image.
+ * @return {HTMLButtonElement} The chevron button element.
+ */
+function createChevronButton( parentLabel, arrowSrc ) {
+	const btn = document.createElement( 'button' );
+	btn.type = 'button';
+	btn.className = CHEVRON_CLASS;
+	btn.setAttribute( 'aria-expanded', 'false' );
+	btn.setAttribute( 'aria-label', `Show submenu for ${ parentLabel }` );
+
+	const img = document.createElement( 'img' );
+	img.src = arrowSrc;
+	img.alt = '';
+	img.className = CHEVRON_ICON_CLASS;
+	btn.appendChild( img );
+
+	return btn;
+}
+
+/**
+ * Inject a chevron button into every tagged parent `<li>` in the overlay.
+ *
+ * Idempotent: if a chevron already exists inside the `<li>`, skips it.
+ * The chevron is appended as the last direct child of the `<li>`, which
+ * places it after any existing link/toggle and before any nested `<ul>`
+ * (lists are moved into child panels later in task 4.3).
+ *
+ * No-op if `arrowSrc` is missing from the module data (e.g. the PHP
+ * filter didn't run) — better to render nothing than to produce broken
+ * image icons.
+ *
+ * @param {HTMLElement} overlay The open overlay root element.
+ * @return {void}
+ */
+function injectChevrons( overlay ) {
+	const { arrowSrc } = getModuleData();
+	if ( ! arrowSrc ) {
+		return;
+	}
+
+	const parents = overlay.querySelectorAll(
+		'li[data-drilldown-parent="true"]'
+	);
+	parents.forEach( ( li ) => {
+		if ( li.querySelector( `:scope > .${ CHEVRON_CLASS }` ) ) {
+			return;
+		}
+		const label = getParentLabel( li );
+		const button = createChevronButton( label, arrowSrc );
+		li.appendChild( button );
+	} );
+}
+
+/**
  * Handle overlay open: tag parent items so later tasks can target them.
  *
  * Called by the MutationObserver when the overlay gains `is-menu-open`.
@@ -201,6 +324,7 @@ function onOverlayOpen( overlay ) {
 	}
 	wrapOverlay( overlay );
 	tagParentItems( overlay );
+	injectChevrons( overlay );
 }
 
 /**
@@ -235,6 +359,9 @@ function stripDrilldownAttributes() {
 	tagged.forEach( ( li ) => {
 		li.removeAttribute( 'data-drilldown-parent' );
 	} );
+
+	const chevrons = document.querySelectorAll( `.${ CHEVRON_CLASS }` );
+	chevrons.forEach( ( btn ) => btn.remove() );
 }
 
 /**
