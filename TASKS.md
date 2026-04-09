@@ -179,7 +179,7 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Guard arbitrary-depth behaviour.
   - Test: `npm run test:e2e` passes (or skips cleanly).
 
-- [ ] **9.3** Add a Playwright test for the resize-across-breakpoint case: open overlay at 900px, resize to 1200px, assert the drilldown wrappers and `data-drilldown-parent` attributes are gone; resize back, assert they re-appear on next overlay open.
+- [x] **9.3** Add a Playwright test for the resize-across-breakpoint case: open overlay at 900px, resize to 1200px, assert the drilldown wrappers and `data-drilldown-parent` attributes are gone; resize back, assert they re-appear on next overlay open.
   - What: Regression coverage for breakpoint cleanup.
   - Test: `npm run test:e2e` passes.
 
