@@ -6,6 +6,6 @@ import metadata from './block.json';
 
 import './style.scss';
 
-registerBlockType(metadata.name, {
+registerBlockType( metadata.name, {
 	edit: Edit,
-}); 
+} );

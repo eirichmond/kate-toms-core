@@ -11,11 +11,13 @@ import { useBlockProps, RichText } from '@wordpress/block-editor';
  * be combined into the final markup, which is then serialized by the block
  * editor into `post_content`.
  *
+ * @param  root0
+ * @param  root0.attributes
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#save
  *
  * @return {Element} Element to render.
  */
-export default function save({ attributes }) {
+export default function save( { attributes } ) {
 	const {
 		text,
 		selectedIcon,
@@ -26,12 +28,12 @@ export default function save({ attributes }) {
 		linkTarget,
 		rel,
 		showForm,
-		formType
+		formType,
 	} = attributes;
 
 	// Get SVG content for selected icon
-	const getIconSvg = (iconName) => {
-		switch (iconName) {
+	const getIconSvg = ( iconName ) => {
+		switch ( iconName ) {
 			case 'speech-bubble':
 				return '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>';
 			case 'magnifying-glass':
@@ -43,60 +45,66 @@ export default function save({ attributes }) {
 
 	// Render icon if selected and visible
 	const renderIcon = () => {
-		if (!showIcon || !selectedIcon) return null;
+		if ( ! showIcon || ! selectedIcon ) {
+			return null;
+		}
 
-		const svgContent = getIconSvg(selectedIcon);
-		if (!svgContent) return null;
+		const svgContent = getIconSvg( selectedIcon );
+		if ( ! svgContent ) {
+			return null;
+		}
 
 		return (
-			<span 
+			<span
 				className="icon-button__icon"
-				style={{ '--icon-size': `${iconSize}px` }}
-				dangerouslySetInnerHTML={{ __html: svgContent }}
-				aria-hidden={text ? "true" : "false"}
+				style={ { '--icon-size': `${ iconSize }px` } }
+				dangerouslySetInnerHTML={ { __html: svgContent } }
+				aria-hidden={ text ? 'true' : 'false' }
 			/>
 		);
 	};
 
-	const blockProps = useBlockProps.save({
-		className: `icon-position-${iconPosition}`,
+	const blockProps = useBlockProps.save( {
+		className: `icon-position-${ iconPosition }`,
 		style: {
-			'--icon-size': `${iconSize}px`
+			'--icon-size': `${ iconSize }px`,
 		},
-		...(showForm && {
+		...( showForm && {
 			'data-show-form': 'true',
-			'data-form-type': formType
-		})
-	});
+			'data-form-type': formType,
+		} ),
+	} );
 
 	const TagName = url ? 'a' : 'button';
-	const linkProps = url ? {
-		href: url,
-		target: linkTarget,
-		rel: rel
-	} : {
-		type: 'button'
-	};
+	const linkProps = url
+		? {
+				href: url,
+				target: linkTarget,
+				rel,
+		  }
+		: {
+				type: 'button',
+		  };
 
 	// Add aria-label if text is empty but icon is shown
 	const accessibilityProps = {};
-	if (showIcon && selectedIcon && !text) {
-		accessibilityProps['aria-label'] = selectedIcon.replace('-', ' ');
+	if ( showIcon && selectedIcon && ! text ) {
+		accessibilityProps[ 'aria-label' ] = selectedIcon.replace( '-', ' ' );
 	}
 
 	return (
-		<TagName {...blockProps} {...linkProps} {...accessibilityProps}>
-			{iconPosition === 'prepend' && renderIcon()}
-			
-			{text && (
+		<TagName { ...blockProps } { ...linkProps } { ...accessibilityProps }>
+			{ iconPosition === 'prepend' && renderIcon() }
+
+			{ text && (
 				<RichText.Content
 					tagName="span"
 					className="icon-button__text"
-					value={text}
+					value={ text }
 				/>
-			)}
-			
-			{iconPosition === 'append' && renderIcon()}
+			) }
+
+			{ iconPosition === 'append' && renderIcon() }
 		</TagName>
 	);
 }

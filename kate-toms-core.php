@@ -37,6 +37,15 @@ if ( ! defined( 'WPINC' ) ) {
 define( 'KATE_TOMS_CORE_VERSION', '1.0.0' );
 
 /**
+ * Absolute path to this plugin's main file.
+ *
+ * Used as a stable reference for plugins_url() / plugin_dir_path() /
+ * plugin_dir_url() calls made from other files inside the plugin, so those
+ * callers don't have to know their own depth relative to the plugin root.
+ */
+define( 'KATE_TOMS_CORE_PLUGIN_FILE', __FILE__ );
+
+/**
  * The code that runs during plugin activation.
  * This action is documented in includes/class-kate-toms-core-activator.php
  */
@@ -67,6 +76,12 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
  * admin-specific hooks, and public-facing site hooks.
  */
 require plugin_dir_path( __FILE__ ) . 'includes/class-kate-toms-core.php';
+
+/**
+ * Mobile Nav Drilldown enhancement class — wired into the public hooks
+ * in Kate_Toms_Core::define_public_hooks().
+ */
+require_once plugin_dir_path( __FILE__ ) . 'includes/mobile-nav/class-kate-toms-core-mobile-nav.php';
 
 /**
  * Begins execution of the plugin.

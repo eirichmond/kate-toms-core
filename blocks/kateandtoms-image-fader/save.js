@@ -11,20 +11,25 @@ import { useBlockProps } from '@wordpress/block-editor';
  * be combined into the final markup, which is then serialized by the block
  * editor into `post_content`.
  *
+ * @param  root0
+ * @param  root0.attributes
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#save
  *
  * @return {Element} Element to render.
  */
-export default function save({ attributes }) {
+export default function save( { attributes } ) {
 	const { images } = attributes;
 
 	return (
-		<div {...useBlockProps.save()}>
-			{images.map((img, index) => (
-				<div className='slide' key={index}>
-					<img src={img.url} alt={decodeURIComponent(img.alt)} />
+		<div { ...useBlockProps.save() }>
+			{ images.map( ( img, index ) => (
+				<div className="slide" key={ index }>
+					<img
+						src={ img.url }
+						alt={ decodeURIComponent( img.alt ) }
+					/>
 				</div>
-			))}
+			) ) }
 		</div>
 	);
 }

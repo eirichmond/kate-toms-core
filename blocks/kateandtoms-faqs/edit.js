@@ -26,59 +26,75 @@ import './editor.scss';
  * The edit function describes the structure of your block in the context of the
  * editor. This represents what the editor will render when the block is used.
  *
+ * @param  root0
+ * @param  root0.attributes
+ * @param  root0.setAttributes
  * @see https://developer.wordpress.org/block-editor/reference-guides/block-api/block-edit-save/#edit
  *
  * @return {Element} Element to render.
  */
-export default function Edit({ attributes, setAttributes }) {
+export default function Edit( { attributes, setAttributes } ) {
 	const { question, isOpen } = attributes;
-	const blockProps = useBlockProps({
-		className: `wp-block-kate-toms-core-kateandtoms-faqs ${isOpen ? 'is-open' : ''}`
-	});
+	const blockProps = useBlockProps( {
+		className: `wp-block-kate-toms-core-kateandtoms-faqs ${
+			isOpen ? 'is-open' : ''
+		}`,
+	} );
 
-	const ALLOWED_BLOCKS = ['core/paragraph', 'core/heading', 'core/list', 'core/image', 'core/quote'];
+	const ALLOWED_BLOCKS = [
+		'core/paragraph',
+		'core/heading',
+		'core/list',
+		'core/image',
+		'core/quote',
+	];
 	const TEMPLATE = [
-		['core/paragraph', { placeholder: 'Enter your answer...' }]
+		[ 'core/paragraph', { placeholder: 'Enter your answer...' } ],
 	];
 
 	return (
-		<div {...blockProps}>
-			<div 
+		<div { ...blockProps }>
+			<div
 				className="faq-question"
 				role="button"
 				tabIndex="0"
-				onClick={() => setAttributes({ isOpen: !isOpen })}
-				onKeyDown={(e) => {
-					if (e.target === e.currentTarget) {
-						if (e.key === 'Enter') {
+				onClick={ () => setAttributes( { isOpen: ! isOpen } ) }
+				onKeyDown={ ( e ) => {
+					if ( e.target === e.currentTarget ) {
+						if ( e.key === 'Enter' ) {
 							e.preventDefault();
-							setAttributes({ isOpen: !isOpen });
+							setAttributes( { isOpen: ! isOpen } );
 						}
 					}
-				}}
-				aria-expanded={isOpen}
+				} }
+				aria-expanded={ isOpen }
 			>
 				<div className="faq-question-content">
 					<RichText
 						tagName="h3"
-						value={question}
-						onChange={(value) => setAttributes({ question: value })}
-						placeholder={__('Enter your question...', 'kateandtoms-faqs')}
+						value={ question }
+						onChange={ ( value ) =>
+							setAttributes( { question: value } )
+						}
+						placeholder={ __(
+							'Enter your question…',
+							'kateandtoms-faqs'
+						) }
 					/>
-					<Icon 
-						icon={isOpen ? 'minus' : 'plus'} 
+					<Icon
+						icon={ isOpen ? 'minus' : 'plus' }
 						className="faq-icon"
 					/>
 				</div>
 			</div>
-			{isOpen && (
+			{ isOpen && (
 				<div className="faq-answer">
 					<InnerBlocks
-						allowedBlocks={ALLOWED_BLOCKS}
-						template={TEMPLATE}
+						allowedBlocks={ ALLOWED_BLOCKS }
+						template={ TEMPLATE }
 					/>
 				</div>
-			)}
+			) }
 		</div>
 	);
 }

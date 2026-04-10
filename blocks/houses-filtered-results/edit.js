@@ -40,56 +40,62 @@ import { store as coreStore } from '@wordpress/core-data';
  * @return {Element} Element to render.
  */
 export default function Edit( { attributes, setAttributes } ) {
-	const {
-		defaultLocation,
-		textAlign,
-		style,
-		fontSize,
-		fontFamily,
-	} = attributes;
+	const { defaultLocation, textAlign, style, fontSize, fontFamily } =
+		attributes;
 
-	const blockProps = useBlockProps({
-		className: `text-align-${textAlign}`,
+	const blockProps = useBlockProps( {
+		className: `text-align-${ textAlign }`,
 		style: {
 			...style?.typography,
 		},
-	});
+	} );
 
-	const { locations } = useSelect((select) => {
-		const { getEntityRecords } = select(coreStore);
+	const { locations } = useSelect( ( select ) => {
+		const { getEntityRecords } = select( coreStore );
 		return {
-			locations: getEntityRecords('taxonomy', 'location', { per_page: -1 }) || [],
+			locations:
+				getEntityRecords( 'taxonomy', 'location', { per_page: -1 } ) ||
+				[],
 		};
-	}, []);
+	}, [] );
 
-	const locationOptions = locations.map((location) => ({
+	const locationOptions = locations.map( ( location ) => ( {
 		value: location.id,
 		label: location.name,
-	}));
+	} ) );
 
-	locationOptions.unshift({ value: '', label: __('Select a location', 'kate-toms-core') });
+	locationOptions.unshift( {
+		value: '',
+		label: __( 'Select a location', 'kate-toms-core' ),
+	} );
 
 	return (
 		<>
 			<BlockControls>
 				<AlignmentToolbar
-					value={textAlign}
-					onChange={(value) => setAttributes({ textAlign: value })}
+					value={ textAlign }
+					onChange={ ( value ) =>
+						setAttributes( { textAlign: value } )
+					}
 				/>
 			</BlockControls>
 			<InspectorControls>
-				<PanelBody title={__('Block Settings', 'kate-toms-core')}>
+				<PanelBody title={ __( 'Block Settings', 'kate-toms-core' ) }>
 					<SelectControl
-						label={__('Default Location', 'kate-toms-core')}
-						value={defaultLocation}
-						options={locationOptions}
-						onChange={(value) => setAttributes({ defaultLocation: Number(value) || '' })}
+						label={ __( 'Default Location', 'kate-toms-core' ) }
+						value={ defaultLocation }
+						options={ locationOptions }
+						onChange={ ( value ) =>
+							setAttributes( {
+								defaultLocation: Number( value ) || '',
+							} )
+						}
 					/>
 				</PanelBody>
 			</InspectorControls>
-			<div {...blockProps}>
+			<div { ...blockProps }>
 				<div className="houses-grid">
-					<p>{__('Houses Filtered Results', 'kate-toms-core')}</p>
+					<p>{ __( 'Houses Filtered Results', 'kate-toms-core' ) }</p>
 				</div>
 			</div>
 		</>

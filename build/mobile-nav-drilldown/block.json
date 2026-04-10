@@ -1,0 +1,16 @@
+{
+  "$schema": "https://schemas.wp.org/trunk/block.json",
+  "apiVersion": 3,
+  "name": "kate-toms-core/mobile-nav-drilldown",
+  "version": "0.1.0",
+  "title": "Mobile Nav Drilldown (internal)",
+  "category": "design",
+  "description": "Build-pipeline stub. Not a real block. Exists only so wp-scripts discovers and bundles the view.js + style.css used to enhance the core/navigation block's mobile overlay.",
+  "textdomain": "kate-toms-core",
+  "supports": {
+    "inserter": false,
+    "html": false
+  },
+  "style": "file:./style.css",
+  "viewScriptModule": "file:./view.js"
+}

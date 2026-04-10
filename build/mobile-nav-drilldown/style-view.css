@@ -1,0 +1,230 @@
+/*!*******************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[2].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[2].use[2]!./blocks/mobile-nav-drilldown/style.css ***!
+  \*******************************************************************************************************************************************************************************************/
+/*
+ * Mobile Nav Drilldown — frontend styles.
+ *
+ * All rules are scoped under @media (max-width: 1100px) so the desktop
+ * navigation (≥1100px) is never touched by this enhancement. The BEM
+ * class names match the constants declared in view.js.
+ */
+
+@media (max-width: 1100px) {
+
+	/*
+	 * Wrapper — the fixed-width horizontal viewport. `overflow: hidden`
+	 * clips off-screen panels. The wrapper itself never moves; the
+	 * TRACK inside it slides on drill-in/drill-back.
+	 */
+	.ktc-drilldown {
+		position: relative;
+		overflow: hidden;
+		width: 100%;
+	}
+
+	/*
+	 * Track — flex row holding every panel side-by-side. Each panel is
+	 * exactly one wrapper width. Translating the track by -N * 100%
+	 * slides panel N into the wrapper's viewport from the right. The
+	 * --ktc-drilldown-offset custom property is written on the wrapper
+	 * by applyWrapperTransform() and cascades into the track via CSS
+	 * inheritance.
+	 */
+	.ktc-drilldown__track {
+		display: flex;
+		flex-wrap: nowrap;
+		align-items: flex-start;
+		width: 100%;
+		transform: translateX(var(--ktc-drilldown-offset, 0));
+		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	/*
+	 * Panels — fixed at 100% of the track's width, regardless of
+	 * content. `min-width: 0` lets long link labels truncate cleanly
+	 * instead of forcing the flex item wider than its allotted space.
+	 */
+	.ktc-drilldown__panel {
+		flex: 0 0 100%;
+		min-width: 0;
+		text-align: left;
+	}
+
+	/*
+	 * All items inside drilldown panels — override core's
+	 * `flex-direction: column` (which stacks children vertically and
+	 * collapses to content width) with `flex-direction: row` and a
+	 * consistent 44px minimum tap height. Applied to every `<li>`, not
+	 * just parents, so leaf items visually match the parent rows.
+	 */
+	.ktc-drilldown__panel li {
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		width: 100% !important;
+		min-height: 44px !important;
+	}
+
+	/*
+	 * Every list in the drilldown should stretch to the panel width and
+	 * stack its children vertically. Core's nav CSS sets
+	 * `display: flex; flex-direction: row` on submenu containers for
+	 * the desktop horizontal layout — the clone inherits that, causing
+	 * items to flow horizontally inside drilled panels. Forcing
+	 * `flex-direction: column` fixes the stacking.
+	 */
+	.ktc-drilldown__panel > ul {
+		display: flex !important;
+		flex-direction: column !important;
+		width: 100%;
+		padding: 0 !important;
+		margin: 0 !important;
+		list-style: none !important;
+		text-align: left !important;
+	}
+
+	.ktc-drilldown__panel > ul > li {
+		width: 100%;
+	}
+
+	/*
+	 * Hide any `<ul>` nested inside a panel's direct-child list. A
+	 * single rule covers both cases:
+	 *   - Root panel: the direct child is the top nav ul; nested
+	 *     submenu-containers inside items are hidden.
+	 *   - Drilled panel: the direct child is a cloned submenu ul;
+	 *     any further-nested uls inside its items are hidden.
+	 * Those hidden lists are still used by `buildChildPanel()` to clone
+	 * from when the user drills deeper.
+	 *
+	 * !important is required because core/navigation has its own mobile
+	 * overlay CSS that force-shows submenu containers (the "one long
+	 * expanded list" behaviour this whole feature is replacing).
+	 */
+	.ktc-drilldown__panel > ul ul {
+		display: none !important;
+	}
+
+	/*
+	 * Hide core/navigation's own submenu toggle/icon so only our
+	 * chevron shows on parent rows. Both class names are covered
+	 * because core has shipped either depending on version.
+	 * !important defends against core's inline-overlay styling.
+	 */
+	.ktc-drilldown .wp-block-navigation__submenu-icon,
+	.ktc-drilldown .wp-block-navigation-submenu__toggle {
+		display: none !important;
+	}
+
+	/*
+	 * Chevron button — 44×44 minimum tap target flush to the right of
+	 * the parent row. `flex-shrink: 0` prevents the chevron from
+	 * collapsing at narrow widths; `margin-left: auto` pushes it to
+	 * the far right regardless of remaining space.
+	 */
+	.ktc-drilldown__chevron {
+		display: inline-flex !important;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		min-width: 44px;
+		min-height: 44px;
+		margin-left: auto;
+		padding: 0 1rem;
+		background: transparent;
+		border: 0;
+		color: inherit;
+		cursor: pointer;
+	}
+
+	.ktc-drilldown__chevron-icon {
+		width: 12px;
+		height: auto;
+		pointer-events: none;
+	}
+
+	/*
+	 * Panel header — full-width back row at the top of each drilled
+	 * panel, with a subtle separator underneath.
+	 */
+	.ktc-drilldown__panel-header {
+		border-bottom: 1px solid currentcolor;
+		margin-bottom: 0.5rem;
+		opacity: 0.95;
+	}
+
+	/*
+	 * Back button — full-width tap target, flex row so the rotated
+	 * arrow image and label sit side-by-side.
+	 */
+	.ktc-drilldown__back {
+		display: flex;
+		gap: 0.5rem;
+		align-items: center;
+		width: 100%;
+		min-height: 44px;
+		padding: 0.75rem 1rem;
+		font: inherit;
+		color: inherit;
+		text-align: left;
+		background: transparent;
+		border: 0;
+		cursor: pointer;
+	}
+
+	.ktc-drilldown__back-icon {
+		width: 12px;
+		height: auto;
+		transform: rotate(180deg);
+		pointer-events: none;
+	}
+
+	/*
+	 * Synthesised "View [Parent]" row — bolder than normal items so
+	 * users can tell it apart from the regular submenu links below.
+	 */
+	.ktc-drilldown__view-parent {
+		font-weight: 600;
+	}
+
+	.ktc-drilldown__view-parent a {
+		display: block;
+		/* padding: 0.75rem 1rem; */
+	}
+
+	/*
+	 * The link/content element should fill the available width inside
+	 * the flex row. Applied to all items (not just parents) so leaf
+	 * links match the same height and alignment as parent rows.
+	 * Declared at the end of the @media block so stylelint's
+	 * `no-descending-specificity` rule stays happy — the lower-specificity
+	 * `.ktc-drilldown__view-parent a` above must come first.
+	 */
+	.ktc-drilldown__panel li > a,
+	.ktc-drilldown__panel li > .wp-block-navigation-item__content {
+		flex: 1 1 auto;
+		display: flex;
+		align-items: center;
+		min-width: 0;
+		min-height: 44px;
+	}
+}
+
+/*
+ * Reduced-motion override. Users who've asked their OS to minimise
+ * animation get an instant panel swap instead of the 0.3s slide. This
+ * rule lives outside the max-width media query so it applies at any
+ * viewport where the drilldown might be active — the `.ktc-drilldown`
+ * wrapper itself only exists below 1100px, so there is no risk of it
+ * leaking into desktop nav.
+ */
+@media (prefers-reduced-motion: reduce) {
+
+	.ktc-drilldown__track {
+		transition: none;
+	}
+}
+
+
+
+/*# sourceMappingURL=style-view.css.map*/
