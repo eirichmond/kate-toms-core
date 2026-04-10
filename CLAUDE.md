@@ -15,7 +15,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - `npm run test:unit` - Run JavaScript unit tests
-- `npm run test:e2e` - Run end-to-end tests
+- `npm run test:e2e` - Run end-to-end tests (wp-env — not configured)
+- `npm run test:e2e:local` - Run Playwright e2e tests against the Valet site (requires `npx playwright install chromium` once)
 
 ## Architecture Overview
 
@@ -29,8 +30,9 @@ This is a WordPress plugin for Kate & Toms that provides custom Gutenberg blocks
 ### Block Development
 - **Source**: All blocks are in `blocks/` directory, each with its own folder
 - **Build Process**: Uses `@wordpress/scripts` with `--source-path=blocks` for building
-- **Block Registration**: Handled via `register_kateandtoms_core_blocks()` in admin class
+- **Block Registration**: Handled via `register_kateandtoms_core_blocks()` in admin class (skips `$skip_folders` entries like `mobile-nav-drilldown`)
 - **Interactive Blocks**: Uses `@wordpress/interactivity` API for frontend interactions
+- **Build-only stubs**: `blocks/mobile-nav-drilldown/` is NOT a real block — it exists solely so wp-scripts discovers and bundles its `view.js` + `style.css`. Its built assets are enqueued by `Kate_Toms_Core_Mobile_Nav` via a `render_block_core/navigation` filter, not via `register_block_type()`
 
 ### Key Custom Blocks
 - `houses-filter` & `houses-filtered-results` - Property filtering system

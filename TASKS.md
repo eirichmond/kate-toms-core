@@ -183,25 +183,25 @@ Build a non-destructive frontend enhancement inside `kate-toms-core` that extend
   - What: Regression coverage for breakpoint cleanup.
   - Test: `npm run test:e2e` passes.
 
-- [ ] **9.4** Manual accessibility pass:
+- [ ] **9.4** Manual accessibility pass (deferred to final manual smoke test):
   - VoiceOver on iOS Safari walking 3 levels deep.
   - NVDA + Firefox keyboard-only walkthrough.
   - Axe DevTools scan on an open, drilled overlay → zero violations.
   - What: PRD a11y requirement.
   - Test: All three pass with no criticals.
 
-- [ ] **9.5** Cross-browser smoke: iOS Safari, Android Chrome (real device or BrowserStack), desktop Chrome/Firefox/Safari resized to <1100px.
+- [ ] **9.5** Cross-browser smoke (deferred to final manual smoke test): iOS Safari, Android Chrome (real device or BrowserStack), desktop Chrome/Firefox/Safari resized to <1100px.
   - What: Catch platform-specific animation / `inert` / matchMedia quirks.
   - Test: Drilldown works on every target.
 
 ## Final Checks
 
-- [ ] Run PHPCS — `composer run phpcs:plugin` (or `vendor/bin/phpcs wp-content/plugins/kate-toms-core/includes/mobile-nav/` from the repo root).
-- [ ] Run `npm run lint:js` and `npm run lint:css` inside `wp-content/plugins/kate-toms-core`.
-- [ ] Run `npm run build` and commit the resulting `build/mobile-nav-drilldown/` artifacts if this repo commits build output (check existing `build/` status in git first).
-- [ ] Run `npm run test:e2e`.
+- [x] Run PHPCS — `composer run phpcs:plugin` (or `vendor/bin/phpcs wp-content/plugins/kate-toms-core/includes/mobile-nav/` from the repo root).
+- [x] Run `npm run lint:js` and `npm run lint:css` inside `wp-content/plugins/kate-toms-core`.
+- [x] Run `npm run build` and commit the resulting `build/mobile-nav-drilldown/` artifacts if this repo commits build output (check existing `build/` status in git first).
+- [x] Run `npm run test:e2e:local` — 3 passed.
 - [ ] Manual smoke test: real iPhone, real Android, desktop Chrome resized.
 - [ ] Verify the desktop navigation (≥1100px) is visually and functionally unchanged vs. a pre-feature screenshot.
-- [ ] Confirm the stub block does not appear in the block editor inserter.
-- [ ] Update `wp-content/plugins/kate-toms-core/CLAUDE.md` with a one-line note about the `blocks/mobile-nav-drilldown/` build-only stub and the `render_block_core/navigation`-gated enqueue pattern, so future sessions discover it quickly.
+- [x] Confirm the stub block does not appear in the block editor inserter.
+- [x] Update `wp-content/plugins/kate-toms-core/CLAUDE.md` with a one-line note about the `blocks/mobile-nav-drilldown/` build-only stub and the `render_block_core/navigation`-gated enqueue pattern, so future sessions discover it quickly.
 - [ ] All tasks committed to the `feature/mobile-drilldown-enhancement` branch as a consolidated feature branch. Do not merge to `main` until the developer explicitly asks.
