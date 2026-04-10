@@ -44,6 +44,7 @@
 	.ktc-drilldown__panel {
 		flex: 0 0 100%;
 		min-width: 0;
+		text-align: left;
 	}
 
 	/*
@@ -62,10 +63,23 @@
 	}
 
 	/*
-	 * Every list in the drilldown should stretch to the panel width so
-	 * the li width:100% rule above has something to resolve against.
+	 * Every list in the drilldown should stretch to the panel width and
+	 * stack its children vertically. Core's nav CSS sets
+	 * `display: flex; flex-direction: row` on submenu containers for
+	 * the desktop horizontal layout — the clone inherits that, causing
+	 * items to flow horizontally inside drilled panels. Forcing
+	 * `flex-direction: column` fixes the stacking.
 	 */
-	.ktc-drilldown__panel > ul,
+	.ktc-drilldown__panel > ul {
+		display: flex !important;
+		flex-direction: column !important;
+		width: 100%;
+		padding: 0 !important;
+		margin: 0 !important;
+		list-style: none !important;
+		text-align: left !important;
+	}
+
 	.ktc-drilldown__panel > ul > li {
 		width: 100%;
 	}
@@ -172,7 +186,7 @@
 
 	.ktc-drilldown__view-parent a {
 		display: block;
-		padding: 0.75rem 1rem;
+		/* padding: 0.75rem 1rem; */
 	}
 
 	/*
