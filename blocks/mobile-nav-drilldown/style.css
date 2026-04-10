@@ -47,8 +47,23 @@
 	}
 
 	/*
+	 * All items inside drilldown panels — override core's
+	 * `flex-direction: column` (which stacks children vertically and
+	 * collapses to content width) with `flex-direction: row` and a
+	 * consistent 44px minimum tap height. Applied to every `<li>`, not
+	 * just parents, so leaf items visually match the parent rows.
+	 */
+	.ktc-drilldown__panel li {
+		display: flex !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		width: 100% !important;
+		min-height: 44px !important;
+	}
+
+	/*
 	 * Every list in the drilldown should stretch to the panel width so
-	 * the li width:100% rule below has something to resolve against.
+	 * the li width:100% rule above has something to resolve against.
 	 */
 	.ktc-drilldown__panel > ul,
 	.ktc-drilldown__panel > ul > li {
@@ -82,24 +97,6 @@
 	.ktc-drilldown .wp-block-navigation__submenu-icon,
 	.ktc-drilldown .wp-block-navigation-submenu__toggle {
 		display: none !important;
-	}
-
-	/*
-	 * Parent <li> — override core's `flex-direction: column` (which
-	 * stacks children vertically and collapses to content width) with
-	 * `flex-direction: row` so the link label and chevron sit
-	 * side-by-side. `width: 100%` fills the panel; `min-height: 44px`
-	 * ensures the row is a comfortably-sized tap target.
-	 *
-	 * Using flexbox rather than absolute positioning for the chevron
-	 * avoids fighting core's overflow/clip rules on overlay children.
-	 */
-	.ktc-drilldown li[data-drilldown-parent="true"] {
-		display: flex !important;
-		flex-direction: row !important;
-		align-items: center !important;
-		width: 100% !important;
-		min-height: 44px !important;
 	}
 
 	/*
@@ -180,14 +177,14 @@
 
 	/*
 	 * The link/content element should fill the available width inside
-	 * the flex row so the chevron sits at the far right edge. `min-width: 0`
-	 * allows long labels to truncate rather than push the chevron off.
+	 * the flex row. Applied to all items (not just parents) so leaf
+	 * links match the same height and alignment as parent rows.
 	 * Declared at the end of the @media block so stylelint's
 	 * `no-descending-specificity` rule stays happy — the lower-specificity
 	 * `.ktc-drilldown__view-parent a` above must come first.
 	 */
-	.ktc-drilldown li[data-drilldown-parent="true"] > a,
-	.ktc-drilldown li[data-drilldown-parent="true"] > .wp-block-navigation-item__content {
+	.ktc-drilldown__panel li > a,
+	.ktc-drilldown__panel li > .wp-block-navigation-item__content {
 		flex: 1 1 auto;
 		display: flex;
 		align-items: center;
