@@ -205,6 +205,19 @@
 		min-width: 0;
 		min-height: 44px;
 	}
+
+	/*
+	 * Vertical scroll for menus taller than the viewport. Without this
+	 * the wrapper's `overflow: hidden` (needed to clip off-screen panels
+	 * during the horizontal slide) also clips items that fall below the
+	 * fold, leaving them unreachable. Override only the Y axis and cap
+	 * height so the overlay container has something to scroll.
+	 */
+	.ktc-drilldown {
+		max-height: calc(100vh - 60px);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
 }
 
 /*
@@ -220,5 +233,31 @@
 	.ktc-drilldown__track {
 		transition: none;
 	}
+}
+
+/*
+ * Desktop submenu scroll. core/navigation renders submenus as
+ * absolutely-positioned `<ul>`s with no height cap, so long lists
+ * extend past the viewport and the user can't reach the bottom items.
+ *
+ * Only apply to LEAF submenus (those with no further nested submenu
+ * inside) via `:not(:has(...))`. If the rule were applied to a
+ * submenu that contains a nested submenu, the nested popup —
+ * absolutely-positioned, but containing-block-anchored to the
+ * positioned parent — would be clipped by the parent's new overflow
+ * context and become unreachable.
+ *
+ * !important is required because core/navigation ships its own
+ * higher-specificity rule that forces `overflow: visible` on
+ * submenu containers.
+ *
+ * Applied at all viewports — on mobile the drilldown's own
+ * `display: none !important` on nested submenu uls keeps this rule
+ * from leaking into the mobile experience.
+ */
+.wp-block-navigation__submenu-container:not(:has(.wp-block-navigation__submenu-container)) {
+	max-height: calc(100vh - 60px) !important;
+	overflow-y: auto !important;
+	overscroll-behavior: contain;
 }
 
