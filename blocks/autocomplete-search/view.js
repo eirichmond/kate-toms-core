@@ -209,56 +209,61 @@ const { state } = store( 'kate-toms-core/autocomplete-search', {
 				return;
 			}
 
-			// Category display order: Locations first, then Features, then Houses
-			const categoryOrder = { Locations: 0, Features: 1, Houses: 2 };
+			// Display order: Locations first, then Features, then Houses.
+			const CATEGORY_ORDER = [ 'Locations', 'Features', 'Houses' ];
 
-			// Match on name/label only (not description)
-			const scoredResults = [];
+			// Match on name/label only (not description). Bucket matches by
+			// category as we go so the cap can be applied per category
+			// rather than globally — without that, common searches like
+			// "Hall" pushed many matching houses behind locations/features
+			// and dropped them past the global cap (Bugherd #136).
+			const matches = { Locations: [], Features: [], Houses: [] };
 
 			for ( const item of allResults ) {
-				let score = 0;
+				const bucket = matches[ item.category ];
+				if ( ! bucket ) {
+					continue;
+				}
 				const labelLower = item.label.toLowerCase();
-
+				let score = 0;
 				if ( labelLower.startsWith( term ) ) {
 					score = 100;
 				} else if ( labelLower.includes( term ) ) {
 					score = 80;
 				}
-
-				if ( score > 0 ) {
-					scoredResults.push( { ...item, score } );
+				if ( score === 0 ) {
+					continue;
 				}
+				bucket.push( { ...item, score } );
 			}
 
-			// Sort by category order first, then by score within each category
-			const sortedResults = scoredResults
-				.sort( ( a, b ) => {
-					const catDiff =
-						( categoryOrder[ a.category ] ?? 99 ) -
-						( categoryOrder[ b.category ] ?? 99 );
-					if ( catDiff !== 0 ) {
-						return catDiff;
-					}
-					return b.score - a.score;
-				} )
-				.slice( 0, context.maxResults );
+			// Within Locations / Features: relevance score (startsWith
+			// before includes). Within Houses: alphabetical by label so
+			// the user can scan the complete name-matched list — this is
+			// what Andy expected from "Hall" / "Hal" searches.
+			const byScoreDesc = ( a, b ) => b.score - a.score;
+			const byLabelAlpha = ( a, b ) =>
+				a.label.localeCompare( b.label, undefined, {
+					sensitivity: 'base',
+				} );
+			matches.Locations.sort( byScoreDesc );
+			matches.Features.sort( byScoreDesc );
+			matches.Houses.sort( byLabelAlpha );
 
-			// Group results by category in display order
-			const grouped = new Map();
-			for ( const item of sortedResults ) {
-				if ( ! grouped.has( item.category ) ) {
-					grouped.set( item.category, [] );
+			// Cap PER category (each gets up to maxResults).
+			const groupedArray = [];
+			const flatResults = [];
+			for ( const category of CATEGORY_ORDER ) {
+				const capped = matches[ category ].slice(
+					0,
+					context.maxResults
+				);
+				if ( capped.length === 0 ) {
+					continue;
 				}
-				grouped.get( item.category ).push( item );
+				groupedArray.push( { category, results: capped } );
+				flatResults.push( ...capped );
 			}
-
-			// Convert to array format for template
-			const groupedArray = Array.from( grouped.entries() ).map(
-				( [ category, results ] ) => ( {
-					category,
-					results,
-				} )
-			);
 
 			// Cache results (limit cache size to prevent memory issues)
 			if ( searchCache.size > 50 ) {
@@ -266,11 +271,11 @@ const { state } = store( 'kate-toms-core/autocomplete-search', {
 				searchCache.delete( firstKey );
 			}
 			searchCache.set( cacheKey, {
-				results: sortedResults,
+				results: flatResults,
 				groupedResults: groupedArray,
 			} );
 
-			context.results = sortedResults; // Keep flat array for keyboard navigation
+			context.results = flatResults; // Keep flat array for keyboard navigation
 			context.groupedResults = groupedArray; // Array of category groups for display
 			context.isOpen = groupedArray.length > 0;
 		},
