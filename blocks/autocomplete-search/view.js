@@ -250,19 +250,27 @@ const { state } = store( 'kate-toms-core/autocomplete-search', {
 			matches.Features.sort( byScoreDesc );
 			matches.Houses.sort( byLabelAlpha );
 
-			// Cap PER category (each gets up to maxResults).
+			// Cap Locations / Features at `maxResults` per category, but
+			// Houses are uncapped. Andy's expectation on "Hall" was every
+			// house with that token in the title — any house-side cap
+			// leaves bottom-of-alphabet matches dropped silently. Houses
+			// are alpha-sorted above so scrolling the dropdown stays
+			// orderly.
 			const groupedArray = [];
 			const flatResults = [];
 			for ( const category of CATEGORY_ORDER ) {
-				const capped = matches[ category ].slice(
-					0,
-					context.maxResults
-				);
-				if ( capped.length === 0 ) {
+				const list =
+					category === 'Houses'
+						? matches[ category ]
+						: matches[ category ].slice(
+							0,
+							context.maxResults
+						);
+				if ( list.length === 0 ) {
 					continue;
 				}
-				groupedArray.push( { category, results: capped } );
-				flatResults.push( ...capped );
+				groupedArray.push( { category, results: list } );
+				flatResults.push( ...list );
 			}
 
 			// Cache results (limit cache size to prevent memory issues)
