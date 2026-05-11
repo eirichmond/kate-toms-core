@@ -71,7 +71,7 @@ export default function Edit( { attributes, setAttributes } ) {
 							setAttributes( { maxResults: value } )
 						}
 						min={ 3 }
-						max={ 40 }
+						max={ 100 }
 						help={ __(
 							'Maximum number of search results to display',
 							'kate-toms-core'
