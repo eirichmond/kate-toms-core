@@ -9,42 +9,55 @@
 @media (max-width: 1100px) {
 
 	/*
-	 * Wrapper — the fixed-width horizontal viewport. `overflow: hidden`
-	 * clips off-screen panels. The wrapper itself never moves; the
-	 * TRACK inside it slides on drill-in/drill-back.
+	 * Wrapper — just a positioning context. No overflow clipping or
+	 * fixed width needed because we no longer slide a multi-panel track
+	 * across the viewport; only one panel is in the DOM-visible state at
+	 * a time, the others are display: none.
 	 */
 	.ktc-drilldown {
 		position: relative;
-		overflow: hidden;
 		width: 100%;
+		text-transform: uppercase;
 	}
 
 	/*
-	 * Track — flex row holding every panel side-by-side. Each panel is
-	 * exactly one wrapper width. Translating the track by -N * 100%
-	 * slides panel N into the wrapper's viewport from the right. The
-	 * --ktc-drilldown-offset custom property is written on the wrapper
-	 * by applyWrapperTransform() and cascades into the track via CSS
-	 * inheritance.
+	 * Pointer-events guard during a panel transition. Prevents ghost
+	 * taps (iOS dispatches `click` after `touchend` based on the ORIGINAL
+	 * tap coordinates at click-dispatch time, so if a panel changes
+	 * between touchend and click the click could land on a different
+	 * element). 200 ms guard matches the keyframe animation duration.
+	 */
+	.ktc-is-drilling {
+		pointer-events: none !important;
+	}
+
+	/*
+	 * Track — just a wrapping container, no layout role.
 	 */
 	.ktc-drilldown__track {
-		display: flex;
-		flex-wrap: nowrap;
-		align-items: flex-start;
+		position: relative;
 		width: 100%;
-		transform: translateX(var(--ktc-drilldown-offset, 0));
-		transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	}
 
 	/*
-	 * Panels — fixed at 100% of the track's width, regardless of
-	 * content. `min-width: 0` lets long link labels truncate cleanly
-	 * instead of forcing the flex item wider than its allotted space.
+	 * Panels — only one is visible at a time. The active panel is set by
+	 * JS via data-active="true" and animates in (slide + fade). Direction
+	 * of the slide depends on whether we're drilling in (from right) or
+	 * back (from left), set via data-direction.
 	 */
 	.ktc-drilldown__panel {
-		flex: 0 0 100%;
-		min-width: 0;
+		display: none;
+		width: 100%;
 		text-align: left;
+	}
+
+	.ktc-drilldown__panel[data-active="true"] {
+		display: block;
+		animation: ktc-drilldown-in 200ms ease-out;
+	}
+
+	.ktc-drilldown__panel[data-active="true"][data-direction="back"] {
+		animation: ktc-drilldown-back 200ms ease-out;
 	}
 
 	/*
@@ -114,10 +127,10 @@
 	}
 
 	/*
-	 * Chevron button — 44×44 minimum tap target flush to the right of
-	 * the parent row. `flex-shrink: 0` prevents the chevron from
-	 * collapsing at narrow widths; `margin-left: auto` pushes it to
-	 * the far right regardless of remaining space.
+	 * Chevron decoration — visual indicator flush to the right of the
+	 * parent row. `flex-shrink: 0` prevents it from collapsing at narrow
+	 * widths; `margin-left: auto` pushes it to the far right regardless
+	 * of remaining space. Non-interactive (aria-hidden span).
 	 */
 	.ktc-drilldown__chevron {
 		display: inline-flex !important;
@@ -128,9 +141,6 @@
 		min-height: 44px;
 		margin-left: auto;
 		padding: 0 1rem;
-		background: transparent;
-		border: 0;
-		color: inherit;
 		cursor: pointer;
 	}
 
@@ -221,17 +231,44 @@
 }
 
 /*
+ * Keyframes for the panel reveal animation. `in` runs when the user
+ * drills further; `back` runs when they pop back. Both are short and
+ * lightweight — a small horizontal slide combined with a fade.
+ */
+@keyframes ktc-drilldown-in {
+
+	from {
+		opacity: 0;
+		transform: translateX(16px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes ktc-drilldown-back {
+
+	from {
+		opacity: 0;
+		transform: translateX(-16px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/*
  * Reduced-motion override. Users who've asked their OS to minimise
- * animation get an instant panel swap instead of the 0.3s slide. This
- * rule lives outside the max-width media query so it applies at any
- * viewport where the drilldown might be active — the `.ktc-drilldown`
- * wrapper itself only exists below 1100px, so there is no risk of it
- * leaking into desktop nav.
+ * animation get an instant panel swap with no slide/fade.
  */
 @media (prefers-reduced-motion: reduce) {
 
-	.ktc-drilldown__track {
-		transition: none;
+	.ktc-drilldown__panel[data-active="true"] {
+		animation: none;
 	}
 }
 

@@ -9,9 +9,6 @@
 /* global MutationObserver, Element */
 import './style.css';
 
-// eslint-disable-next-line no-console
-console.debug( '[mobile-nav-drilldown] loaded' );
-
 /**
  * Maximum viewport width (px) at which the drilldown is active.
  *
@@ -60,7 +57,7 @@ const PANEL_CLASS = 'ktc-drilldown__panel';
 const ROOT_LIST_SELECTOR = 'ul.wp-block-navigation__container';
 
 /**
- * CSS class applied to the chevron button injected on parent items.
+ * CSS class applied to the decorative chevron span injected on parent items.
  */
 const CHEVRON_CLASS = 'ktc-drilldown__chevron';
 
@@ -93,22 +90,11 @@ const BACK_ICON_CLASS = 'ktc-drilldown__back-icon';
 const VIEW_PARENT_CLASS = 'ktc-drilldown__view-parent';
 
 /**
- * Per-`<li>` cache of lazily-built child panels. Using WeakMap means
- * entries are automatically garbage-collected when the `<li>` is removed
- * from the DOM (e.g. by unwrapOverlays during a breakpoint reset).
+ * Per-`<li>` cache of lazily-built child panels.
  *
  * @type {WeakMap<HTMLElement, HTMLElement>}
  */
 const childPanelCache = new WeakMap();
-
-/**
- * Per-panel record of the chevron button that triggered its drill-in.
- * Used by `drillBack` (task 5.2) to restore focus to the originating
- * chevron when the user pops back up the stack.
- *
- * @type {WeakMap<HTMLElement, HTMLElement>}
- */
-const panelTriggers = new WeakMap();
 
 /**
  * Monotonic counter for generating stable, unique child panel ids.
@@ -118,17 +104,62 @@ const panelTriggers = new WeakMap();
 let panelIdCounter = 0;
 
 /**
+ * CSS class added to the wrapper while a drill transition is in progress.
+ * The stylesheet sets `pointer-events: none` on the wrapper itself while
+ * this class is present, suppressing all interaction inside (trigger
+ * links, back buttons, View-Parent links). This blocks the iOS ghost-tap
+ * cascade where a click dispatched after `touchend` hit-tests onto the
+ * back button of the next panel that has slid into the tap position,
+ * triggering an unintended second drill.
+ *
+ * Also consulted by `drillIn`/`drillBack` as a JS-level re-entry guard
+ * for events that bypass hit-testing (synthetic clicks, dispatched
+ * events).
+ */
+const DRILLING_CLASS = 'ktc-is-drilling';
+
+/**
+ * Mark the start of a drill transition by adding `.ktc-is-drilling` to
+ * the wrapper. The stylesheet sets `pointer-events: none` on the wrapper
+ * while this class is present, blocking ghost taps and rapid double-taps
+ * during the panel reveal. The class is removed on `animationend` (which
+ * bubbles up from the active panel's keyframe animation), with a safety
+ * timeout in case the animation event never fires (e.g. when
+ * prefers-reduced-motion sets animation: none).
+ *
+ * @param {HTMLElement} track The `.ktc-drilldown__track` element.
+ * @return {void}
+ */
+function activateDrillGuard( track ) {
+	const wrapper = track.closest( `.${ WRAPPER_CLASS }` );
+	if ( ! wrapper ) {
+		return;
+	}
+
+	wrapper.classList.add( DRILLING_CLASS );
+
+	const ANIMATION_MS = 200;
+
+	let cleared = false;
+	const clear = () => {
+		if ( cleared ) {
+			return;
+		}
+		cleared = true;
+		wrapper.classList.remove( DRILLING_CLASS );
+		wrapper.removeEventListener( 'animationend', clear );
+	};
+
+	wrapper.addEventListener( 'animationend', clear );
+	setTimeout( clear, ANIMATION_MS + 100 );
+}
+
+/**
  * DOM id of the `<script type="application/json">` tag WordPress prints
  * for this module's `script_module_data_{id}` filter return value.
  */
 const MODULE_DATA_ID =
 	'wp-script-module-data-kate-toms-core/mobile-nav-drilldown';
-
-/**
- * CSS class applied to the visually-hidden `aria-live="polite"` element
- * that announces drilldown level changes to assistive tech.
- */
-const LIVE_REGION_CLASS = 'ktc-drilldown__live-region';
 
 /**
  * Local drilldown state.
@@ -151,6 +182,7 @@ const state = {
 	 */
 	drilldownPath: [],
 };
+
 
 /**
  * Check whether the viewport is currently below the drilldown breakpoint.
@@ -221,23 +253,12 @@ function wrapOverlay( overlay ) {
 
 	const wrapper = document.createElement( 'div' );
 	wrapper.className = WRAPPER_CLASS;
-
-	const liveRegion = document.createElement( 'div' );
-	liveRegion.className = LIVE_REGION_CLASS;
-	liveRegion.setAttribute( 'aria-live', 'polite' );
-	liveRegion.setAttribute( 'aria-atomic', 'true' );
-	// Inline visually-hidden styles so the region never shows even if
-	// task 7's CSS hasn't loaded. Task 7 may refine via the class.
-	liveRegion.style.position = 'absolute';
-	liveRegion.style.width = '1px';
-	liveRegion.style.height = '1px';
-	liveRegion.style.overflow = 'hidden';
-	liveRegion.style.clip = 'rect(0 0 0 0)';
-	liveRegion.style.whiteSpace = 'nowrap';
-	liveRegion.style.border = '0';
-	liveRegion.style.padding = '0';
-	liveRegion.style.margin = '-1px';
-	wrapper.appendChild( liveRegion );
+	// tabindex="-1" makes the wrapper a programmatic focus target. We use
+	// it as a guaranteed-safe focus fallback during drill-back when there's
+	// no element to focus inside the new active panel — focus must stay
+	// inside the modal, otherwise core/navigation's focus-out handler
+	// closes the overlay.
+	wrapper.setAttribute( 'tabindex', '-1' );
 
 	const track = document.createElement( 'div' );
 	track.className = TRACK_CLASS;
@@ -246,6 +267,10 @@ function wrapOverlay( overlay ) {
 	const rootPanel = document.createElement( 'div' );
 	rootPanel.className = PANEL_CLASS;
 	rootPanel.setAttribute( 'data-level', '0' );
+	// Root is the active panel on initial render. CSS hides any panel
+	// without data-active="true", so without this the menu would open
+	// blank until the user drills.
+	rootPanel.setAttribute( 'data-active', 'true' );
 	track.appendChild( rootPanel );
 
 	// Insert the wrapper where the root list currently lives, then move
@@ -254,34 +279,73 @@ function wrapOverlay( overlay ) {
 	rootList.parentNode.insertBefore( wrapper, rootList );
 	rootPanel.appendChild( rootList );
 
-	// Keyboard shortcuts are scoped to the wrapper — removing the
-	// wrapper (via unwrapOverlays) removes the listener with it.
-	wrapper.addEventListener( 'keydown', ( event ) => {
-		onWrapperKeydown( event, wrapper );
-	} );
-
 	return track;
 }
 
 /**
- * Undo `wrapOverlay()` — move the root list back out of the wrapper and
- * remove the wrapper from the DOM. Used by `resetDrilldownState()` when
- * the viewport crosses above the breakpoint.
- *
- * @return {void}
+ * Module-scope flag for the focus trap. Set to true while we're in the
+ * middle of programmatically refocusing the wrapper, so we don't recurse
+ * on the focusout that our own focus() call generates.
  */
-function unwrapOverlays() {
-	const wrappers = document.querySelectorAll( `.${ WRAPPER_CLASS }` );
-	wrappers.forEach( ( wrapper ) => {
-		const rootList = wrapper.querySelector(
-			`[data-level="0"] ${ ROOT_LIST_SELECTOR }`
-		);
-		if ( rootList && wrapper.parentNode ) {
-			wrapper.parentNode.insertBefore( rootList, wrapper );
+let trapping = false;
+
+// Document-level capture-phase focus trap. Set up once at module load.
+//
+// Why document-capture instead of wrapper-bubble:
+//
+// Core/navigation listens for focusout on the modal (somewhere in the
+// bubble path above the wrapper) and closes the overlay when focus
+// leaves the modal. A wrapper-bubble listener fires before core's, but
+// any wrapper.focus() call made inside a focusout handler is QUEUED by
+// the browser — it runs after the current event finishes bubbling. By
+// then core has already closed the menu and the refocus is moot.
+//
+// Document-capture fires before any other listener for the same event.
+// Calling stopImmediatePropagation() there prevents the focusout from
+// ever reaching core. The queued wrapper.focus() then lands cleanly
+// because nothing else has acted on the event.
+//
+// Allowed exits: tapping the X close button or the hamburger (open)
+// button moves focus outside the wrapper. Their click handlers fire
+// independently of focus, so the menu still closes / opens normally
+// even though we re-grab focus.
+document.addEventListener(
+	'focusout',
+	( event ) => {
+		if ( trapping ) {
+			return;
 		}
-		wrapper.remove();
-	} );
-}
+		const wrapper = document.querySelector( `.${ WRAPPER_CLASS }` );
+		if ( ! wrapper ) {
+			return;
+		}
+		// Only act on focusout originating inside our wrapper.
+		if ( ! event.target || ! wrapper.contains( event.target ) ) {
+			return;
+		}
+		// Only act while the overlay is actually open — otherwise we'd
+		// fight legitimate close behaviour (Esc, X click, etc.).
+		const overlay = wrapper.closest( OVERLAY_SELECTOR );
+		if (
+			! overlay ||
+			! overlay.classList.contains( OVERLAY_OPEN_CLASS )
+		) {
+			return;
+		}
+		// Focus staying inside the wrapper is fine.
+		const next = event.relatedTarget;
+		if ( next && wrapper.contains( next ) ) {
+			return;
+		}
+		// Focus is leaving. Block core's focus-out close handler before
+		// it sees the event, then re-grab focus to the wrapper.
+		event.stopImmediatePropagation();
+		trapping = true;
+		wrapper.focus( { preventScroll: true } );
+		trapping = false;
+	},
+	true
+);
 
 /**
  * Tag every direct-child `<li>` of the given `<ul>` that contains a
@@ -355,14 +419,14 @@ function getParentHref( li ) {
 	return trimmed;
 }
 
-/**
- * Build a synthesised "View [Parent Label]" list item for the top of a
- * cloned child submenu. Returns `null` if the parent has no usable href
- * so callers can simply skip the prepend.
- *
- * @param {HTMLElement} parentLi The parent list item being drilled into.
- * @return {HTMLLIElement|null} The synthesised list item, or null.
+/* CLIENT-DISABLED — uncomment this function (and the corresponding call
+ * site in `buildChildPanel`, plus the View-Parent branch in
+ * `focusFirstIn`) to restore the synthesised "View [Parent Label]" link
+ * at the top of each drilled submenu. Disabled on client request: they
+ * prefer drilling in via the parent label without an explicit "View
+ * Parent" entry duplicating it.
  */
+// eslint-disable-next-line no-unused-vars
 function createViewParentItem( parentLi ) {
 	const href = getParentHref( parentLi );
 	if ( ! href ) {
@@ -382,30 +446,29 @@ function createViewParentItem( parentLi ) {
 }
 
 /**
- * Build a drilldown chevron `<button>` for a parent item.
+ * Build a chevron `<span>` for a parent item.
  *
- * The button contains an `<img>` using the `arrowSrc` provided by the
- * PHP side via script module data. The `<img>` itself is marked
- * decorative (`alt=""`); the button carries the accessible label.
+ * Acts as a secondary drill-down trigger alongside the parent `<a>` so a
+ * tap on either the label or the arrow opens the submenu. Hidden from
+ * assistive tech (`aria-hidden="true"`) — the parent `<a>` is the named,
+ * keyboard-accessible drill trigger; the chevron is a redundant pointer
+ * affordance that screen-reader users don't need to encounter twice.
  *
- * @param {string} parentLabel Trimmed label of the parent item.
- * @param {string} arrowSrc    Absolute URL of the chevron image.
- * @return {HTMLButtonElement} The chevron button element.
+ * @param {string} arrowSrc Absolute URL of the chevron image.
+ * @return {HTMLSpanElement} The chevron span element.
  */
-function createChevronButton( parentLabel, arrowSrc ) {
-	const btn = document.createElement( 'button' );
-	btn.type = 'button';
-	btn.className = CHEVRON_CLASS;
-	btn.setAttribute( 'aria-expanded', 'false' );
-	btn.setAttribute( 'aria-label', `Show submenu for ${ parentLabel }` );
+function createChevronDecoration( arrowSrc ) {
+	const span = document.createElement( 'span' );
+	span.className = CHEVRON_CLASS;
+	span.setAttribute( 'aria-hidden', 'true' );
 
 	const img = document.createElement( 'img' );
 	img.src = arrowSrc;
 	img.alt = '';
 	img.className = CHEVRON_ICON_CLASS;
-	btn.appendChild( img );
+	span.appendChild( img );
 
-	return btn;
+	return span;
 }
 
 /**
@@ -471,12 +534,8 @@ function createPanelHeader( backLabel ) {
  * On first call: clones the parent's nested `<ul>`, wraps it in a new
  * panel element with a header, appends the panel to the overlay's track,
  * and caches the result on the parent via `childPanelCache`. Subsequent
- * calls return the cached element directly.
- *
- * Cloning (not detaching) is deliberate: `unwrapOverlays()` moves the
- * root `<ul>` back out of the wrapper and destroys the wrapper + panels.
- * If we detached the child `<ul>`s, they would be lost on resize-above
- * cleanup. Cloning leaves the original tree intact.
+ * calls return the cached element directly. Cloning (not detaching) is
+ * deliberate so the original navigation tree stays intact for desktop.
  *
  * @param {HTMLElement} parentLi Parent list item whose submenu is being
  *                               drilled into. Must be inside an overlay
@@ -530,10 +589,12 @@ function buildChildPanel( parentLi ) {
 	panel.appendChild( createPanelHeader( backLabel ) );
 
 	const clonedList = sourceList.cloneNode( true );
-	const viewParentItem = createViewParentItem( parentLi );
-	if ( viewParentItem ) {
-		clonedList.insertBefore( viewParentItem, clonedList.firstChild );
-	}
+	// CLIENT-DISABLED — uncomment to restore the "View [Parent]" link
+	// prepended to each drilled submenu. See createViewParentItem above.
+	// const viewParentItem = createViewParentItem( parentLi );
+	// if ( viewParentItem ) {
+	// 	clonedList.insertBefore( viewParentItem, clonedList.firstChild );
+	// }
 	panel.appendChild( clonedList );
 
 	track.appendChild( panel );
@@ -549,7 +610,7 @@ function buildChildPanel( parentLi ) {
 }
 
 /**
- * Apply the current drill level's horizontal offset to the wrapper.
+ * Apply the correct horizontal offset for the currently active panel.
  *
  * Writes the `--ktc-drilldown-offset` CSS custom property, which the
  * stylesheet uses inside `transform: translateX(var(...))`. Driving the
@@ -558,12 +619,54 @@ function buildChildPanel( parentLi ) {
  * `prefers-reduced-motion` override in task 7.4 can disable the
  * transition without any JS changes.
  *
+ * IMPORTANT: the offset is computed from the panel's *actual DOM index*
+ * inside the track, not from `drilldownPath.length`. Panels are appended
+ * in build order (first-visit order), so after exploring different branches
+ * the depth and position can diverge — depth-based offsets would slide the
+ * wrong panel into view and leave the real active panel off-screen and
+ * visually inaccessible.
+ *
  * @param {HTMLElement} wrapper The `.ktc-drilldown` wrapper element.
  * @return {void}
  */
+/**
+ * Tracks the previous drilldown depth so we can tell whether the next
+ * `applyWrapperTransform` call is a drill-in (depth grew) or a drill-back
+ * (depth shrunk) — the answer drives the keyframe direction (slide-in
+ * from right vs slide-in from left).
+ */
+let lastDrilldownPathLength = 0;
+
 function applyWrapperTransform( wrapper ) {
-	const level = state.drilldownPath.length;
-	wrapper.style.setProperty( '--ktc-drilldown-offset', `-${ level * 100 }%` );
+	const track = wrapper.querySelector( `.${ TRACK_CLASS }` );
+	if ( ! track ) {
+		return;
+	}
+
+	const panels = Array.from(
+		track.querySelectorAll( `:scope > .${ PANEL_CLASS }` )
+	);
+
+	const newLength = state.drilldownPath.length;
+	const direction = newLength < lastDrilldownPathLength ? 'back' : 'in';
+	lastDrilldownPathLength = newLength;
+
+	const activeId = newLength === 0
+		? null
+		: state.drilldownPath[ newLength - 1 ];
+
+	panels.forEach( ( panel ) => {
+		const isActive = activeId === null
+			? panel.dataset.level === '0'
+			: panel.id === activeId;
+		if ( isActive ) {
+			panel.setAttribute( 'data-active', 'true' );
+			panel.setAttribute( 'data-direction', direction );
+		} else {
+			panel.removeAttribute( 'data-active' );
+			panel.removeAttribute( 'data-direction' );
+		}
+	} );
 }
 
 /**
@@ -584,31 +687,32 @@ function getActivePanel( track ) {
 }
 
 /**
- * Sync every chevron's `aria-expanded` attribute to the current drill
+ * Sync every parent link's `aria-expanded` attribute to the current drill
  * path — authoritative single source of truth.
  *
- * For each chevron in the track: find its parent `<li>`, look up its
- * lazily-built panel in `childPanelCache`, and set `aria-expanded` to
- * `true` iff that panel's id is currently on `state.drilldownPath`.
- * Chevrons whose panels haven't been built yet (never drilled into)
- * stay at `false`.
+ * For each parent-item link in the track: look up its lazily-built panel
+ * in `childPanelCache`, and set `aria-expanded` to `true` iff that panel's
+ * id is currently on `state.drilldownPath`. Links whose panels haven't been
+ * built yet (never drilled into) stay at `false`.
  *
  * Computing this from the path on every transition is more robust than
- * flipping individual chevrons, because it stays correct for any
+ * flipping individual elements, because it stays correct for any
  * future interaction that pops or pushes more than one level at a time.
  *
  * @param {HTMLElement} track The `.ktc-drilldown__track` element.
  * @return {void}
  */
 function syncChevronExpanded( track ) {
-	const chevrons = track.querySelectorAll( `.${ CHEVRON_CLASS }` );
-	chevrons.forEach( ( btn ) => {
-		const li = btn.parentElement;
+	const triggerLinks = track.querySelectorAll(
+		'li[data-drilldown-parent="true"] > a[aria-expanded]'
+	);
+	triggerLinks.forEach( ( link ) => {
+		const li = link.parentElement;
 		const panel = li ? childPanelCache.get( li ) : null;
 		const expanded = !! (
 			panel && state.drilldownPath.includes( panel.id )
 		);
-		btn.setAttribute( 'aria-expanded', expanded ? 'true' : 'false' );
+		link.setAttribute( 'aria-expanded', expanded ? 'true' : 'false' );
 	} );
 }
 
@@ -639,57 +743,25 @@ function updatePanelInertness( track ) {
 }
 
 /**
- * Update the wrapper's `aria-live` region with the current level label.
+ * Move focus to the back button in the panel header.
  *
- * Level 0 announces "Top menu"; deeper levels announce "In submenu:
- * {parentLabel}" based on the currently-active panel's stored parent
- * label. Silent if the wrapper has no live region (defensive).
- *
- * @param {HTMLElement} wrapper The `.ktc-drilldown` wrapper element.
- * @return {void}
- */
-function announceLevelChange( wrapper ) {
-	const liveRegion = wrapper.querySelector( `.${ LIVE_REGION_CLASS }` );
-	if ( ! liveRegion ) {
-		return;
-	}
-
-	if ( state.drilldownPath.length === 0 ) {
-		liveRegion.textContent = 'Top menu';
-		return;
-	}
-
-	const track = wrapper.querySelector( `.${ TRACK_CLASS }` );
-	if ( ! track ) {
-		return;
-	}
-	const active = getActivePanel( track );
-	const label = ( active && active.dataset.parentLabel ) || 'submenu';
-	liveRegion.textContent = `In submenu: ${ label }`;
-}
-
-/**
- * Move focus to the best starting element inside a panel.
- *
- * Preference order:
- *   1. The synthesised "View [Parent]" link at the top of the list.
- *   2. The first anchor or button inside the panel's `<ul>`.
- *   3. The back button in the panel header.
+ * Deliberately does NOT focus arbitrary first-list links. Parent items
+ * carry `data-drilldown-bound` click handlers; focusing one after a tap
+ * causes mobile browsers to deliver a ghost click to it (the browser
+ * resolves the touch gesture against whatever has focus), which would
+ * skip a level or create an infinite drill-back loop.
  *
  * @param {HTMLElement} panel The panel to focus into.
  * @return {void}
  */
 function focusFirstIn( panel ) {
-	const viewParent = panel.querySelector( `.${ VIEW_PARENT_CLASS } a` );
-	if ( viewParent ) {
-		viewParent.focus();
-		return;
-	}
-	const firstItemLink = panel.querySelector( 'ul a, ul button' );
-	if ( firstItemLink ) {
-		firstItemLink.focus();
-		return;
-	}
+	// CLIENT-DISABLED — uncomment to prefer the View-Parent link as the
+	// initial focus target when it's present. See createViewParentItem.
+	// const viewParent = panel.querySelector( `.${ VIEW_PARENT_CLASS } a` );
+	// if ( viewParent ) {
+	// 	viewParent.focus();
+	// 	return;
+	// }
 	const back = panel.querySelector( `.${ BACK_BUTTON_CLASS }` );
 	if ( back ) {
 		back.focus();
@@ -697,9 +769,13 @@ function focusFirstIn( panel ) {
 }
 
 /**
- * Drill back one level: pop the path stack, reverse the slide, update
- * inertness, and restore focus to the chevron that opened the panel
- * we just left.
+ * Drill back one level: pop the path stack, reverse the slide, and
+ * update inertness.
+ *
+ * Focus is intentionally NOT moved. The originating trigger lives in the
+ * panel we just left, which is about to become `inert` — focusing into an
+ * inert subtree is a no-op anyway, and on iOS the focus call could cause
+ * a synthetic click to re-drill the panel we just popped.
  *
  * No-op if we're already at the root (`state.drilldownPath` is empty);
  * callers relying on Escape fall-through at root should check the path
@@ -713,51 +789,85 @@ function drillBack( track ) {
 		return;
 	}
 
-	// Capture the panel and trigger we're leaving BEFORE mutating the
-	// path, because `getActivePanel` reads from `state.drilldownPath`.
-	const leavingPanel = getActivePanel( track );
-	const trigger = leavingPanel ? panelTriggers.get( leavingPanel ) : null;
+	const wrapper = track.closest( `.${ WRAPPER_CLASS }` );
+	// Re-entry guard: if a slide is already in flight, drop the call.
+	// The CSS pointer-events: none on .ktc-is-drilling already blocks
+	// real taps; this catches anything that bypassed hit-testing
+	// (synthetic events, dispatched click(), keydown shortcuts).
+	if ( wrapper && wrapper.classList.contains( DRILLING_CLASS ) ) {
+		return;
+	}
 
+	activateDrillGuard( track );
 	state.drilldownPath.pop();
 
-	const wrapper = track.closest( `.${ WRAPPER_CLASS }` );
 	if ( wrapper ) {
 		applyWrapperTransform( wrapper );
-		announceLevelChange( wrapper );
 	}
+
+	// CRITICAL ordering: focus must leave the leaving panel BEFORE that
+	// panel becomes inert. Otherwise the browser kicks focus to <body>
+	// (outside the modal) and core/navigation's focus-out handler closes
+	// the overlay.
+	//
+	// We can't simply focus the new active panel here because it is still
+	// inert at this point (it was inerted by the previous drillIn when it
+	// became the inactive panel). Focusing into an inert subtree is a
+	// silent no-op, leaving the original focus on the soon-to-be-inert
+	// back button. So:
+	//
+	//   1. Focus the wrapper (always non-inert, tabindex="-1"). This
+	//      moves focus out of the leaving panel safely.
+	//   2. Run updatePanelInertness. Now the new active panel is no
+	//      longer inert; the leaving panel becomes inert, but focus is
+	//      already on the wrapper so nothing gets kicked.
+	//   3. Best-effort move focus into the new active panel's back
+	//      button for keyboard users.
+	if ( wrapper ) {
+		wrapper.focus( { preventScroll: true } );
+	}
+
 	updatePanelInertness( track );
 	syncChevronExpanded( track );
 
-	if ( trigger ) {
-		trigger.focus();
+	const newActive = getActivePanel( track );
+	if ( newActive ) {
+		const target =
+			newActive.querySelector( `.${ BACK_BUTTON_CLASS }` ) ||
+			newActive.querySelector( 'a, button' );
+		if ( target ) {
+			target.focus( { preventScroll: true } );
+		}
 	}
 }
 
 /**
- * Drill in to a child panel: push its id on the path stack, slide the
- * wrapper, update inertness, and move focus.
+ * Drill in to a child panel: push its id on the path stack, animate the
+ * panel reveal, update inertness, and move focus.
  *
- * Records the triggering chevron on the panel via `panelTriggers` so
- * the matching drill-back (task 5.2) can restore focus correctly.
- *
- * @param {HTMLElement} panel         The panel being drilled into.
- * @param {HTMLElement} triggerButton The chevron that initiated the drill.
+ * @param {HTMLElement} panel The panel being drilled into.
  * @return {void}
  */
-function drillIn( panel, triggerButton ) {
+function drillIn( panel ) {
 	const track = panel.closest( `.${ TRACK_CLASS }` );
 	const wrapper = panel.closest( `.${ WRAPPER_CLASS }` );
 	if ( ! track || ! wrapper ) {
 		return;
 	}
+	// Re-entry guard: if a slide is already in flight, drop the call.
+	// The CSS pointer-events: none on .ktc-is-drilling already blocks
+	// real taps; this catches anything that bypassed hit-testing
+	// (synthetic events, dispatched click(), keydown shortcuts).
+	if ( wrapper.classList.contains( DRILLING_CLASS ) ) {
+		return;
+	}
 
-	panelTriggers.set( panel, triggerButton );
+	activateDrillGuard( track );
 	state.drilldownPath.push( panel.id );
 
 	applyWrapperTransform( wrapper );
 	updatePanelInertness( track );
 	syncChevronExpanded( track );
-	announceLevelChange( wrapper );
 	focusFirstIn( panel );
 }
 
@@ -765,105 +875,30 @@ function drillIn( panel, triggerButton ) {
  * Chevron click handler — materialises the target child panel (if not
  * already cached) and drills into it.
  *
- * @param {HTMLElement} parentLi      The parent list item whose chevron
- *                                    was clicked.
- * @param {HTMLElement} triggerButton The chevron button itself, used for
- *                                    focus restoration on drill-back.
+ * @param {HTMLElement} parentLi The parent list item whose chevron was clicked.
  * @return {void}
  */
-function onChevronClick( parentLi, triggerButton ) {
+function onChevronClick( parentLi ) {
 	const panel = buildChildPanel( parentLi );
 	if ( ! panel ) {
 		return;
 	}
-	drillIn( panel, triggerButton );
+	drillIn( panel );
 }
 
-/**
- * Ignore keyboard shortcuts when focus is inside a form control. Prevents
- * us from hijacking arrow keys during typing — search boxes inside a
- * navigation submenu (unlikely but possible) must still behave normally.
- *
- * @param {EventTarget|null} target The focused element.
- * @return {boolean} True if keyboard shortcuts should be ignored.
- */
-function isTypingTarget( target ) {
-	if ( ! target || ! ( target instanceof Element ) ) {
-		return false;
-	}
-	if ( target.isContentEditable ) {
-		return true;
-	}
-	const tag = target.tagName;
-	return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
-}
 
 /**
- * Handle keydown events inside a drilldown wrapper.
+ * Wire each tagged direct-child parent `<li>` of the given `<ul>`:
+ *   1. Append a decorative chevron `<span>` (visual only, aria-hidden).
+ *   2. Make the parent `<a>` the drill-down trigger — clicking it opens
+ *      the submenu instead of navigating. The actual page link is kept
+ *      reachable via the synthesised "View [Parent]" item inside the panel.
  *
- * Shortcuts:
- *   - Escape inside a drilled panel → drillBack. At level 0 the event
- *     is intentionally NOT consumed, so core/navigation's own
- *     close-overlay handler still runs.
- *   - ArrowRight on a focused element inside a parent `<li>` that has
- *     a chevron → drillIn that parent.
- *   - ArrowLeft inside any drilled panel (not the root) → drillBack.
- *
- * @param {KeyboardEvent} event   The keydown event.
- * @param {HTMLElement}   wrapper The `.ktc-drilldown` wrapper element
- *                                the listener is attached to.
- * @return {void}
- */
-function onWrapperKeydown( event, wrapper ) {
-	if ( isTypingTarget( event.target ) ) {
-		return;
-	}
-
-	const track = wrapper.querySelector( `.${ TRACK_CLASS }` );
-	if ( ! track ) {
-		return;
-	}
-
-	if ( event.key === 'Escape' ) {
-		if ( state.drilldownPath.length > 0 ) {
-			event.preventDefault();
-			event.stopPropagation();
-			drillBack( track );
-		}
-		return;
-	}
-
-	if ( event.key === 'ArrowRight' ) {
-		const li = event.target.closest( 'li[data-drilldown-parent="true"]' );
-		if ( ! li || ! wrapper.contains( li ) ) {
-			return;
-		}
-		const chevron = li.querySelector( `:scope > .${ CHEVRON_CLASS }` );
-		if ( ! chevron ) {
-			return;
-		}
-		event.preventDefault();
-		onChevronClick( li, chevron );
-		return;
-	}
-
-	if ( event.key === 'ArrowLeft' ) {
-		if ( state.drilldownPath.length === 0 ) {
-			return;
-		}
-		const panel = event.target.closest( `.${ PANEL_CLASS }` );
-		if ( ! panel || panel.getAttribute( 'data-level' ) === '0' ) {
-			return;
-		}
-		event.preventDefault();
-		drillBack( track );
-	}
-}
-
-/**
- * Inject a chevron button into every tagged direct-child `<li>` of the
- * given `<ul>`. Idempotent: `<li>`s that already have a chevron are
- * skipped.
+ * Idempotent: `<li>`s that already have a chevron span are skipped, and
+ * links that already have `data-drilldown-bound` are not re-bound.
+ * The click handler guards with `isBelowBreakpoint()` so desktop
+ * navigation remains unaffected when the overlay is displayed above the
+ * breakpoint (e.g. due to forced visibility).
  *
  * @param {HTMLElement} list     The `<ul>` whose children to scan.
  * @param {string}      arrowSrc Absolute URL of the chevron image.
@@ -874,17 +909,36 @@ function injectChevronsInList( list, arrowSrc ) {
 		':scope > li[data-drilldown-parent="true"]'
 	);
 	parents.forEach( ( li ) => {
-		if ( li.querySelector( `:scope > .${ CHEVRON_CLASS }` ) ) {
-			return;
+		let chevron = li.querySelector( `:scope > .${ CHEVRON_CLASS }` );
+		if ( ! chevron ) {
+			chevron = createChevronDecoration( arrowSrc );
+			li.appendChild( chevron );
 		}
-		const label = getParentLabel( li );
-		const button = createChevronButton( label, arrowSrc );
-		button.addEventListener( 'click', ( event ) => {
-			event.preventDefault();
-			event.stopPropagation();
-			onChevronClick( li, button );
-		} );
-		li.appendChild( button );
+		if ( ! chevron.dataset.drilldownBound ) {
+			chevron.dataset.drilldownBound = 'true';
+			chevron.addEventListener( 'click', ( event ) => {
+				if ( ! isBelowBreakpoint() ) {
+					return;
+				}
+				event.preventDefault();
+				event.stopPropagation();
+				onChevronClick( li );
+			} );
+		}
+
+		const link = li.querySelector( ':scope > a' );
+		if ( link && ! link.dataset.drilldownBound ) {
+			link.dataset.drilldownBound = 'true';
+			link.setAttribute( 'aria-expanded', 'false' );
+			link.addEventListener( 'click', ( event ) => {
+				if ( ! isBelowBreakpoint() ) {
+					return;
+				}
+				event.preventDefault();
+				event.stopPropagation();
+				onChevronClick( li );
+			} );
+		}
 	} );
 }
 
@@ -946,13 +1000,10 @@ function onOverlayOpen( overlay ) {
 /**
  * Reset drilldown state when the overlay closes.
  *
- * Differs from `resetDrilldownState()` (used on breakpoint reset): this
- * keeps the wrapper, built panels, and chevrons in place so reopening
- * the overlay is instant. Only the drill path, transform, inertness,
- * and `aria-expanded` states are rewound.
- *
- * Idempotent — safe to call on overlays that never had a wrapper
- * injected (e.g. desktop-only navs, or the initial pre-open state).
+ * Keeps the wrapper, built panels, and chevrons in place so reopening
+ * the overlay is instant. Only the drill path, panel inertness, and
+ * `aria-expanded` states are rewound. Idempotent — safe to call on
+ * overlays that never had a wrapper injected.
  *
  * @param {HTMLElement} overlay The overlay that just closed.
  * @return {void}
@@ -968,16 +1019,9 @@ function onOverlayClose( overlay ) {
 	}
 
 	state.drilldownPath.length = 0;
-	wrapper.style.removeProperty( '--ktc-drilldown-offset' );
+	applyWrapperTransform( wrapper );
 	updatePanelInertness( track );
 	syncChevronExpanded( track );
-
-	// Clear the live region so the next open doesn't start with a
-	// stale "In submenu: X" announcement.
-	const liveRegion = wrapper.querySelector( `.${ LIVE_REGION_CLASS }` );
-	if ( liveRegion ) {
-		liveRegion.textContent = '';
-	}
 }
 
 /**
@@ -1001,64 +1045,6 @@ function observeOverlay( overlay ) {
 }
 
 /**
- * Remove every `data-drilldown-parent` marker from the document.
- *
- * Called when the viewport crosses above the drilldown breakpoint, so
- * leftover markers don't confuse later tasks (e.g. chevron injection)
- * if the user resizes back below the breakpoint.
- *
- * @return {void}
- */
-function stripDrilldownAttributes() {
-	const tagged = document.querySelectorAll( '[data-drilldown-parent]' );
-	tagged.forEach( ( li ) => {
-		li.removeAttribute( 'data-drilldown-parent' );
-	} );
-
-	const chevrons = document.querySelectorAll( `.${ CHEVRON_CLASS }` );
-	chevrons.forEach( ( btn ) => btn.remove() );
-}
-
-/**
- * Reset all drilldown state: empty the path stack and strip markers.
- *
- * Mutates `state.drilldownPath` in place (via `length = 0`) so
- * Interactivity's reactive tracking picks up the change. Replacing the
- * array with a new reference can miss reactivity depending on how the
- * store proxy was set up.
- *
- * @return {void}
- */
-function resetDrilldownState() {
-	state.drilldownPath.length = 0;
-	stripDrilldownAttributes();
-	unwrapOverlays();
-}
-
-/**
- * Wire a listener that cleans up drilldown state when the viewport
- * crosses above the breakpoint. Below-the-breakpoint transitions
- * intentionally do nothing — the next overlay open will re-tag via
- * the MutationObserver.
- *
- * @return {void}
- */
-function watchBreakpoint() {
-	const mql = window.matchMedia( `(max-width: ${ BREAKPOINT_PX }px)` );
-	const handler = ( event ) => {
-		if ( ! event.matches ) {
-			resetDrilldownState();
-		}
-	};
-	if ( typeof mql.addEventListener === 'function' ) {
-		mql.addEventListener( 'change', handler );
-	} else {
-		// Safari < 14 fallback.
-		mql.addListener( handler );
-	}
-}
-
-/**
  * Initialise observers for every navigation overlay currently in the DOM.
  *
  * @return {void}
@@ -1066,7 +1052,6 @@ function watchBreakpoint() {
 function init() {
 	const overlays = document.querySelectorAll( OVERLAY_SELECTOR );
 	overlays.forEach( observeOverlay );
-	watchBreakpoint();
 }
 
 if ( document.readyState === 'loading' ) {
