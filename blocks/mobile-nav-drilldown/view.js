@@ -1059,3 +1059,41 @@ if ( document.readyState === 'loading' ) {
 } else {
 	init();
 }
+
+/**
+ * Contact-form trigger: any anchor whose href ends with
+ * `#kt-form-contact` opens the same enquiry modal that the
+ * `wp-block-kate-and-toms-icon-button` (with `showForm: true`,
+ * `formType: contact`) opens in the desktop header.
+ *
+ * Editors add a Custom Link menu item with URL `#kt-form-contact`
+ * to the mobile burger menu so it can call the contact form without
+ * the icon-button block (which is parent-locked to core/navigation
+ * and awkward to drop into a menu via Appearance → Menus).
+ *
+ * The icon-button stays in the desktop nav DOM at all viewports
+ * (only hidden via CSS on mobile), so triggering its `click()`
+ * fires its existing jQuery handler and the modal opens. We attach
+ * the listener at document level so it works regardless of where
+ * the link lives or when it is injected into the DOM.
+ */
+const CONTACT_FORM_HASH = '#kt-form-contact';
+const CONTACT_FORM_TRIGGER_SELECTOR =
+	'.wp-block-kate-and-toms-icon-button[data-show-form="true"][data-form-type="contact"]';
+
+document.addEventListener( 'click', ( event ) => {
+	if ( ! ( event.target instanceof Element ) ) {
+		return;
+	}
+	const link = event.target.closest( `a[href$="${ CONTACT_FORM_HASH }"]` );
+	if ( ! link ) {
+		return;
+	}
+	const trigger = document.querySelector( CONTACT_FORM_TRIGGER_SELECTOR );
+	if ( ! trigger ) {
+		return;
+	}
+	event.preventDefault();
+	event.stopPropagation();
+	trigger.click();
+} );
