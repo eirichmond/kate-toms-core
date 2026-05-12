@@ -1095,5 +1095,29 @@ document.addEventListener( 'click', ( event ) => {
 	}
 	event.preventDefault();
 	event.stopPropagation();
+
+	// Close any open burger overlay BEFORE triggering the modal. The
+	// focus trap at the top of this file intercepts focusout events
+	// while the overlay carries `is-menu-open` — without closing it
+	// first, the trap bounces focus back to the wrapper every time
+	// the user tries to focus an input inside the form modal,
+	// leaving the form visible but uninteractive.
+	const openOverlay = document.querySelector(
+		`${ OVERLAY_SELECTOR }.${ OVERLAY_OPEN_CLASS }`
+	);
+	if ( openOverlay ) {
+		const closeBtn = openOverlay.querySelector(
+			'.wp-block-navigation__responsive-container-close'
+		);
+		if ( closeBtn ) {
+			closeBtn.click();
+		}
+		// Yield a frame so core's interactivity-driven re-render has
+		// removed `is-menu-open` before the modal opens — the trap
+		// gates on that class, and a stale value would still trap.
+		requestAnimationFrame( () => trigger.click() );
+		return;
+	}
+
 	trigger.click();
 } );
