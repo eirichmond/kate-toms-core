@@ -23,6 +23,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		{ label: __( 'Cotswolds', 'kate-toms-core' ), value: 'cotswolds' },
 		{ label: __( 'Country', 'kate-toms-core' ), value: 'country' },
 		{ label: __( 'Town', 'kate-toms-core' ), value: 'town' },
+		{ label: __( 'Signature', 'kate-toms-core' ), value: 'signature' },
 	];
 
 	const blockProps = useBlockProps( {

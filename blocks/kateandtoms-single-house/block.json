@@ -22,7 +22,7 @@
 		"category": {
 			"type": "string",
 			"default": "cotswolds",
-			"enum": ["coast", "cotswolds", "country", "town"]
+			"enum": ["coast", "cotswolds", "country", "town", "signature"]
 		}
 	},
 	"editorScript": "file:./index.js",
