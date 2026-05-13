@@ -1121,3 +1121,138 @@ document.addEventListener( 'click', ( event ) => {
 
 	trigger.click();
 } );
+
+/**
+ * Search-house-name trigger: a Custom Link menu item with URL
+ * `#kt-search-house-name` opens a mobile-only search overlay that
+ * reuses the existing autocomplete-search block.
+ *
+ * Implementation: instead of duplicating the search UI / store /
+ * REST plumbing, we MOVE the page's existing
+ * `.wp-block-kate-toms-core-autocomplete-search` element into a
+ * fixed-position overlay div appended to `<body>`. The element's
+ * Interactivity API bindings travel with it, so typing in the
+ * overlay's input drives the same store, the same `/wp-json/
+ * kate-toms/v1/autocomplete-search` call, the same grouped
+ * results, and the same navigation behaviour as the desktop
+ * search.
+ *
+ * On close (X / Escape) the element is moved back to its original
+ * location so the desktop nav continues to render it normally on
+ * resize / next page load.
+ */
+const SEARCH_HASH = '#kt-search-house-name';
+const SEARCH_BLOCK_SELECTOR = '.wp-block-kate-toms-core-autocomplete-search';
+const SEARCH_INPUT_SELECTOR = '.autocomplete-search__input';
+const MOBILE_SEARCH_OPEN_CLASS = 'kt-mobile-search-open';
+const MOBILE_SEARCH_OVERLAY_CLASS = 'kt-mobile-search-overlay';
+
+let searchOriginalParent = null;
+let searchOriginalNextSibling = null;
+
+function ensureSearchOverlay() {
+	let overlay = document.querySelector(
+		`.${ MOBILE_SEARCH_OVERLAY_CLASS }`
+	);
+	if ( overlay ) {
+		return overlay;
+	}
+	overlay = document.createElement( 'div' );
+	overlay.className = MOBILE_SEARCH_OVERLAY_CLASS;
+	overlay.setAttribute( 'role', 'dialog' );
+	overlay.setAttribute( 'aria-modal', 'true' );
+	overlay.setAttribute( 'aria-label', 'Search houses by name' );
+
+	const close = document.createElement( 'button' );
+	close.type = 'button';
+	close.className = `${ MOBILE_SEARCH_OVERLAY_CLASS }__close`;
+	close.setAttribute( 'aria-label', 'Close search' );
+	close.textContent = '×';
+	close.addEventListener( 'click', closeMobileSearch );
+	overlay.appendChild( close );
+
+	document.body.appendChild( overlay );
+	return overlay;
+}
+
+function openMobileSearch() {
+	if ( document.body.classList.contains( MOBILE_SEARCH_OPEN_CLASS ) ) {
+		return;
+	}
+	const searchBlock = document.querySelector( SEARCH_BLOCK_SELECTOR );
+	if ( ! searchBlock ) {
+		return;
+	}
+
+	searchOriginalParent = searchBlock.parentElement;
+	searchOriginalNextSibling = searchBlock.nextElementSibling;
+
+	const overlay = ensureSearchOverlay();
+	overlay.appendChild( searchBlock );
+	document.body.classList.add( MOBILE_SEARCH_OPEN_CLASS );
+
+	const input = searchBlock.querySelector( SEARCH_INPUT_SELECTOR );
+	if ( input ) {
+		input.focus();
+	}
+}
+
+function closeMobileSearch() {
+	if ( ! document.body.classList.contains( MOBILE_SEARCH_OPEN_CLASS ) ) {
+		return;
+	}
+	const searchBlock = document.querySelector( SEARCH_BLOCK_SELECTOR );
+	if ( searchBlock && searchOriginalParent ) {
+		if ( searchOriginalNextSibling ) {
+			searchOriginalParent.insertBefore(
+				searchBlock,
+				searchOriginalNextSibling
+			);
+		} else {
+			searchOriginalParent.appendChild( searchBlock );
+		}
+	}
+	searchOriginalParent = null;
+	searchOriginalNextSibling = null;
+	document.body.classList.remove( MOBILE_SEARCH_OPEN_CLASS );
+}
+
+document.addEventListener( 'click', ( event ) => {
+	if ( ! ( event.target instanceof Element ) ) {
+		return;
+	}
+	const link = event.target.closest( `a[href$="${ SEARCH_HASH }"]` );
+	if ( ! link ) {
+		return;
+	}
+	event.preventDefault();
+	event.stopPropagation();
+
+	// Close burger overlay first (same reason as #kt-form-contact —
+	// the focus trap intercepts focusout while is-menu-open is set
+	// and would prevent the search input from receiving focus).
+	const openOverlay = document.querySelector(
+		`${ OVERLAY_SELECTOR }.${ OVERLAY_OPEN_CLASS }`
+	);
+	if ( openOverlay ) {
+		const closeBtn = openOverlay.querySelector(
+			'.wp-block-navigation__responsive-container-close'
+		);
+		if ( closeBtn ) {
+			closeBtn.click();
+		}
+		requestAnimationFrame( openMobileSearch );
+		return;
+	}
+
+	openMobileSearch();
+} );
+
+document.addEventListener( 'keydown', ( event ) => {
+	if (
+		event.key === 'Escape' &&
+		document.body.classList.contains( MOBILE_SEARCH_OPEN_CLASS )
+	) {
+		closeMobileSearch();
+	}
+} );

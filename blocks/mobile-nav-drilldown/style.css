@@ -298,3 +298,91 @@
 	overscroll-behavior: contain;
 }
 
+/*
+ * Mobile search overlay (fix/269). Activated when the user taps a
+ * Custom Link menu item whose URL ends with `#kt-search-house-name`;
+ * the view module moves the existing autocomplete-search block into
+ * `.kt-mobile-search-overlay` so the same Interactivity API
+ * directives, store, REST call, and dropdown all keep working.
+ *
+ * Hidden by default. Shown only when `body.kt-mobile-search-open`
+ * is set by the view module. Scoped to mobile viewports: the
+ * desktop search lives in its normal nav location at >= 1100px.
+ */
+.kt-mobile-search-overlay {
+	display: none;
+}
+
+body.kt-mobile-search-open .kt-mobile-search-overlay {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 10000;
+	background: var(--wp--preset--color--black, #fff);
+	padding: 0.75rem 1rem;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+	box-sizing: border-box;
+	height: 6em;
+}
+
+body.logged-in.kt-mobile-search-open .kt-mobile-search-overlay {
+	top: 46px; /** compensate for the offset of adminbar when logged in */
+}
+
+/* Search element: takes all available width inside the centred bar,
+ * up to 720px so it stays compact on tablets. `position: relative`
+ * so the absolutely-positioned results panel anchors to it. */
+body.kt-mobile-search-open
+	.kt-mobile-search-overlay
+	.wp-block-kate-toms-core-autocomplete-search {
+	flex: 1 1 auto;
+	min-width: 0;
+	max-width: 720px;
+	display: block;
+	position: relative;
+}
+
+/* The autocomplete-search input/container inherit fixed widths from
+ * the desktop nav layout. Force full-width here so the input fills
+ * the overlay row and the dropdown anchors correctly beneath it. */
+body.kt-mobile-search-open .kt-mobile-search-overlay .autocomplete-search,
+body.kt-mobile-search-open
+	.kt-mobile-search-overlay
+	.autocomplete-search__input-container,
+body.kt-mobile-search-open
+	.kt-mobile-search-overlay
+	.autocomplete-search__input {
+	width: 97%;
+	box-sizing: border-box;
+	text-align: left;
+}
+
+/* Results panel below the input, full-width of the search element. */
+body.kt-mobile-search-open
+	.kt-mobile-search-overlay
+	.autocomplete-search__results {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	width: 94%;
+	max-width: none;
+}
+
+.kt-mobile-search-overlay__close {
+	flex-shrink: 0;
+	align-self: center;
+	background: transparent;
+	border: 0;
+	font-size: 1.5rem;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0.5rem;
+	color: var(--wp--preset--color--white, #fff);
+}
+
