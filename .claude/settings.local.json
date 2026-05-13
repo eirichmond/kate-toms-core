@@ -10,7 +10,9 @@
       "Bash(curl -sk https://kateandtomsblocks.test/)",
       "Bash(curl -skI https://kateandtomsblocks.test/wp-content/plugins/kate-toms-core/public/assets/images/right-arrow.png)",
       "Bash(grep -n \"existingWrapper\\\\|querySelector.*CHEVRON_CLASS.*\\\\`\\\\s*\\)\\\\|childPanelCache.get\" blocks/mobile-nav-drilldown/view.js)",
-      "Bash(npx playwright:*)"
+      "Bash(npx playwright:*)",
+      "Bash(curl -sk \"https://kateandtomsblocks.test/wp-content/plugins/kate-toms-core/build/mobile-nav-drilldown/style-view.css?ver=580c955dbe3be9f2d3b0\")",
+      "Bash(curl -sk \"https://kateandtomsblocks.test/wp-content/plugins/kate-toms-core/build/mobile-nav-drilldown/view.js?ver=580c955dbe3be9f2d3b0\")"
     ],
     "deny": []
   }

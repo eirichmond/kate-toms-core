@@ -1,1 +1,30 @@
-.house-filter-breadcrumb{color:#555;display:flex;flex-wrap:wrap;font-size:var(--wp--preset--font-size--small);gap:1rem;min-height:calc(1.4em + 1rem);padding:.5rem 0}.house-filter-breadcrumb[hidden]{display:flex;visibility:hidden}.house-filter-breadcrumb__item{align-items:center;display:inline-flex;gap:.35rem}.house-filter-breadcrumb__item[hidden]{display:none}.house-filter-breadcrumb__icon{fill:#999;flex-shrink:0}
+/*!******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/house-filter-breadcrumb/style.scss ***!
+  \******************************************************************************************************************************************************************************************************************************************************************/
+.house-filter-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  padding: 0.5rem 0;
+  font-size: var(--wp--preset--font-size--small);
+  color: #555;
+  min-height: calc(1.4em + 1rem);
+}
+.house-filter-breadcrumb[hidden] {
+  display: flex;
+  visibility: hidden;
+}
+.house-filter-breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.house-filter-breadcrumb__item[hidden] {
+  display: none;
+}
+.house-filter-breadcrumb__icon {
+  fill: #999;
+  flex-shrink: 0;
+}
+
+/*# sourceMappingURL=style-index.css.map*/
