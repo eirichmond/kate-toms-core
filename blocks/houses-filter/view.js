@@ -22,6 +22,9 @@ const { state, actions } = store( storeName, {
 		// store re-initialises (page reload/revisit). Used to permanently hide
 		// the archive's "Featured Properties" group once filtering begins.
 		hasInteracted: false,
+		// True only after a search resolves with zero matches across every
+		// section — drives the single "No houses found" message.
+		noResults: false,
 		date: '',
 		dtype: '',
 		size: '',
@@ -59,8 +62,10 @@ const { state, actions } = store( storeName, {
 		updateDate( event ) {
 			state.date = event.target.value;
 
-			// Default to Weekend (dtype '1') whenever a new date is set.
-			if ( state.date ) {
+			// Default to Weekend (dtype '1') when a date is set and no duration
+			// has been chosen yet. An existing selection (Week/Midweek) is
+			// preserved rather than overwritten.
+			if ( state.date && state.activeFilters.dtype.length === 0 ) {
 				state.activeFilters.dtype = [ '1' ];
 				state.dtype = '1';
 			}
@@ -142,6 +147,8 @@ const { state, actions } = store( storeName, {
 				// Every interaction handler funnels through here, so this is the
 				// single place that records the user has started filtering.
 				state.hasInteracted = true;
+				// Clear any previous "no results" message while this search runs.
+				state.noResults = false;
 
 				// Build query parameters
 				const params = new URLSearchParams();
@@ -195,12 +202,12 @@ const { state, actions } = store( storeName, {
 							if ( data.success ) {
 								const housesGrid =
 									region.querySelector( '.houses-grid' );
-								if (
-									housesGrid &&
-									data.data &&
-									data.data.html
-								) {
-									housesGrid.innerHTML = data.data.html;
+								if ( housesGrid && data.data ) {
+									// Apply the response even when it's empty (0
+									// results) so the grid is cleared and the region
+									// hidden below — instead of leaving the stale
+									// results rendered on initial page load.
+									housesGrid.innerHTML = data.data.html || '';
 									const total = data.data.total || 0;
 
 									// Find the parent block element and all its .wp-block-group ancestors
@@ -245,6 +252,8 @@ const { state, actions } = store( storeName, {
 					( sum, count ) => sum + count,
 					0
 				);
+				// Every section came back empty — show the single message.
+				state.noResults = state.results === 0;
 			} catch ( error ) {
 				console.error( 'Error updating filters:', error );
 				// Show user-friendly error message in all regions

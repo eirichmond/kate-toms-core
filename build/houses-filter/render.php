@@ -17,6 +17,7 @@ wp_interactivity_state(
 	array(
 		'isLoading'     => false,
 		'hasInteracted' => false,
+		'noResults'     => false,
 		'date'          => '',
 		'dtype'         => '',
 		'size'          => '',
@@ -331,5 +332,9 @@ $duration_options = array(
 				</path>
 			</svg>
 		</div>
+	</div>
+
+	<div class="houses-filter__no-results" data-wp-bind--hidden="!state.noResults">
+		<p><?php esc_html_e( 'No houses found', 'kate-and-toms-houses-filter-search' ); ?></p>
 	</div>
 </div>
