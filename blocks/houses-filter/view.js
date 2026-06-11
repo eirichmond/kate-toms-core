@@ -59,9 +59,13 @@ const { state, actions } = store( storeName, {
 		updateDate( event ) {
 			state.date = event.target.value;
 
-			// Do not pre-select a duration — let the results show every period
-			// available for the chosen date. The user can still narrow by
-			// Weekend/Week/Midweek afterwards.
+			// Default to Weekend (dtype '1') when a date is set and no duration
+			// has been chosen yet. An existing selection (Week/Midweek) is
+			// preserved rather than overwritten.
+			if ( state.date && state.activeFilters.dtype.length === 0 ) {
+				state.activeFilters.dtype = [ '1' ];
+				state.dtype = '1';
+			}
 
 			actions.updateFilters();
 		},
