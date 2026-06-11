@@ -51,6 +51,7 @@ $pattern_slugs = [
 	'cotswolds' => 'katomswold/house-card-search-cotswolds',
 	'country' => 'katomswold/house-card-search-country',
 	'town' => 'katomswold/house-card-search-town',
+	'signature' => 'katomswold/house-card-search-signature',
 ];
 
 $pattern_slug = $pattern_slugs[$category] ?? $pattern_slugs['cotswolds'];

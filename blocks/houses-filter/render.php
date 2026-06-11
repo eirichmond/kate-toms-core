@@ -16,6 +16,7 @@ wp_interactivity_state(
 	'kate-toms-house-filter',
 	array(
 		'isLoading'     => false,
+		'hasInteracted' => false,
 		'date'          => '',
 		'dtype'         => '',
 		'size'          => '',
@@ -151,11 +152,58 @@ $duration_options = array(
 				</label>
 				<select class="houses-filter__select" data-wp-on--change="actions.updateLocation">
 					<option value=""><?php esc_html_e( 'Any', 'kate-and-toms-houses-filter-search' ); ?></option>
-					<?php foreach ( $locations as $location ) : ?>
-					<option value="<?php echo esc_attr( $location->term_id ); ?>">
-						<?php echo esc_html( $location->name ); ?>
+					<?php
+					// Priority locations shown first, with their dropdown labels.
+					$location_priority = array(
+						'In the Cotswolds' => 'Cotswolds',
+						'By the Coast'     => 'Coast',
+						'In the Country'   => 'Country',
+					);
+
+					// Build the ordered list: priority terms first, then the rest alphabetically.
+					$ordered_locations = array();
+
+					foreach ( $location_priority as $priority_name => $priority_label ) {
+						foreach ( $locations as $location ) {
+							if ( $location->name === $priority_name ) {
+								$ordered_locations[] = array(
+									'term'  => $location,
+									'label' => $priority_label,
+								);
+								break;
+							}
+						}
+					}
+
+					$remaining_locations = array();
+					foreach ( $locations as $location ) {
+						if ( ! isset( $location_priority[ $location->name ] ) ) {
+							$remaining_locations[] = $location;
+						}
+					}
+
+					usort(
+						$remaining_locations,
+						static function ( $a, $b ) {
+							return strcasecmp( $a->name, $b->name );
+						}
+					);
+
+					foreach ( $remaining_locations as $location ) {
+						$ordered_locations[] = array(
+							'term'  => $location,
+							'label' => $location->name,
+						);
+					}
+
+					foreach ( $ordered_locations as $ordered_location ) :
+						?>
+					<option value="<?php echo esc_attr( $ordered_location['term']->term_id ); ?>">
+						<?php echo esc_html( $ordered_location['label'] ); ?>
 					</option>
-					<?php endforeach; ?>
+						<?php
+					endforeach;
+					?>
 				</select>
 			</div>
 

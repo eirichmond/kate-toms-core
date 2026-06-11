@@ -1,6 +1,14 @@
 .wp-block-kate-toms-core-kateandtoms-single-house {
 	// Main block wrapper styles
-	
+
+	a:link,
+	a:visited,
+	a:hover,
+	a:active,
+	a:focus {
+		color: var(--wp--preset--color--white);
+	}
+
 	// Error message styling
 	.wp-block-kate-toms-core-kateandtoms-single-house-error {
 		padding: 20px;

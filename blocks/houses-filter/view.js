@@ -18,6 +18,10 @@ const initialRegionId = context.regionId || '';
 const { state, actions } = store( storeName, {
 	state: {
 		isLoading: false,
+		// Latches true on the first filter interaction; only resets when the
+		// store re-initialises (page reload/revisit). Used to permanently hide
+		// the archive's "Featured Properties" group once filtering begins.
+		hasInteracted: false,
 		date: '',
 		dtype: '',
 		size: '',
@@ -135,6 +139,9 @@ const { state, actions } = store( storeName, {
 		async updateFilters() {
 			try {
 				state.isLoading = true;
+				// Every interaction handler funnels through here, so this is the
+				// single place that records the user has started filtering.
+				state.hasInteracted = true;
 
 				// Build query parameters
 				const params = new URLSearchParams();
