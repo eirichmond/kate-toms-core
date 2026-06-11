@@ -209,10 +209,15 @@ class Houses_Filter_API {
 		$params = $request->get_params();
 
 		// Build query args.
+		// Order by sleeps_max (largest first) via a named meta_query clause so it
+		// coexists with the size filter's sleeps_* clauses below. Mirrors the
+		// kate-toms-core/house-load-search block; houses without sleeps_max are
+		// excluded by the EXISTS clause.
 		$args = array(
 			'post_type'      => 'houses',
 			'posts_per_page' => -1,
 			'post_status'    => 'publish',
+			'orderby'        => array( 'sleeps_max_clause' => 'DESC' ),
 		);
 
 		// Add taxonomy queries.
@@ -261,8 +266,15 @@ class Houses_Filter_API {
 			);
 		}
 
-		// Add meta queries.
-		$meta_query = array();
+		// Add meta queries. The named sleeps_max clause is what `orderby` above
+		// sorts on, and its EXISTS compare excludes houses with no sleeps_max.
+		$meta_query = array(
+			'sleeps_max_clause' => array(
+				'key'     => 'sleeps_max',
+				'compare' => 'EXISTS',
+				'type'    => 'NUMERIC',
+			),
+		);
 
 		if ( ! empty( $params['size'] ) ) {
 			$size_ranges = array(
