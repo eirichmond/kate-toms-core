@@ -15,10 +15,22 @@ if ( empty( $attributes['blockId'] ) ) {
 }
 
 // Get initial houses query.
+// Order by sleeps_max (largest first), excluding houses without it — mirrors
+// the kate-toms-core/house-load-search block so both lists rank identically.
 $args = array(
 	'post_type'      => 'houses',
 	'posts_per_page' => 12,
 	'post_status'    => 'publish',
+	'orderby'        => 'meta_value_num',
+	'order'          => 'DESC',
+	'meta_key'       => 'sleeps_max',
+	'meta_query'     => array(
+		array(
+			'key'     => 'sleeps_max',
+			'compare' => 'EXISTS',
+			'type'    => 'NUMERIC',
+		),
+	),
 );
 
 
