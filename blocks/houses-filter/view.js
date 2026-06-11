@@ -59,11 +59,9 @@ const { state, actions } = store( storeName, {
 		updateDate( event ) {
 			state.date = event.target.value;
 
-			// Default to Weekend (dtype '1') whenever a new date is set.
-			if ( state.date ) {
-				state.activeFilters.dtype = [ '1' ];
-				state.dtype = '1';
-			}
+			// Do not pre-select a duration — let the results show every period
+			// available for the chosen date. The user can still narrow by
+			// Weekend/Week/Midweek afterwards.
 
 			actions.updateFilters();
 		},
@@ -195,12 +193,12 @@ const { state, actions } = store( storeName, {
 							if ( data.success ) {
 								const housesGrid =
 									region.querySelector( '.houses-grid' );
-								if (
-									housesGrid &&
-									data.data &&
-									data.data.html
-								) {
-									housesGrid.innerHTML = data.data.html;
+								if ( housesGrid && data.data ) {
+									// Apply the response even when it's empty (0
+									// results) so the grid is cleared and the region
+									// hidden below — instead of leaving the stale
+									// results rendered on initial page load.
+									housesGrid.innerHTML = data.data.html || '';
 									const total = data.data.total || 0;
 
 									// Find the parent block element and all its .wp-block-group ancestors
