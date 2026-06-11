@@ -203,6 +203,8 @@ class Kate_Toms_Core {
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_adverts_admin_menu' );
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_house_settings_menu' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_house_settings' );
+		$this->loader->add_action( 'add_meta_boxes', $plugin_admin, 'add_houses_meta_box' );
+		$this->loader->add_action( 'save_post_houses', $plugin_admin, 'save_houses_meta_box' );
 		$this->loader->add_filter( 'render_block', $plugin_admin, 'add_signature_collection_badge', 10, 2 );
 
 	}

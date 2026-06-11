@@ -697,6 +697,118 @@ class Kate_Toms_Core_Admin {
 	}
 
 	/**
+	 * The house detail meta fields surfaced in the editor meta box.
+	 *
+	 * Keyed by meta key, value is the field config used for rendering/saving.
+	 *
+	 * @return array
+	 */
+	private function house_detail_fields() {
+		return array(
+			'sleeps_min'        => array(
+				'label' => __( 'Sleeps (min)', 'kate-toms-core' ),
+				'type'  => 'number',
+			),
+			'sleeps_max'        => array(
+				'label' => __( 'Sleeps (max)', 'kate-toms-core' ),
+				'type'  => 'number',
+			),
+			'location_text'     => array(
+				'label' => __( 'Location text', 'kate-toms-core' ),
+				'type'  => 'text',
+			),
+			'brief_description' => array(
+				'label' => __( 'Brief description', 'kate-toms-core' ),
+				'type'  => 'textarea',
+			),
+		);
+	}
+
+	/**
+	 * Register the "House details" meta box on the houses edit screen.
+	 *
+	 * @return void
+	 */
+	public function add_houses_meta_box() {
+		add_meta_box(
+			'kate_toms_house_details',
+			__( 'House details', 'kate-toms-core' ),
+			array( $this, 'render_houses_meta_box' ),
+			'houses',
+			'side',
+			'default'
+		);
+	}
+
+	/**
+	 * Render the "House details" meta box fields.
+	 *
+	 * @param WP_Post $post Current post object.
+	 * @return void
+	 */
+	public function render_houses_meta_box( $post ) {
+		wp_nonce_field( 'kate_toms_house_details_save', 'kate_toms_house_details_nonce' );
+
+		foreach ( $this->house_detail_fields() as $key => $field ) {
+			$value    = get_post_meta( $post->ID, $key, true );
+			$field_id = 'kt-house-' . $key;
+			?>
+			<p>
+				<label for="<?php echo esc_attr( $field_id ); ?>" style="display:block;font-weight:600;margin-bottom:4px;">
+					<?php echo esc_html( $field['label'] ); ?>
+				</label>
+				<?php if ( 'textarea' === $field['type'] ) : ?>
+					<textarea id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( $key ); ?>" rows="4" class="widefat"><?php echo esc_textarea( $value ); ?></textarea>
+				<?php elseif ( 'number' === $field['type'] ) : ?>
+					<input type="number" min="0" step="1" id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( $value ); ?>" class="widefat" />
+				<?php else : ?>
+					<input type="text" id="<?php echo esc_attr( $field_id ); ?>" name="<?php echo esc_attr( $key ); ?>" value="<?php echo esc_attr( $value ); ?>" class="widefat" />
+				<?php endif; ?>
+			</p>
+			<?php
+		}
+	}
+
+	/**
+	 * Persist the "House details" meta box fields.
+	 *
+	 * @param int $post_id Post being saved.
+	 * @return void
+	 */
+	public function save_houses_meta_box( $post_id ) {
+		if ( ! isset( $_POST['kate_toms_house_details_nonce'] )
+			|| ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['kate_toms_house_details_nonce'] ) ), 'kate_toms_house_details_save' ) ) {
+			return;
+		}
+
+		if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+			return;
+		}
+
+		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return;
+		}
+
+		foreach ( $this->house_detail_fields() as $key => $field ) {
+			if ( ! isset( $_POST[ $key ] ) ) {
+				continue;
+			}
+
+			$raw = wp_unslash( $_POST[ $key ] );
+
+			if ( 'number' === $field['type'] ) {
+				$value = ( '' === trim( $raw ) ) ? '' : (string) absint( $raw );
+			} elseif ( 'textarea' === $field['type'] ) {
+				$value = sanitize_textarea_field( $raw );
+			} else {
+				$value = sanitize_text_field( $raw );
+			}
+
+			update_post_meta( $post_id, $key, $value );
+		}
+	}
+
+	/**
 	 * Register custom meta for seasonal post type
 	 *
 	 * @return void
