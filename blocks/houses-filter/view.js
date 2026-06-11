@@ -22,6 +22,9 @@ const { state, actions } = store( storeName, {
 		// store re-initialises (page reload/revisit). Used to permanently hide
 		// the archive's "Featured Properties" group once filtering begins.
 		hasInteracted: false,
+		// True only after a search resolves with zero matches across every
+		// section — drives the single "No houses found" message.
+		noResults: false,
 		date: '',
 		dtype: '',
 		size: '',
@@ -144,6 +147,8 @@ const { state, actions } = store( storeName, {
 				// Every interaction handler funnels through here, so this is the
 				// single place that records the user has started filtering.
 				state.hasInteracted = true;
+				// Clear any previous "no results" message while this search runs.
+				state.noResults = false;
 
 				// Build query parameters
 				const params = new URLSearchParams();
@@ -247,6 +252,8 @@ const { state, actions } = store( storeName, {
 					( sum, count ) => sum + count,
 					0
 				);
+				// Every section came back empty — show the single message.
+				state.noResults = state.results === 0;
 			} catch ( error ) {
 				console.error( 'Error updating filters:', error );
 				// Show user-friendly error message in all regions
