@@ -19,7 +19,7 @@ if ( empty( $attributes['blockId'] ) ) {
 // the kate-toms-core/house-load-search block so both lists rank identically.
 $args = array(
 	'post_type'      => 'houses',
-	'posts_per_page' => 12,
+	'posts_per_page' => 20,
 	'post_status'    => 'publish',
 	'orderby'        => 'meta_value_num',
 	'order'          => 'DESC',
@@ -47,12 +47,19 @@ if ( ! empty( $attributes['defaultLocation'] ) ) {
 
 $query = new WP_Query( $args );
 
+// Pagination state for the infinite-scroll sentinel. Mirrors the
+// kate-toms-core/house-load-search block: page 1 is server-rendered, further
+// pages are appended client-side from the /houses endpoint.
+$per_page  = (int) $args['posts_per_page'];
+$has_more  = $query->max_num_pages > 1;
+
 
 // Prepare context data.
 $context = wp_json_encode(
 	array(
 		'blockId'         => $attributes['blockId'],
 		'defaultLocation' => $attributes['defaultLocation'] ?? '',
+		'isLoadingMore'   => false,
 	)
 );
 
@@ -64,6 +71,9 @@ $context = wp_json_encode(
 	data-wp-interactive="kate-toms-house-filter"
 	data-wp-context="<?php echo esc_attr( $context ); ?>"
 	data-block-id="<?php echo esc_attr( $attributes['blockId'] ); ?>"
+	data-current-page="1"
+	data-per-page="<?php echo esc_attr( $per_page ); ?>"
+	data-has-more="<?php echo $has_more ? 'true' : 'false'; ?>"
 >
 	<div class="houses-grid">
 		<?php
@@ -90,9 +100,11 @@ $context = wp_json_encode(
 				<?php
 			}
 
-			// Check if we need adverts to fill the row
+			// Check if we need adverts to fill the row. Only when this is the
+			// only page — otherwise adverts are appended client-side once the
+			// final page loads (see view.js).
 			$remainder = $house_count % 4;
-			if ( $remainder > 0 ) {
+			if ( ! $has_more && $remainder > 0 ) {
 				$adverts_needed = 4 - $remainder;
 
 				// Determine location key for adverts
@@ -137,4 +149,11 @@ $context = wp_json_encode(
 		wp_reset_postdata();
 		?>
 	</div>
+
+	<!-- Scroll sentinel: triggers loading the next page when scrolled into view. -->
+	<div
+		class="houses-filtered-results-sentinel"
+		data-wp-on-async-window--scroll="actions.checkScroll"
+		data-wp-init="callbacks.init"
+	></div>
 </div>
