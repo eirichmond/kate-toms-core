@@ -53,6 +53,16 @@ class Houses_Filter_API {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+					'page'    => array(
+						'type'              => 'integer',
+						'default'           => 1,
+						'sanitize_callback' => 'absint',
+					),
+					'per_page' => array(
+						'type'              => 'integer',
+						'default'           => 20,
+						'sanitize_callback' => 'absint',
+					),
 				),
 			)
 		);
@@ -208,6 +218,16 @@ class Houses_Filter_API {
 	public function get_filtered_houses( $request ) {
 		$params = $request->get_params();
 
+		// Pagination. When a date filter is active we cannot paginate via
+		// WP_Query: houses with no qualifying price are dropped after the query
+		// runs (see the pricing loop below), so max_num_pages would not match
+		// what is actually rendered. In that case we fall back to returning all
+		// matches in a single page (hasMore = false) — same as the original
+		// behaviour. The no-date case paginates normally.
+		$page         = max( 1, (int) ( $request->get_param( 'page' ) ?? 1 ) );
+		$per_page     = max( 1, (int) ( $request->get_param( 'per_page' ) ?? 20 ) );
+		$is_paginated = empty( $params['date'] );
+
 		// Build query args.
 		// Order by sleeps_max (largest first) via a named meta_query clause so it
 		// coexists with the size filter's sleeps_* clauses below. Mirrors the
@@ -215,7 +235,8 @@ class Houses_Filter_API {
 		// excluded by the EXISTS clause.
 		$args = array(
 			'post_type'      => 'houses',
-			'posts_per_page' => -1,
+			'posts_per_page' => $is_paginated ? $per_page : -1,
+			'paged'          => $is_paginated ? $page : 1,
 			'post_status'    => 'publish',
 			'orderby'        => array( 'sleeps_max_clause' => 'DESC' ),
 		);
@@ -327,6 +348,15 @@ class Houses_Filter_API {
 		// Query posts.
 		$query = new WP_Query( $args );
 
+		// Determine whether further pages exist. Always false for the date
+		// branch (single un-paginated response) — see note above.
+		$has_more = $is_paginated ? ( $page < $query->max_num_pages ) : false;
+
+		// Advert HTML is returned separately and only appended by the client
+		// once the final page has loaded (hasMore = false), so adverts never
+		// land mid-grid between pages.
+		$adverts_html = '';
+
 		// Build the response HTML.
 		ob_start();
 		$house_count = 0;
@@ -391,16 +421,27 @@ class Houses_Filter_API {
 
 						// Filter by duration type if selected.
 						if ( ! empty( $params['dtype'] ) && ! empty( $kt_current_house_pricing ) ) {
-							$allowed_periods = $dtype_period_map[ $params['dtype'] ] ?? array();
-							if ( ! empty( $allowed_periods ) ) {
-								$kt_current_house_pricing = array_values(
-									array_filter(
-										$kt_current_house_pricing,
-										function ( $period ) use ( $allowed_periods ) {
-											return in_array( $period['id'], $allowed_periods, true );
-										}
-									)
-								);
+							if ( ! empty( $kt_current_house_pricing['no_breaks'] ) ) {
+								// get_booking_periods_for_date() returns a
+								// { no_breaks, message } sentinel (not a list of
+								// periods) when the property has no bookable breaks
+								// for the chosen arrival day. Such a house cannot
+								// satisfy a duration-type filter, so drop it.
+								$kt_current_house_pricing = array();
+							} else {
+								$allowed_periods = $dtype_period_map[ $params['dtype'] ] ?? array();
+								if ( ! empty( $allowed_periods ) ) {
+									$kt_current_house_pricing = array_values(
+										array_filter(
+											$kt_current_house_pricing,
+											function ( $period ) use ( $allowed_periods ) {
+												return is_array( $period )
+													&& isset( $period['id'] )
+													&& in_array( $period['id'], $allowed_periods, true );
+											}
+										)
+									);
+								}
 							}
 						}
 					}
@@ -438,9 +479,13 @@ class Houses_Filter_API {
 				$kt_current_house_pricing = array();
 			}
 
-			// Check if we need adverts to fill the row
-			$remainder = $house_count % 4;
-			if ( $remainder > 0 ) {
+			// Check if we need adverts to fill the row, but only once the final
+			// page has been reached. The row is filled against the grand total
+			// (found_posts) when paginating, or the rendered count for the
+			// single-response date branch.
+			$advert_basis = $is_paginated ? (int) $query->found_posts : $house_count;
+			$remainder    = $advert_basis % 4;
+			if ( ! $has_more && $remainder > 0 ) {
 				$adverts_needed = 4 - $remainder;
 
 				// Determine location key for adverts
@@ -460,7 +505,8 @@ class Houses_Filter_API {
 					$admin = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
 					$adverts = $admin->get_adverts_for_location( $location_key, $adverts_needed );
 
-					// Output advert placeholders
+					// Capture advert placeholders into their own buffer.
+					ob_start();
 					foreach ( $adverts as $advert ) {
 						?>
 						<!-- Advert Placeholder Card -->
@@ -473,6 +519,7 @@ class Houses_Filter_API {
 						</div>
 						<?php
 					}
+					$adverts_html = ob_get_clean();
 				}
 			}
 		} else {
@@ -482,8 +529,10 @@ class Houses_Filter_API {
 		wp_reset_postdata();
 
 		$response = array(
-			'html'  => ob_get_clean(),
-			'total' => $house_count,
+			'html'    => ob_get_clean(),
+			'total'   => $house_count,
+			'hasMore' => $has_more,
+			'adverts' => $adverts_html,
 		);
 
 		header( 'Content-Type: application/json' );

@@ -20,7 +20,7 @@
   },
   "textdomain": "kate-toms-core",
   "editorScript": "file:./index.js",
-  "viewScript": "file:./view.js",
+  "viewScriptModule": "file:./view.js",
   "render": "file:./render.php",
   "style": "file:./style.css"
 }

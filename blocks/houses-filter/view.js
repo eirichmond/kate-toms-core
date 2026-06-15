@@ -210,6 +210,27 @@ const { state, actions } = store( storeName, {
 									housesGrid.innerHTML = data.data.html || '';
 									const total = data.data.total || 0;
 
+									// Re-arm the filtered-results infinite scroll
+									// from page 1. The houses-filtered-results
+									// block reads these on scroll/observe.
+									region.dataset.currentPage = '1';
+									region.dataset.hasMore = data.data.hasMore
+										? 'true'
+										: 'false';
+
+									// When this is already the final page, append
+									// the row-filling adverts (returned separately
+									// so they never land mid-grid between pages).
+									if (
+										! data.data.hasMore &&
+										data.data.adverts
+									) {
+										housesGrid.insertAdjacentHTML(
+											'beforeend',
+											data.data.adverts
+										);
+									}
+
 									// Find the parent block element and all its .wp-block-group ancestors
 									let currentElement = region;
 									while ( currentElement ) {
@@ -254,6 +275,13 @@ const { state, actions } = store( storeName, {
 				);
 				// Every section came back empty — show the single message.
 				state.noResults = state.results === 0;
+
+				// Nudge the filtered-results infinite scroll: after a filter
+				// change the sentinel may already sit within the viewport (short
+				// result set), in which case no IntersectionObserver entry fires
+				// on its own. A synthetic scroll event triggers each region's
+				// checkScroll handler.
+				window.dispatchEvent( new Event( 'scroll' ) );
 			} catch ( error ) {
 				console.error( 'Error updating filters:', error );
 				// Show user-friendly error message in all regions
