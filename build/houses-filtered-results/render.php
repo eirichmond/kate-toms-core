@@ -150,6 +150,27 @@ $context = wp_json_encode(
 		?>
 	</div>
 
+	<!-- Skeleton placeholders: shown while the next page is fetched. -->
+	<div
+		class="houses-filtered-results-skeletons"
+		data-wp-bind--hidden="!context.isLoadingMore"
+	>
+		<?php for ( $i = 0; $i < 4; $i++ ) : ?>
+			<div class="house-card house-card-skeleton">
+				<div class="skeleton-image"></div>
+				<div class="skeleton-title"></div>
+				<div class="skeleton-description">
+					<div class="skeleton-line"></div>
+					<div class="skeleton-line skeleton-line--short"></div>
+				</div>
+				<div class="skeleton-footer">
+					<div class="skeleton-line skeleton-line--tiny"></div>
+					<div class="skeleton-line skeleton-line--tiny"></div>
+				</div>
+			</div>
+		<?php endfor; ?>
+	</div>
+
 	<!-- Scroll sentinel: triggers loading the next page when scrolled into view. -->
 	<div
 		class="houses-filtered-results-sentinel"

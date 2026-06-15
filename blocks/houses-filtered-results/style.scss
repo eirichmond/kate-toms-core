@@ -1,9 +1,88 @@
 /**
  * The following styles get applied both on the front of your site
  * and in the editor.
- *
- * Replace them with your own styles or remove the file completely.
  */
 
 .wp-block-kate-toms-core-houses-filtered-results {
+	// Skeleton placeholders shown during infinite-scroll loading. Rendered as a
+	// sibling grid below .houses-grid that mirrors its column rules, so the
+	// shimmering cards line up with the real results above.
+	.houses-filtered-results-skeletons {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 1rem;
+		margin-top: 1rem;
+
+		&[hidden] {
+			display: none;
+		}
+	}
+
+	// Skeleton card — matches the real card patterns (min-height, square image).
+	.house-card-skeleton {
+		min-height: 365px;
+		background: #fff;
+		overflow: hidden;
+	}
+
+	.skeleton-image {
+		width: 100%;
+		aspect-ratio: 1;
+		background: linear-gradient(-45deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+		background-size: 200% 100%;
+		animation: skeleton-shimmer 1.5s infinite;
+	}
+
+	.skeleton-title {
+		height: 48px;
+		background: linear-gradient(-45deg, #e8e8e8 25%, #b3b3b3 50%, #e1e1e1 75%);
+		background-size: 200% 100%;
+		animation: skeleton-shimmer 1.5s infinite;
+	}
+
+	.skeleton-description {
+		padding: var(--wp--preset--spacing--30, 15px);
+	}
+
+	.skeleton-line {
+		height: 14px;
+		background: linear-gradient(-45deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+		background-size: 200% 100%;
+		animation: skeleton-shimmer 1.5s infinite;
+		border-radius: 4px;
+		margin-bottom: 8px;
+
+		&--short {
+			width: 70%;
+		}
+
+		&--tiny {
+			width: 40%;
+			height: 12px;
+		}
+	}
+
+	.skeleton-footer {
+		padding: var(--wp--preset--spacing--30, 15px);
+		border-top: 1px solid #eee;
+		display: flex;
+		justify-content: space-between;
+	}
+
+	// Skeleton shimmer animation.
+	@keyframes skeleton-shimmer {
+		0% {
+			background-position: 200% 0;
+		}
+		100% {
+			background-position: -200% 0;
+		}
+	}
+
+	// Sentinel element (invisible trigger for infinite scroll).
+	.houses-filtered-results-sentinel {
+		height: 1px;
+		width: 100%;
+		visibility: hidden;
+	}
 }
