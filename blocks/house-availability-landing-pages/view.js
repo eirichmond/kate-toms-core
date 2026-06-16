@@ -1,0 +1,165 @@
+/**
+ * WordPress dependencies
+ */
+import { store, getContext, getElement } from '@wordpress/interactivity';
+
+store( 'kate-toms-house-availability-landing-pages', {
+	actions: {
+		/**
+		 * Check if we should load more houses based on scroll position.
+		 */
+		checkScroll() {
+			const context = getContext();
+			const { ref } = getElement();
+
+			if ( context.isLoading || ! context.hasMore ) {
+				return;
+			}
+
+			// Find the sentinel within this block instance.
+			const wrapper = ref.closest( '.house-availability-landing-pages' );
+			const sentinel = wrapper?.querySelector(
+				'.house-availability-sentinel'
+			);
+			if ( ! sentinel ) {
+				return;
+			}
+
+			const rect = sentinel.getBoundingClientRect();
+			const inViewport = rect.top <= window.innerHeight + 200;
+
+			if ( inViewport ) {
+				actions.loadMore();
+			}
+		},
+
+		/**
+		 * Load more houses via REST API using pre-filtered house IDs.
+		 */
+		async loadMore() {
+			const context = getContext();
+			const { ref } = getElement();
+
+			if ( context.isLoading || ! context.hasMore ) {
+				return;
+			}
+
+			context.isLoading = true;
+
+			try {
+				const nextPage = context.currentPage + 1;
+
+				// Calculate the slice of house IDs for the next page.
+				const start = context.currentPage * context.postsPerPage;
+				const end = start + context.postsPerPage;
+				const houseIds = context.allHouseIds.slice( start, end );
+
+				if ( houseIds.length === 0 ) {
+					context.hasMore = false;
+					return;
+				}
+
+				const params = new URLSearchParams( {
+					house_ids: houseIds.join( ',' ),
+					pattern_style: context.patternStyle,
+					beginning_date: context.beginningDate,
+					ending_date: context.endingDate,
+					title_bg_color: context.titleBgColor,
+				} );
+
+				const apiUrl = `/wp-json/kate-toms/v1/houses-seasonal-load?${ params.toString() }`;
+				const response = await fetch( apiUrl );
+
+				if ( ! response.ok ) {
+					throw new Error( `API Error: ${ response.status }` );
+				}
+
+				const data = await response.json();
+
+				if ( ! data.success ) {
+					throw new Error( 'Invalid response from API' );
+				}
+
+				// Find the results container within this block instance.
+				const wrapper = ref.closest(
+					'.house-availability-landing-pages'
+				);
+				const resultsContainer = wrapper?.querySelector(
+					'.house-availability-results'
+				);
+
+				if ( resultsContainer && data.data && data.data.html ) {
+					const temp = document.createElement( 'div' );
+					temp.innerHTML = data.data.html;
+
+					while ( temp.firstChild ) {
+						resultsContainer.appendChild( temp.firstChild );
+					}
+				}
+
+				context.currentPage = nextPage;
+
+				if (
+					data.data.hasMore === false ||
+					nextPage >= context.totalPages
+				) {
+					context.hasMore = false;
+
+					if ( data.data.adverts ) {
+						const advertsContainer = wrapper?.querySelector(
+							'.house-availability-adverts'
+						);
+						if ( advertsContainer ) {
+							advertsContainer.innerHTML = data.data.adverts;
+						}
+					}
+				}
+			} catch ( error ) {
+				console.error( 'Error loading more availability houses:', error );
+			} finally {
+				context.isLoading = false;
+			}
+		},
+	},
+
+	callbacks: {
+		/**
+		 * Initialize the infinite scroll observer for this block instance.
+		 */
+		init() {
+			const context = getContext();
+			const { ref } = getElement();
+
+			// The sentinel is the element with data-wp-init, so ref IS the sentinel.
+			const sentinel = ref;
+			if ( ! sentinel ) {
+				return;
+			}
+
+			const observer = new IntersectionObserver(
+				( entries ) => {
+					entries.forEach( ( entry ) => {
+						if (
+							entry.isIntersecting &&
+							! context.isLoading &&
+							context.hasMore
+						) {
+							actions.loadMore();
+						}
+					} );
+				},
+				{
+					rootMargin: '200px',
+					threshold: 0,
+				}
+			);
+
+			observer.observe( sentinel );
+
+			context.observer = observer;
+		},
+	},
+} );
+
+// Store reference so callbacks can call actions.
+const { actions } = store( 'kate-toms-house-availability-landing-pages' );
