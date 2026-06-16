@@ -620,7 +620,9 @@ class Houses_Filter_API {
 				'taxonomy' => 'location',
 				'field'    => 'term_id',
 				'terms'    => $location_term_ids,
-				'operator' => 'IN',
+				// AND: when multiple location terms are set (e.g. a broad region
+				// plus a granular location), a house must match all of them.
+				'operator' => 'AND',
 			);
 		}
 

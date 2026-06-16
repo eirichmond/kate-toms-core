@@ -63,7 +63,9 @@ if ( ! empty( $location_term_ids ) ) {
 		'taxonomy' => 'location',
 		'field'    => 'term_id',
 		'terms'    => $location_term_ids,
-		'operator' => 'IN',
+		// AND: when multiple location terms are set (e.g. a broad region plus a
+		// granular location injected by the migration), a house must match all.
+		'operator' => 'AND',
 	);
 }
 
