@@ -11,12 +11,13 @@
 	"example": {},
 	"supports": {
 		"html": false,
-		"align": ["wide", "full"]
+		"align": ["wide", "full"],
+		"interactivity": true
 	},
 	"attributes": {
 		"postsPerPage": {
 			"type": "number",
-			"default": 10
+			"default": 20
 		},
 		"orderBy": {
 			"type": "string",
@@ -37,5 +38,7 @@
 	},
 	"textdomain": "kate-toms-core",
 	"editorScript": "file:./index.js",
+	"viewScriptModule": "file:./view.js",
+	"style": "file:./style-index.css",
 	"render": "file:./render.php"
 }
