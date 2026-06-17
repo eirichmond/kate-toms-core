@@ -1,1 +1,73 @@
-.kt-house-calendar-editor{background:#fff;border:1px solid #ddd;border-radius:4px;padding:1rem}.kt-house-calendar-editor .kt-calendar-preview{text-align:center}.kt-house-calendar-editor .kt-calendar-preview .kt-calendar-icon svg{color:#135e96;height:48px;margin-bottom:1rem;width:48px}.kt-house-calendar-editor .kt-calendar-preview h3{color:#135e96;font-size:1.25rem;margin:0 0 1rem}.kt-house-calendar-editor .kt-calendar-preview .components-notice{margin:1rem 0}.kt-house-calendar-editor .kt-calendar-configured{text-align:left}.kt-house-calendar-editor .kt-calendar-configured p{margin:.5rem 0}.kt-house-calendar-editor .kt-calendar-configured p strong{color:#135e96}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid{background:#f9f9f9;border-radius:4px;margin-top:1.5rem;padding:1rem}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month h4{color:#135e96;margin:0 0 1rem;text-align:center}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days{display:grid;gap:.5rem;grid-template-columns:repeat(4,1fr)}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day{border-radius:4px;color:#fff;font-size:.875rem;font-weight:500;padding:.5rem;text-align:center}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.available{background:#22c55e}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.booked{background:#ef4444}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.checkin.halfafter{background:linear-gradient(135deg,#22c55e 50%,#3b82f6 0)}.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.checkout.halfbefore{background:linear-gradient(-45deg,#3b82f6 50%,#22c55e 0)}
+/*!***********************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/house-calendar-availability/editor.scss ***!
+  \***********************************************************************************************************************************************************************************************************************************************************************/
+.kt-house-calendar-editor {
+  padding: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+}
+.kt-house-calendar-editor .kt-calendar-preview {
+  text-align: center;
+}
+.kt-house-calendar-editor .kt-calendar-preview .kt-calendar-icon svg {
+  width: 48px;
+  height: 48px;
+  color: #135e96;
+  margin-bottom: 1rem;
+}
+.kt-house-calendar-editor .kt-calendar-preview h3 {
+  margin: 0 0 1rem 0;
+  color: #135e96;
+  font-size: 1.25rem;
+}
+.kt-house-calendar-editor .kt-calendar-preview .components-notice {
+  margin: 1rem 0;
+}
+.kt-house-calendar-editor .kt-calendar-configured {
+  text-align: left;
+}
+.kt-house-calendar-editor .kt-calendar-configured p {
+  margin: 0.5rem 0;
+}
+.kt-house-calendar-editor .kt-calendar-configured p strong {
+  color: #135e96;
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month h4 {
+  margin: 0 0 1rem 0;
+  color: #135e96;
+  text-align: center;
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day {
+  padding: 0.5rem;
+  text-align: center;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  color: #fff;
+  font-weight: 500;
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.available {
+  background: #22c55e;
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.booked {
+  background: #ef4444;
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.checkin.halfafter {
+  background: linear-gradient(135deg, #22c55e 50%, #3b82f6 50%);
+}
+.kt-house-calendar-editor .kt-calendar-configured .kt-calendar-preview-grid .kt-calendar-month .kt-calendar-days .kt-day.checkout.halfbefore {
+  background: linear-gradient(-45deg, #3b82f6 50%, #22c55e 50%);
+}
+
+/*# sourceMappingURL=index.css.map*/

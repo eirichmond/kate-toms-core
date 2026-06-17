@@ -15,8 +15,8 @@
 		overflow: hidden;
 		position: absolute; /* Ensure positioning context */
 		img {
-			min-width: 100%; /* Prevent the image from overflowing horizontally */
-			max-height: 100%; /* Prevent the image from overflowing vertically */
+			width: 100%; /* Prevent the image from overflowing horizontally */
+			height: 100%; /* Prevent the image from overflowing vertically */
 			object-fit: cover; /* Maintain aspect ratio */
 			transform: scale(1);
 			transition: transform 4s ease;
