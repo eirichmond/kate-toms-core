@@ -2532,6 +2532,38 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 }
 
 /**
+ * Determine whether a house has a special-offer rate within a date range.
+ *
+ * Offers are flagged in the rate strings produced by kate_toms_get_seasonal_prices()
+ * with one or more '*' characters (see the 'offer' handling in that function). A house
+ * "has an offer" if any rate for any of the requested periods, within the window,
+ * carries that indicator.
+ *
+ * @param int    $house_id       WordPress post ID for the house.
+ * @param string $beginning_date Start date (Y-m-d format).
+ * @param string $ending_date    End date (Y-m-d format).
+ * @param array  $periods        Array of period keys to check (API format).
+ * @return bool True if at least one rate within the window carries an offer indicator.
+ */
+function kate_toms_house_has_seasonal_offer( $house_id, $beginning_date, $ending_date, $periods ) {
+	$seasonal_prices = kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date, $periods );
+
+	if ( empty( $seasonal_prices ) ) {
+		return false;
+	}
+
+	foreach ( $seasonal_prices as $rates ) {
+		foreach ( $rates as $rate ) {
+			if ( false !== strpos( (string) $rate, '*' ) ) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
+/**
  * Convert array of price strings to minimum price formatted for display.
  *
  * Finds the minimum value from an array of price strings and formats it with comma separators.
