@@ -220,15 +220,15 @@
 .house-card__image {
   position: relative;
   padding-top: 100%;
+  height: 40%;
 }
 .house-card__image img {
   position: absolute;
   top: 0;
-  right: 0;
-  width: 100%;
+  right: 50%;
+  transform: translateX(50%);
   height: 100%;
-  -o-object-fit: cover;
-     object-fit: cover;
+  width: auto;
 }
 .house-card__content {
   padding: 1.5rem;
