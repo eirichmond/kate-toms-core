@@ -166,6 +166,26 @@ if ( empty( $filtered_houses ) ) {
 	return;
 }
 
+// Restrict to houses that carry a special offer (indicated by '*') for the
+// included periods within the rolling window. The availability filter above
+// only confirms a house is bookable; this block should surface offers only.
+$available_count = count( $filtered_houses );
+$filtered_houses = array_values(
+	array_filter(
+		$filtered_houses,
+		function ( $house ) use ( $beginning_date, $ending_date, $api_periods ) {
+			return kate_toms_house_has_seasonal_offer( $house->ID, $beginning_date, $ending_date, $api_periods );
+		}
+	)
+);
+
+error_log( sprintf( 'Availability offer filtering: %d available, %d with offers', $available_count, count( $filtered_houses ) ) );
+
+if ( empty( $filtered_houses ) ) {
+	echo '<p>' . __( 'No houses with special offers available for the selected dates and periods.', 'kate-toms-core' ) . '</p>';
+	return;
+}
+
 // Collect all filtered house IDs (preserving order).
 $all_house_ids = array_map(
 	function ( $house ) {
