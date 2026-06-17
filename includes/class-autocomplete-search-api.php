@@ -94,7 +94,35 @@ class Autocomplete_Search_API {
 			$this->parse_landing_page_items( self::FEATURES_PAGE_ID, 'Features' )
 		);
 
+		// Cap result descriptions for the autocomplete dropdown display.
+		foreach ( $search_items as &$item ) {
+			if ( isset( $item['desc'] ) ) {
+				$item['desc'] = $this->truncate_desc( $item['desc'] );
+			}
+		}
+		unset( $item );
+
 		return rest_ensure_response( $search_items );
+	}
+
+	/**
+	 * Truncate a result description to a maximum character length.
+	 *
+	 * Length is inclusive of the appended ellipsis, so the returned string
+	 * never exceeds $length characters.
+	 *
+	 * @param string $desc   The description text.
+	 * @param int    $length Maximum length, including the ellipsis. Default 50.
+	 * @return string The truncated description.
+	 */
+	private function truncate_desc( $desc, $length = 50 ) {
+		$desc = trim( (string) $desc );
+
+		if ( mb_strlen( $desc ) <= $length ) {
+			return $desc;
+		}
+
+		return rtrim( mb_substr( $desc, 0, $length - 1 ) ) . '…';
 	}
 
 	/**
