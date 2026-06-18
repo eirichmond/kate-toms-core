@@ -144,7 +144,19 @@ __webpack_require__.r(__webpack_exports__);
           if (data.data.adverts) {
             const advertsContainer = wrapper?.querySelector('.house-seasonal-adverts');
             if (advertsContainer) {
-              advertsContainer.innerHTML = data.data.adverts;
+              // The endpoint returns up to 3 adverts, but only
+              // enough to complete the final row of 4 should be
+              // shown. The exact count depends on the total
+              // (e.g. a remainder of 1 needs 3, a remainder of 3
+              // needs 1), so trim to what's actually needed —
+              // otherwise extra adverts overhang the grid.
+              const remainder = context.totalHouses % 4;
+              const advertsNeeded = remainder === 0 ? 0 : 4 - remainder;
+              const temp = document.createElement('div');
+              temp.innerHTML = data.data.adverts;
+              const advertCards = Array.from(temp.children).slice(0, advertsNeeded);
+              advertsContainer.innerHTML = '';
+              advertCards.forEach(card => advertsContainer.appendChild(card));
             }
           }
         }

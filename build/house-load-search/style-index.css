@@ -84,6 +84,7 @@
 .wp-block-kate-toms-core-house-load-search .house-load-search-adverts .advert-placeholder .house-card__image {
   position: relative;
   padding-top: 100%;
+  height: 40%;
 }
 .wp-block-kate-toms-core-house-load-search .house-load-search-adverts .advert-placeholder .house-card__image img {
   position: absolute;
@@ -92,6 +93,9 @@
   height: 100%;
   -o-object-fit: cover;
      object-fit: cover;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%);
 }
 .wp-block-kate-toms-core-house-load-search .house-load-search-sentinel {
   height: 1px;
