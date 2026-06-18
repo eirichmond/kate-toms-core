@@ -25,4 +25,25 @@
 		fill: #999;
 		flex-shrink: 0;
 	}
+
+	&__reset {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: inherit;
+		font: inherit;
+		cursor: pointer;
+
+		&:hover {
+			color: #000;
+		}
+	}
+
+	&__reset-icon {
+		fill: currentColor;
+		flex-shrink: 0;
+	}
 }
