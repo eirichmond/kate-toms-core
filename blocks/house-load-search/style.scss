@@ -98,14 +98,24 @@
 		}
 
 		.advert-placeholder {
-			min-height: 365px;
 			background: #fff;
+			overflow: hidden;
 
-			img {
-				width: 100%;
-				height: 368px;
-				display: block;
-				object-fit: cover;
+			// Square image card — consistent with the Houses Filtered Results block.
+			.house-card__image {
+				position: relative;
+				padding-top: 100%;
+				height: 40%;
+				img {
+					position: absolute;
+					inset: 0;
+					width: 100%;
+					height: 100%;
+					object-fit: cover;
+					left: 50%;
+					top: 0;
+					transform: translateX(-50%);
+				}
 			}
 		}
 	}

@@ -365,10 +365,12 @@ $all_period_keys = array( 'week', '2-night-weekend', '3-night-weekend', 'midweek
 				foreach ( $initial_adverts as $advert ) :
 					?>
 					<!-- Advert Placeholder Card -->
-					<div class="wp-block-group has-white-background-color has-background advert-placeholder" style="min-height:365px">
-						<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
-							style="width: 100%; height: 368px; display: block; object-fit: cover;"
-							alt="Advertisement">
+					<div class="house-card advert-placeholder">
+						<div class="house-card__image">
+							<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
+								alt="Advertisement"
+								style="width: 100%; height: 100%; object-fit: cover;">
+						</div>
 					</div>
 					<?php
 				endforeach;
