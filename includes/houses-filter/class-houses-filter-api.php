@@ -765,10 +765,12 @@ class Houses_Filter_API {
 					foreach ( $adverts as $advert ) {
 						?>
 						<!-- Advert Placeholder Card -->
-						<div class="wp-block-group has-white-background-color has-background advert-placeholder" style="min-height:365px">
-							<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
-								style="width: 100%; height: 368px; display: block; object-fit: cover;"
-								alt="Advertisement">
+						<div class="house-card advert-placeholder">
+							<div class="house-card__image">
+								<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
+									alt="Advertisement"
+									style="width: 100%; height: 100%; object-fit: cover;">
+							</div>
 						</div>
 						<?php
 					}
@@ -988,10 +990,12 @@ class Houses_Filter_API {
 				foreach ( $adverts as $advert ) {
 					?>
 					<!-- Advert Placeholder Card -->
-					<div class="wp-block-group has-white-background-color has-background advert-placeholder" style="min-height:365px">
-						<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
-							style="width: 100%; height: 368px; display: block; object-fit: cover;"
-							alt="Advertisement">
+					<div class="house-card advert-placeholder">
+						<div class="house-card__image">
+							<img src="<?php echo esc_url( $advert['image_url'] ); ?>"
+								alt="Advertisement"
+								style="width: 100%; height: 100%; object-fit: cover;">
+						</div>
 					</div>
 					<?php
 				}

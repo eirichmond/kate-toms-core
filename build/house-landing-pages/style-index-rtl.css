@@ -7,3 +7,19 @@
 .house-landing-pages .house-landing-grid a p {
   color: var(--wp--preset--color--charcoal);
 }
+.house-landing-pages .advert-placeholder {
+  background: #fff;
+  overflow: hidden;
+}
+.house-landing-pages .advert-placeholder .house-card__image {
+  position: relative;
+  padding-top: 100%;
+}
+.house-landing-pages .advert-placeholder .house-card__image img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+}
