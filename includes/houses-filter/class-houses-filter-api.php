@@ -216,6 +216,7 @@ class Houses_Filter_API {
 	 * @return WP_REST_Response The response object containing filtered houses
 	 */
 	public function get_filtered_houses( $request ) {
+		global $wpdb;
 		$params = $request->get_params();
 
 		// Pagination. When a date filter is active we cannot paginate via
@@ -297,6 +298,13 @@ class Houses_Filter_API {
 			),
 		);
 
+		// Size filter: precompute matching post IDs via raw SQL so we can use
+		// COALESCE to mirror the old theme's fallback logic exactly:
+		//   effective_min = sleeps_min if set, otherwise sleeps_max
+		// A house is included when sleeps_max >= range_min (can fit at least
+		// the smallest group) AND effective_min <= range_max (doesn't require
+		// more people than the largest group in the band).
+		$size_post_ids = null;
 		if ( ! empty( $params['size'] ) ) {
 			$size_ranges = array(
 				'2'  => array( 2, 10 ),
@@ -305,35 +313,22 @@ class Houses_Filter_API {
 			);
 
 			if ( isset( $size_ranges[ $params['size'] ] ) ) {
-				$range        = $size_ranges[ $params['size'] ];
-				$meta_query[] = array(
-					'relation' => 'AND',
-					// Overlap check: house max must reach the filter's lower bound.
-					array(
-						'key'     => 'sleeps_max',
-						'value'   => $range[0],
-						'type'    => 'NUMERIC',
-						'compare' => '>=',
-					),
-					// Overlap check: house min must not exceed the filter's upper bound.
-					// When sleeps_min is absent the LEFT JOIN yields NULL, so the first
-					// OR branch is NULL (not true) and the second branch takes over —
-					// equivalent to the old theme's sleeps_min fallback to sleeps_max.
-					array(
-						'relation' => 'OR',
-						array(
-							'key'     => 'sleeps_min',
-							'value'   => $range[1],
-							'type'    => 'NUMERIC',
-							'compare' => '<=',
-						),
-						array(
-							'key'     => 'sleeps_max',
-							'value'   => $range[1],
-							'type'    => 'NUMERIC',
-							'compare' => '<=',
-						),
-					),
+				$range         = $size_ranges[ $params['size'] ];
+				$size_post_ids = $wpdb->get_col(
+					$wpdb->prepare(
+						"SELECT DISTINCT p.ID
+						FROM {$wpdb->posts} p
+						INNER JOIN {$wpdb->postmeta} pm_max
+							ON ( p.ID = pm_max.post_id AND pm_max.meta_key = 'sleeps_max' )
+						LEFT JOIN {$wpdb->postmeta} pm_min
+							ON ( p.ID = pm_min.post_id AND pm_min.meta_key = 'sleeps_min' )
+						WHERE p.post_type = 'houses'
+						AND p.post_status = 'publish'
+						AND CAST( pm_max.meta_value AS SIGNED ) >= %d
+						AND COALESCE( CAST( pm_min.meta_value AS SIGNED ), CAST( pm_max.meta_value AS SIGNED ) ) <= %d",
+						$range[0],
+						$range[1]
+					)
 				);
 			}
 		}
@@ -349,6 +344,18 @@ class Houses_Filter_API {
 
 			if ( ! empty( $matching_post_ids ) ) {
 				$args['post__in'] = $matching_post_ids;
+			}
+		}
+
+		// Merge size and date post ID constraints. If both filters are active,
+		// post__in must be their intersection; otherwise whichever is set wins.
+		if ( null !== $size_post_ids ) {
+			$size_ids = ! empty( $size_post_ids ) ? array_map( 'intval', $size_post_ids ) : array( 0 );
+			if ( isset( $args['post__in'] ) ) {
+				$intersection        = array_intersect( $args['post__in'], $size_ids );
+				$args['post__in']    = ! empty( $intersection ) ? array_values( $intersection ) : array( 0 );
+			} else {
+				$args['post__in'] = $size_ids;
 			}
 		}
 
