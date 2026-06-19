@@ -308,17 +308,36 @@ class Houses_Filter_API {
 				$range        = $size_ranges[ $params['size'] ];
 				$meta_query[] = array(
 					'relation' => 'AND',
+					// Overlap check: house max must reach the filter's lower bound.
 					array(
-						'key'     => 'sleeps_min',
+						'key'     => 'sleeps_max',
 						'value'   => $range[0],
 						'type'    => 'NUMERIC',
 						'compare' => '>=',
 					),
+					// Overlap check: house min must not exceed the filter's upper bound.
+					// Fallback mirrors old theme: if sleeps_min is absent, use sleeps_max.
 					array(
-						'key'     => 'sleeps_max',
-						'value'   => $range[1],
-						'type'    => 'NUMERIC',
-						'compare' => '<=',
+						'relation' => 'OR',
+						array(
+							'key'     => 'sleeps_min',
+							'value'   => $range[1],
+							'type'    => 'NUMERIC',
+							'compare' => '<=',
+						),
+						array(
+							'relation' => 'AND',
+							array(
+								'key'     => 'sleeps_min',
+								'compare' => 'NOT EXISTS',
+							),
+							array(
+								'key'     => 'sleeps_max',
+								'value'   => $range[1],
+								'type'    => 'NUMERIC',
+								'compare' => '<=',
+							),
+						),
 					),
 				);
 			}
