@@ -325,7 +325,7 @@ class Houses_Filter_API {
 						WHERE p.post_type = 'houses'
 						AND p.post_status = 'publish'
 						AND CAST( pm_max.meta_value AS SIGNED ) >= %d
-						AND COALESCE( CAST( pm_min.meta_value AS SIGNED ), CAST( pm_max.meta_value AS SIGNED ) ) <= %d",
+						AND COALESCE( NULLIF( CAST( pm_min.meta_value AS SIGNED ), 0 ), CAST( pm_max.meta_value AS SIGNED ) ) <= %d",
 						$range[0],
 						$range[1]
 					)
