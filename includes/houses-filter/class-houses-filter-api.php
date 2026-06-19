@@ -316,7 +316,9 @@ class Houses_Filter_API {
 						'compare' => '>=',
 					),
 					// Overlap check: house min must not exceed the filter's upper bound.
-					// Fallback mirrors old theme: if sleeps_min is absent, use sleeps_max.
+					// When sleeps_min is absent the LEFT JOIN yields NULL, so the first
+					// OR branch is NULL (not true) and the second branch takes over —
+					// equivalent to the old theme's sleeps_min fallback to sleeps_max.
 					array(
 						'relation' => 'OR',
 						array(
@@ -326,17 +328,10 @@ class Houses_Filter_API {
 							'compare' => '<=',
 						),
 						array(
-							'relation' => 'AND',
-							array(
-								'key'     => 'sleeps_min',
-								'compare' => 'NOT EXISTS',
-							),
-							array(
-								'key'     => 'sleeps_max',
-								'value'   => $range[1],
-								'type'    => 'NUMERIC',
-								'compare' => '<=',
-							),
+							'key'     => 'sleeps_max',
+							'value'   => $range[1],
+							'type'    => 'NUMERIC',
+							'compare' => '<=',
 						),
 					),
 				);
