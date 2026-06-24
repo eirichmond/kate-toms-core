@@ -1,178 +1,232 @@
-# PRD: Mobile Drilldown Navigation Enhancement
+# PRD: House Blueprint Onboarding Wizard
 
-> Generated: 2026-04-09
+> Generated: 2026-06-24
 > Status: Draft
 
 ## Overview
 
-A frontend enhancement module inside the `kate-toms-core` plugin that augments the core `core/navigation` block's mobile overlay with an iOS-style drilldown experience. Instead of rendering nested submenus as an ever-growing vertical list, any parent item with children will show a right-pointing arrow; tapping it slides a new panel in from the right containing the submenu. Users can drill arbitrarily deep, and a back affordance returns them to the parent panel. Zero configuration — it applies globally to all core Navigation blocks on the site below the 1100px breakpoint.
+The Blueprint feature adds a React-powered admin wizard under the Houses CPT menu that lets non-technical staff onboard a new house property in one pass. Staff search for a house by name (via the existing CRM API), confirm or override the display title, then click Create — the wizard creates a draft parent Houses post and all five associated child pages, each pre-loaded with the correct placeholder block patterns from the katomswold theme.
 
 ## Goals
 
-- Replace the long, fully-expanded mobile menu with a one-panel-at-a-time drilldown that matches user expectations from native apps.
-- Enhance the existing `core/navigation` block non-destructively — no new block, no theme fork, no markup replacement.
-- Support arbitrary submenu depth.
-- Meet WCAG 2.1 AA: focus management, keyboard parity, screen reader announcements, no gesture-only interactions.
-- Zero-config: drop-in behaviour that activates only below 1100px and only inside open Navigation overlays.
+- Allow non-technical staff to onboard a new house without developer involvement
+- Ensure consistent page structure and pattern placement across all properties
+- Store the CRM house ID (`crm_house_id`) on the parent post so blocks and APIs can reference it
+- Make the pattern-per-page configuration developer-maintainable via a PHP array, without touching the wizard UI
 
 ## Non-Goals
 
-- **No custom block.** We do not register a new navigation block or wrap the core one.
-- **No desktop-nav changes.** The ≥1100px navigation keeps its existing behaviour.
-- **No admin UI / settings page.** Breakpoint, animation duration, and styling are fixed constants.
-- **No physical drag gestures.** Drilldown is tap-driven (answer A in discovery). No swipe-to-drag panel implementation.
-- **No classic-menu (`wp_nav_menu()`) support.** The site uses the core Navigation block everywhere relevant; classic menus are out of scope.
-- **No replacement of the core overlay open/close mechanism.** We extend the `core/navigation` Interactivity store, not replace it.
-- **No content model changes.** No CPTs, taxonomies, options, meta, or DB tables.
-- **No i18n strings beyond the few required UI labels** (e.g. "Back", "View [parent]"). These will be translation-ready via the plugin's existing `kate-toms-core` text domain.
+- Does not publish pages — all output is draft only
+- Does not sync ongoing CRM data changes back to WordPress after creation
+- Does not replace or delete existing house pages (duplicate handling stops the process, it does not overwrite silently)
+- Does not support multisite — main site (Blog ID 1) only
+- Does not migrate or touch existing houses created outside this wizard
+- Does not replace the existing `House_Calendar_Manager` CRM calls — the new API class extracts shared logic; existing calls are left intact as a legacy task
 
 ## Technical Requirements
 
 ### Environment
-
-- **PHP**: 8.1+ (matches site runtime per root CLAUDE.md).
-- **WordPress**: 6.8.2 (site version). Requires WP ≥ 6.5 for stable `wp_register_script_module` / `wp_enqueue_script_module` + Interactivity API store extension.
-- **Dependencies**:
-  - Runtime: `@wordpress/interactivity` (provided by core).
-  - Dev: plugin already has `@wordpress/scripts` — reuse existing build pipeline.
-  - No new Composer or npm packages.
+- PHP: 8.1+
+- WordPress: 6.8.2+
+- Dependencies: `@wordpress/components`, `@wordpress/api-fetch`, `@wordpress/element` (already available via plugin build pipeline)
 
 ### Architecture
-
-- **OOP**, following the plugin's existing WP Boilerplate pattern. New class `Kate_Toms_Core_Mobile_Nav` under `includes/mobile-nav/class-kate-toms-core-mobile-nav.php`, wired into the loader in `class-kate-toms-core.php` alongside the other `define_public_hooks()` registrations.
-- **Autoloading**: manual `require_once` in the main plugin bootstrap, consistent with the rest of `kate-toms-core` (no PSR-4 in this plugin today — don't introduce it for one feature).
-- **Namespace**: none (plugin uses class-name prefixing, not namespaces). Class prefix: `Kate_Toms_Core_`.
-- **Frontend code**: a single Interactivity API view script **module** registered as `kate-toms-core/mobile-nav-drilldown`, source at `blocks/../modules/mobile-nav-drilldown/view.js` (or a new top-level `modules/` directory inside the plugin — to be finalised in tasks). Built via the existing `npm run build` pipeline. It imports `store` from `@wordpress/interactivity` and calls `store( 'core/navigation', { … } )` to **extend** the core navigation store with new state/actions rather than register a new namespace.
-- **Styles**: a single CSS file `assets/css/mobile-nav-drilldown.css` loaded only when needed (see "Frontend Output"). No Sass — follow the theme's existing plain-CSS block-assets convention.
-- **Breakpoint**: hardcoded `1100px` constant shared between CSS (`@media (max-width: 1100px)`) and JS (`matchMedia`). Document the constant in one place as the source of truth.
+- OOP, namespaced under the existing plugin conventions
+- New class: `Kate_Toms_Blueprint_CRM_API` — extracts OAuth2 + cURL logic from `class-houses-calendar-availability-api.php` into a reusable CRM API client
+- New class: `Kate_Toms_Blueprint` — registers the admin page, REST endpoints, and page-creation logic
+- New React entry point: `blocks/blueprint-admin/index.js` — the wizard UI, built via the existing `@wordpress/scripts` pipeline
+- Pattern config: static PHP array inside `Kate_Toms_Blueprint`, one entry per page, listing pattern slugs in insertion order
 
 ### Data Model
 
-- None. No custom post types, taxonomies, tables, options, user meta, or post meta.
+**Post structure created per blueprint run:**
 
-### Roles and Capabilities
+| Post | Type | Status | Parent |
+|---|---|---|---|
+| `{display_title}` | `houses` | `draft` | — |
+| `{display_title}` | `houses` | `draft` | houses post ID |
+| `{display_title} - availability - Kate and Tom's` | `houses` | `draft` | houses post ID |
+| `{display_title} - book - Kate and Tom's` | `houses` | `draft` | houses post ID |
+| `{display_title} - facts - Kate and Tom's` | `houses` | `draft` | houses post ID |
+| `{display_title} - gallery - Kate and Tom's` | `houses` | `draft` | houses post ID |
 
-- None.
+**Post meta on parent `houses` post:**
+
+| Meta key | Value |
+|---|---|
+| `crm_house_id` | CRM integer ID pulled from the API |
+
+> **Retrospective note**: Existing block settings that reference `houseID` (e.g. House Calendar Availability block) should be migrated to read from `crm_house_id` post meta as a follow-up task. This is out of scope for the Blueprint prototype.
+
+**Child page slugs (fixed):**
+
+| Page | Slug |
+|---|---|
+| More | `more` |
+| Availability | `availability` |
+| Book | `book` |
+| Facts | `facts` |
+| Gallery | `gallery` |
+
+### Pattern Configuration Array
+
+Developer-maintained static array in `Kate_Toms_Blueprint`. Keys match the page identifier; values are ordered arrays of pattern slugs from the katomswold theme. To add a pattern to a page later, add its slug to the relevant array.
+
+```php
+private static array $blueprint_pages = [
+    'parent' => [
+        'patterns' => [
+            'katomswold/house-title-banner',
+            'katomswold/standard-widget-fourimage',
+            'katomswold/wide-widget',
+            'katomswold/houses-you-may-also-like',
+        ],
+    ],
+    'more' => [
+        'patterns' => [
+            'katomswold/house-title-banner-sub-page',
+            'katomswold/standard-widget-galleryright',
+            'katomswold/button-widget',
+        ],
+    ],
+    'availability' => [
+        'patterns' => [
+            'katomswold/house-title-banner-sub-page',
+            'katomswold/button-widget',
+        ],
+    ],
+    'book' => [
+        'patterns' => [
+            'katomswold/house-title-banner-sub-page',
+            'katomswold/button-widget',
+        ],
+    ],
+    'facts' => [
+        'patterns' => [
+            'katomswold/house-title-banner-sub-page',
+            'katomswold/standard-widget-fourimage',
+            'katomswold/wide-widget',
+        ],
+    ],
+    'gallery' => [
+        'patterns' => [
+            'katomswold/house-title-banner-sub-page',
+            'katomswold/standard-widget-galleryright',
+            'katomswold/button-widget',
+        ],
+    ],
+];
+```
 
 ## Features
 
-### 1. Drilldown Panel Transform
+### Feature 1: CRM House Search (Typeahead)
 
-**Description**: Intercepts nested submenus inside an open core navigation overlay and presents each level as a horizontally-sliding panel.
-**User-facing**: Frontend only, mobile breakpoint only.
+**Description**: Staff type a house name into a search field; the wizard queries the CRM API and returns matching houses as a selectable list.
+**User-facing**: Admin only (Blueprint page)
 **Details**:
-- On overlay open (detected by extending `core/navigation` store's `actions.openMenu` / reacting to the existing `isMenuOpen` state), the view module scans the overlay for `li` items containing a nested `ul` (i.e. `core/navigation-submenu`).
-- Each such parent gets a right-pointing chevron button injected as a sibling of the link, acting as the drilldown trigger. The parent link itself remains a normal link.
-- Tapping the chevron pushes a new panel into view via `translateX` on a stacking context. The previous panel stays mounted (instant back) but is `aria-hidden="true"` and `inert`.
-- Panel header shows a back button (labelled with the parent's text) and pushes the user back one level when tapped.
-- The **first item inside each drilled panel** is a synthesised "View [Parent Label]" link that points to the parent's own URL, so the parent destination remains reachable (answer to discovery Q5).
-- Arbitrary depth: the same logic recurses for any `core/navigation-submenu` nested inside another.
+- Calls `GET /wp-json/kate-toms-core/v1/blueprint/crm-search?query={term}` (internal REST endpoint, proxied to CRM)
+- Returns an array of `{ crm_id, crm_title }` objects
+- Results render as a selectable list using `@wordpress/components` ComboboxControl or similar
+- Selecting a result populates the CRM ID field (read-only) and the display title field (editable)
 
-### 2. Breakpoint Gating
+### Feature 2: Display Title Override
 
-**Description**: Drilldown behaviour and styles are only active below 1100px.
-**User-facing**: Frontend.
+**Description**: The display title defaults to the CRM house name but can be freely edited before creation. This is the title used for the parent post and all child page title prefixes.
+**User-facing**: Admin only
 **Details**:
-- CSS rules live inside `@media (max-width: 1100px)` only.
-- JS uses `window.matchMedia('(max-width: 1100px)')` and attaches a `change` listener. Above the breakpoint, any transform/inert state is reset and the menu renders normally.
-- On resize across the breakpoint while the overlay is open, state is cleaned up gracefully (reset to level 0, remove `inert`).
+- Editable text input, pre-filled from CRM selection
+- Used verbatim as `post_title` on the parent `houses` post
+- Child page titles follow the pattern: `{display_title} - {suffix} - Kate and Tom's` (except "more" which uses display title only)
 
-### 3. Animation
+### Feature 3: Duplicate Detection
 
-**Description**: Panels slide using a CSS `transform: translateX()` transition.
-**User-facing**: Frontend.
+**Description**: Before creating any posts, the wizard checks whether a `houses` post with the same display title already exists.
+**User-facing**: Admin only
 **Details**:
-- Duration: **0.3s**, easing: `cubic-bezier(0.4, 0, 0.2, 1)` (material "standard").
-- Respects `prefers-reduced-motion: reduce` — transitions become `0s` and panels swap instantly.
-- GPU-friendly (`translateX` + `will-change: transform` only on the active transition).
+- Check runs client-side via a REST call on "Create Blueprint" click, before any posts are written
+- If a match is found: show an inline warning naming the existing post, offer two options — "Choose a different name" (returns to step 1) or "Override" (admin acknowledges and proceeds, creating pages with a deduplicated title suffix or forcing creation regardless — TBD at implementation)
+- If no match: proceed immediately
 
-### 4. Parent Logo / Overlay Header Stability
+### Feature 4: Blueprint Creation
 
-**Description**: The site logo and overlay close (×) button remain in place at the top of the overlay across all drill levels (answer to discovery Q6).
-**User-facing**: Frontend.
+**Description**: On confirmation, creates the parent `houses` post and all five child pages in a single server-side operation.
+**User-facing**: Admin only
 **Details**:
-- The drilldown container is scoped to the `<ul>` region of the overlay, not the entire overlay. The core Navigation block's overlay header (logo + close) is untouched.
-- The back button appears **inside** the drilled panel, above the submenu list — not in the overlay header.
+- Triggered by `POST /wp-json/kate-toms-core/v1/blueprint/create`
+- Request body: `{ crm_id, display_title }`
+- Server creates posts in order: parent first, then children
+- `crm_house_id` meta saved on parent post
+- Each post's `post_content` is assembled by loading the registered block patterns for that page and serialising them via `WP_Block_Patterns_Registry` + `serialize_blocks()`
+- All posts created with `post_status: draft`
+- Response returns an array of created post IDs and edit URLs
 
-### 5. Accessibility
+### Feature 5: Success Screen
 
-**Description**: Full WCAG 2.1 AA compliance for the drilldown interaction.
-**User-facing**: Frontend.
+**Description**: After successful creation, the wizard shows a confirmation screen listing all created pages with direct edit links.
+**User-facing**: Admin only
 **Details**:
-- **Focus management**: drilling in moves focus to the "View [Parent]" link (first focusable item) of the new panel; drilling back returns focus to the chevron button that opened it.
-- **`inert` + `aria-hidden`**: inactive panels get both, so screen readers and keyboard focus can't land on off-screen items.
-- **Keyboard parity**:
-  - `Enter` / `Space` on a chevron button → drill in.
-  - `Escape` on a drilled panel → drill back one level. At level 0, `Escape` falls through to the core block's own close-overlay handler.
-  - `Right Arrow` on a parent row → drill in. `Left Arrow` inside a drilled panel → drill back. (Implemented only when the focused element is a menu item; doesn't interfere with typing.)
-- **ARIA**: chevron buttons have `aria-label="Show submenu for {parent}"` and `aria-expanded` reflecting panel state. Back button is a `<button>` with `aria-label="Back to {grandparent or top}"`.
-- **Live region**: an `aria-live="polite"` off-screen element announces level changes ("In submenu: Houses") for screen reader users.
-- **No gesture-only interactions** — everything is reachable by tap/click and keyboard.
-
-### 6. Non-Parent Items Unchanged
-
-**Description**: Menu items without children render and behave exactly as they do today (answer to discovery Q9).
-**User-facing**: Frontend.
-**Details**:
-- Detection is structural (presence of a nested `ul` inside the `li`), so leaf items are untouched — no chevron, no modified markup.
+- Lists parent post and each child page by title
+- Each title is a clickable link to the WordPress block editor for that post
+- "Create Another" button resets the wizard to step 1
 
 ## Admin UI
 
-- None. Zero-config by design.
+- **Menu location**: Submenu under `edit.php?post_type=houses`, label "Blueprint", capability `manage_options`
+- **Wizard steps**:
+  - Step 1 — Search: CRM typeahead search + display title field + "Next" button
+  - Step 2 — Review: Summary of pages to be created (titles, slugs, pattern count per page) + "Create Blueprint" button
+  - Step 3 — Success: Links to all created drafts + "Create Another" button
+- **Inline error states**: API failures, duplicate detection warning, creation failures
+- **Technology**: React via `@wordpress/components`, enqueued only on the Blueprint admin page
 
 ## Frontend Output
 
-- No new blocks, shortcodes, or template tags.
-- A **view script module** `kate-toms-core/mobile-nav-drilldown` is registered via `wp_register_script_module()` and **enqueued conditionally** via `wp_enqueue_script_module()` only when the page actually renders a `core/navigation` block. Wire this via:
-  - `render_block_core/navigation` filter — on first invocation per request, call `wp_enqueue_script_module()` and enqueue the CSS with `wp_enqueue_style()`. This keeps the enhancement off pages that don't have a nav (e.g. some landing pages).
-- The module extends the existing `core/navigation` Interactivity store; no custom `data-wp-interactive` directive is required on the markup since the core block already sets one.
-- Markup mutations (chevron buttons, synthesised "View [Parent]" links, panel wrappers) are applied **client-side on overlay open**, not server-side. Rationale: keeps the core block's rendered HTML canonical, avoids PHP block-filter complexity, and means the enhancement is fully reversible if disabled.
+None. This feature is entirely admin-side. The created draft pages only appear on the frontend once a content editor publishes them manually.
 
 ## REST API
 
-- None.
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/wp-json/kate-toms/v1/blueprint/crm-search` | `manage_options` | Typeahead search proxied to CRM API. Accepts `?query=` param. |
+| `POST` | `/wp-json/kate-toms/v1/blueprint/create` | `manage_options` | Creates parent + child posts. Body: `{ crm_id, display_title }`. Returns created post IDs + edit URLs. |
+
+Both endpoints are restricted to `manage_options` capability. Namespace matches existing `kate-toms/v1` convention used by `class-houses-filter-api.php`.
 
 ## Third-Party Integrations
 
-- None.
+- **Kate & Tom's CRM (iProperty Pro / 2iPro)**
+  - Base URL: `https://booking.kateandtoms.com/apis/property`
+  - House search endpoint: `https://booking.kateandtoms.com/apis/properties` (confirmed)
+  - Auth: OAuth2 client credentials (`https://booking.kateandtoms.com/oauth/2.0/token`, Basic auth header with Base64-encoded credentials)
+  - Existing implementation: `class-houses-calendar-availability-api.php` — OAuth token management and cURL request pattern to be extracted into new `Kate_Toms_Blueprint_CRM_API` class
+  - The new class must handle token refresh and caching (transient-based, as per existing implementation)
 
 ## Scheduled Tasks
 
-- None.
+None.
 
 ## CLI Commands
 
-- None.
+None for prototype. Could add `wp blueprint create --crm-id=123 --title="House Name"` as a future enhancement.
 
 ## Lifecycle
 
-- **Activation**: no-op. Nothing to install.
-- **Deactivation**: no-op. The module simply stops being enqueued; the core Navigation block reverts to its default overlay behaviour with no residue.
-- **Uninstall**: no-op. No data to clean up.
+- **Activation**: No changes. No tables or options added. The Blueprint submenu and REST endpoints register on every page load via existing hook system.
+- **Deactivation**: No cleanup needed. Created draft posts persist; they're standard WordPress content.
+- **Uninstall**: No special cleanup. Created posts are ordinary `houses` and `page` posts; they are left in place.
 
 ## Testing Strategy
 
-- **Unit tests**: not a strong fit — logic is overwhelmingly DOM-manipulation and state transitions in the view module. Skip unit tests for this feature.
-- **Integration / E2E tests** (Playwright via `@wordpress/scripts`):
-  - Overlay opens below 1100px → chevrons appear on parent items only.
-  - Tapping a chevron slides a panel in and moves focus to the "View [Parent]" link.
-  - Back button returns focus to the originating chevron.
-  - Three-level drill (e.g. Top → Houses → Cotswolds → Luxury) works and all levels can be navigated back out in sequence.
-  - `Escape` inside a drilled panel drills back; `Escape` at level 0 closes the overlay.
-  - Resize across the 1100px breakpoint while drilled → state resets cleanly.
-  - `prefers-reduced-motion: reduce` → transitions resolve instantly.
-  - Leaf menu items render without chevrons and navigate as plain links.
-  - Close + reopen the overlay → drilldown state resets to level 0.
-- **Manual accessibility checks**:
-  - VoiceOver on iOS Safari announces level changes and back-button context.
-  - NVDA + Firefox keyboard-only walkthrough reaches every item at every depth.
-  - Axe DevTools on an open, drilled overlay reports zero violations.
-- **Cross-browser smoke**: iOS Safari, Android Chrome, desktop Chrome/Firefox/Safari resized to <1100px.
+- **Unit tests**: `Kate_Toms_Blueprint_CRM_API` — mock cURL responses, test OAuth token caching/refresh, test search result parsing
+- **Integration tests**: Blueprint creation endpoint — assert correct number of posts created, correct meta saved, correct post_parent relationships, correct post_status
+- **Integration tests**: Duplicate detection — assert warning fires when a matching `houses` title exists
+- **Manual/e2e**: Playwright test against Valet site — full wizard flow from search to success screen; verify edit links resolve
 
 ## Open Questions
 
-- **Back-button label wording**: "Back" alone, "Back to [grandparent]", or just the grandparent label with a chevron icon? Recommendation: `← [Grandparent label]`, falling back to `← Menu` at level 1. Confirm during implementation.
-- **Chevron icon source**: inline SVG in the view module (preferred — no extra request, themeable via `currentColor`), or a reused icon from the theme's assets? Recommendation: inline SVG.
-- **Multiple Navigation blocks on one page**: the header contains two (desktop + mobile style variants). The enhancement should only activate on overlays that are actually open at <1100px, which naturally scopes it to the mobile one, but we should explicitly verify no chevrons leak into the hidden desktop nav during initialisation.
-- **File location for the view module**: does it live under `blocks/` (unusual — it's not a block), under a new top-level `modules/` directory, or under `public/modules/`? Recommendation: new `modules/mobile-nav-drilldown/` at plugin root, mirroring the `blocks/` convention. Confirm before task generation.
-- **Build pipeline**: `@wordpress/scripts` default entry scanning uses `--source-path=blocks`. We may need a second build command or an expanded `webpack.config.js` to include `modules/`. To be resolved in the first implementation task.
+1. ~~**CRM search endpoint**~~ — resolved: `https://booking.kateandtoms.com/apis/properties`
+2. **Duplicate override behaviour**: When staff acknowledge a duplicate and choose to proceed, should the wizard append a suffix (e.g. `- Copy`) to the display title, or create the post with the exact same title and let WordPress handle the slug deduplication? Defer to implementation.
+3. ~~**Child page post type**~~ — resolved: all child posts use `houses` post type with `post_parent` set to the parent houses post ID.
+4. **Pattern injection method**: Confirm that `WP_Block_Patterns_Registry::get_instance()->get_registered( $slug )` is available in this WordPress version and returns serialisable block content, or whether patterns need to be loaded directly from the theme PHP files.
+5. **`houseID` migration**: Blocks currently reference `houseID` as a block attribute/setting rather than reading post meta. The migration to `crm_house_id` post meta is explicitly out of scope for this prototype but should be tracked as a follow-up task.
