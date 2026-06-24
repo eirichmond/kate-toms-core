@@ -149,6 +149,16 @@ class Kate_Toms_Core {
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-custom-block-bindings.php';
 
+		/**
+		 * The CRM API client used by the Blueprint onboarding feature.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-blueprint-crm-api.php';
+
+		/**
+		 * The Blueprint onboarding feature — admin page, REST endpoints, page creation.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-blueprint.php';
+
 		$this->loader = new Kate_Toms_Core_Loader();
 
 		// Initialize the APIs
@@ -156,6 +166,7 @@ class Kate_Toms_Core {
 		new House_Calendar_Manager();
 		new Autocomplete_Search_API();
 		new Related_Houses_API();
+		new Kate_Toms_Blueprint();
 
 		// Initialize custom block bindings
 		$custom_bindings = new Kate_Toms_Custom_Block_Bindings();
