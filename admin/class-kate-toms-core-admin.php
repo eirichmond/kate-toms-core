@@ -187,7 +187,7 @@ class Kate_Toms_Core_Admin {
 			// only so wp-scripts bundles view.js + style.css for the mobile drilldown
 			// enhancement of the core/navigation block. It has no editor UI, no
 			// render callback, and must never appear in the inserter.
-			$skip_folders = array( 'mobile-nav-drilldown' );
+			$skip_folders = array( 'mobile-nav-drilldown', 'blueprint-admin' );
 
 			foreach ( $folders as $folder ) {
 				if ( in_array( $folder, $skip_folders, true ) ) {

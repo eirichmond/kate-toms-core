@@ -1,17 +1,1 @@
-/*!***************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/kateandtoms-reviews/editor.scss ***!
-  \***************************************************************************************************************************************************************************************************************************************************************/
-.wp-block-create-block-kateandtoms-reviews .review-panel {
-  margin-bottom: 1.5em;
-  border: 1px solid #e2e4e7;
-}
-.wp-block-create-block-kateandtoms-reviews .add-review-button {
-  margin-top: 1em;
-  width: 100%;
-}
-.wp-block-create-block-kateandtoms-reviews .components-panel__body .components-base-control {
-  margin-bottom: 1em;
-}
-.wp-block-create-block-kateandtoms-reviews .components-panel__body .components-button.is-destructive {
-  margin-top: 1em;
-}
+.wp-block-create-block-kateandtoms-reviews .review-panel{border:1px solid #e2e4e7;margin-bottom:1.5em}.wp-block-create-block-kateandtoms-reviews .add-review-button{margin-top:1em;width:100%}.wp-block-create-block-kateandtoms-reviews .components-panel__body .components-base-control{margin-bottom:1em}.wp-block-create-block-kateandtoms-reviews .components-panel__body .components-button.is-destructive{margin-top:1em}
