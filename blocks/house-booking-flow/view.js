@@ -675,7 +675,8 @@ class HouseBookingFlow {
 			.then( ( response ) => response.json() )
 			.then( ( data ) => {
 				if ( data.success ) {
-					this.renderStep3( data.data );
+					// this.renderStep3( data.data );
+					window.location.href = '/thank-you';
 				} else {
 					this.showStep2Error(
 						data.data ||
