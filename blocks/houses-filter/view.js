@@ -15,9 +15,14 @@ const context = form
 	: {};
 const initialRegionId = context.regionId || '';
 
+const reverseSizeMap = { '2': '2-10', '10': '10-20', '20': '20+' };
+
 const { state, actions } = store( storeName, {
 	state: {
 		isLoading: false,
+		// True when URL params were present on load — keeps the filter UI
+		// visible so the pre-applied filters are legible to the user.
+		prefiltered: false,
 		// Latches true on the first filter interaction; only resets when the
 		// store re-initialises (page reload/revisit). Used to permanently hide
 		// the archive's "Featured Properties" group once filtering begins.
@@ -298,3 +303,45 @@ const { state, actions } = store( storeName, {
 		},
 	},
 } );
+
+// Bootstrap from URL parameters so a landing-page button can link directly
+// to pre-filtered results, e.g. /houses/?kt_dtype=2&kt_size=10&kt_local=5
+//
+// Params are namespaced with `kt_` deliberately: `size` and `feature` are
+// registered house taxonomies with `query_var => true`, so an un-prefixed
+// `?size=2` is parsed by WordPress as a taxonomy archive request and 404s
+// before any JS runs. The prefix keeps these clear of all WP query vars.
+( function initFromUrlParams() {
+	const params = new URLSearchParams( window.location.search );
+	const keys = [ 'kt_date', 'kt_dtype', 'kt_size', 'kt_local', 'kt_feature' ];
+	if ( ! keys.some( ( k ) => params.has( k ) ) ) return;
+
+	const date    = params.get( 'kt_date' );
+	const dtype   = params.get( 'kt_dtype' );
+	const size    = params.get( 'kt_size' );
+	const local   = params.get( 'kt_local' );
+	const feature = params.get( 'kt_feature' );
+
+	if ( date )    state.date = date;
+	if ( dtype ) {
+		state.dtype = dtype;
+		state.activeFilters.dtype = [ dtype ];
+	}
+	if ( size ) {
+		state.size = size;
+		// activeFilters stores the display key ('2-10' etc.) so the UI
+		// button highlights; reverse-map from the numeric API value.
+		state.activeFilters.size = [ reverseSizeMap[ size ] || size ];
+	}
+	if ( local ) {
+		state.local = local;
+		state.activeFilters.local = [ local ];
+	}
+	if ( feature ) {
+		state.feature = feature;
+		state.activeFilters.feature = [ feature ];
+	}
+
+	state.prefiltered = true;
+	actions.updateFilters();
+} )();
