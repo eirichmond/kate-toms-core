@@ -1952,7 +1952,7 @@ class House_Calendar_Manager {
 		);
 
 		foreach ( $required_fields as $field => $label ) {
-			if ( empty( $sanitized_data[ $field ] ) ) {
+			if ( '' === $sanitized_data[ $field ] ) {
 				wp_send_json_error( "Missing required field: {$label}" );
 				return;
 			}
