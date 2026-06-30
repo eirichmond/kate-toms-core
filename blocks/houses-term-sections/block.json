@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "kate-toms-core/houses-term-sections",
+	"title": "Houses Term Sections",
+	"category": "widgets",
+	"icon": "screenoptions",
+	"description": "On a taxonomy archive, groups houses tagged with the current term into the location regions (Cotswolds, Coast, Country, Town), hiding any region with no matching houses.",
+	"attributes": {
+		"align": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": true,
+		"interactivity": true
+	},
+	"textdomain": "kate-toms-core",
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./editor.scss",
+	"render": "file:./render.php"
+}

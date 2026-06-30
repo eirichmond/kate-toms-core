@@ -34,15 +34,46 @@ $args = array(
 );
 
 
-// Add default location to query if set.
+// Resolve an optional "context" term — used on taxonomy archive pages so this
+// block shows only houses tagged with both the region (defaultLocation) AND the
+// archived term. Explicit attributes win; otherwise fall back to the queried
+// object when rendering on a taxonomy archive.
+$context_taxonomy = isset( $attributes['contextTaxonomy'] ) ? (string) $attributes['contextTaxonomy'] : '';
+$context_term     = isset( $attributes['contextTerm'] ) ? (int) $attributes['contextTerm'] : 0;
+
+if ( ( empty( $context_taxonomy ) || empty( $context_term ) ) && is_tax() ) {
+	$queried = get_queried_object();
+	if ( $queried instanceof WP_Term ) {
+		$context_taxonomy = $queried->taxonomy;
+		$context_term     = (int) $queried->term_id;
+	}
+}
+
+// Build the taxonomy query. Region (defaultLocation) and the context term are
+// separate clauses joined with AND, so a house must match both.
+$tax_query = array();
+
 if ( ! empty( $attributes['defaultLocation'] ) ) {
-	$args['tax_query'] = array(
-		array(
-			'taxonomy' => 'location',
-			'field'    => 'term_id',
-			'terms'    => $attributes['defaultLocation'],
-		),
+	$tax_query[] = array(
+		'taxonomy' => 'location',
+		'field'    => 'term_id',
+		'terms'    => $attributes['defaultLocation'],
 	);
+}
+
+if ( ! empty( $context_taxonomy ) && ! empty( $context_term ) ) {
+	$tax_query[] = array(
+		'taxonomy' => $context_taxonomy,
+		'field'    => 'term_id',
+		'terms'    => $context_term,
+	);
+}
+
+if ( ! empty( $tax_query ) ) {
+	if ( count( $tax_query ) > 1 ) {
+		$tax_query['relation'] = 'AND';
+	}
+	$args['tax_query'] = $tax_query;
 }
 
 $query = new WP_Query( $args );
@@ -59,6 +90,8 @@ $context = wp_json_encode(
 	array(
 		'blockId'         => $attributes['blockId'],
 		'defaultLocation' => $attributes['defaultLocation'] ?? '',
+		'contextTaxonomy' => $context_taxonomy,
+		'contextTerm'     => $context_term ? $context_term : '',
 		'isLoadingMore'   => false,
 	)
 );

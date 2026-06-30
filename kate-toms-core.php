@@ -172,7 +172,7 @@ function kate_toms_replace_image_srcset_url( $image, $attachment_id, $size, $ico
 	}
 	return $image;
 }
-add_filter( 'wp_get_attachment_image_src', 'kate_toms_replace_image_srcset_url', 10, 4 );
+//add_filter( 'wp_get_attachment_image_src', 'kate_toms_replace_image_srcset_url', 10, 4 );
 
 function kate_toms_calculate_image_srcset ( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
 	if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'staging' ) {
@@ -191,7 +191,7 @@ function kate_toms_calculate_image_srcset ( $sources, $size_array, $image_src, $
 	return $sources;
 }
 
-add_filter( 'wp_calculate_image_srcset', 'kate_toms_calculate_image_srcset', 10, 5 );
+//add_filter( 'wp_calculate_image_srcset', 'kate_toms_calculate_image_srcset', 10, 5 );
 
 // Register button form extension
 function register_button_form_extension() {

@@ -84,6 +84,16 @@ async function loadMoreFor( region, context ) {
 			params.append( 'default_location', defaultLocation );
 		}
 
+		// On taxonomy archives the region is further constrained to the archived
+		// term so appended pages stay filtered the same way as page 1.
+		if ( regionContext.contextTaxonomy && regionContext.contextTerm ) {
+			params.append( 'context_taxonomy', regionContext.contextTaxonomy );
+			params.append(
+				'context_term',
+				regionContext.contextTerm.toString()
+			);
+		}
+
 		params.append( 'page', nextPage );
 		params.append( 'per_page', perPage );
 
@@ -219,6 +229,16 @@ const { actions, callbacks } = store( 'kate-toms-house-filter', {
 				}
 				if ( defaultLocation ) {
 					params.append( 'default_location', defaultLocation );
+				}
+				if ( context.contextTaxonomy && context.contextTerm ) {
+					params.append(
+						'context_taxonomy',
+						context.contextTaxonomy
+					);
+					params.append(
+						'context_term',
+						context.contextTerm.toString()
+					);
 				}
 
 				const apiUrl = `/wp-json/kate-toms/v1/houses?${ params.toString() }`;

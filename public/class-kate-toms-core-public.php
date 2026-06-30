@@ -194,7 +194,7 @@ class Kate_Toms_Core_Public {
 	 * @return void
 	 */
 	public function kt_facebook_pixel_header_code() {
-		echo "<!-- Facebook Pixel Code -->
+		echo "<!-- Meta Pixel Code -->
 		<script>
 		!function(f,b,e,v,n,t,s)
 		{if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -204,13 +204,13 @@ class Kate_Toms_Core_Public {
 		t.src=v;s=b.getElementsByTagName(e)[0];
 		s.parentNode.insertBefore(t,s)}(window, document,'script',
 		'https://connect.facebook.net/en_US/fbevents.js');
-		fbq('init', '868590816927957');
+		fbq('init', '1409335782416862');
 		fbq('track', 'PageView');
 		</script>
 		<noscript><img height='1' width='1' style='display:none'
-		src='https://www.facebook.com/tr?id=868590816927957&ev=PageView&noscript=1'
+		src='https://www.facebook.com/tr?id=1409335782416862&ev=PageView&noscript=1'
 		/></noscript>
-		<!-- End Facebook Pixel Code -->";
+		<!-- End Meta Pixel Code -->";
 	}
 
 	/**

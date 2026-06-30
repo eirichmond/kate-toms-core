@@ -9,6 +9,12 @@
 		"defaultLocation": {
 			"type": "number"
 		},
+		"contextTaxonomy": {
+			"type": "string"
+		},
+		"contextTerm": {
+			"type": "number"
+		},
 		"blockId": {
 			"type": "string"
 		}

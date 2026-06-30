@@ -108,6 +108,12 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-core-loader.php';
 
 		/**
+		 * Region section configuration helper (shared by the houses archive /
+		 * taxonomy templates and the taxonomy term-sections block).
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/region-sections.php';
+
+		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
@@ -246,7 +252,7 @@ class Kate_Toms_Core {
 		$this->loader->add_action( 'wp_footer', $plugin_public, 'linkedin_script' );
 
 
-		$this->loader->add_filter( 'wp_calculate_image_srcset', $plugin_public, 'kate_toms_replace_image_srcset_url', 10, 5 );
+		//$this->loader->add_filter( 'wp_calculate_image_srcset', $plugin_public, 'kate_toms_replace_image_srcset_url', 10, 5 );
 		$this->loader->add_filter( 'get_terms', $plugin_public, 'filter_bedroom_terms', 10, 3 );
 
 		// Mobile Nav Drilldown enhancement — register assets on init, then

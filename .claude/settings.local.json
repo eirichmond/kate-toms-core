@@ -12,7 +12,12 @@
       "Bash(grep -n \"existingWrapper\\\\|querySelector.*CHEVRON_CLASS.*\\\\`\\\\s*\\)\\\\|childPanelCache.get\" blocks/mobile-nav-drilldown/view.js)",
       "Bash(npx playwright:*)",
       "Bash(curl -sk \"https://kateandtomsblocks.test/wp-content/plugins/kate-toms-core/build/mobile-nav-drilldown/style-view.css?ver=580c955dbe3be9f2d3b0\")",
-      "Bash(curl -sk \"https://kateandtomsblocks.test/wp-content/plugins/kate-toms-core/build/mobile-nav-drilldown/view.js?ver=580c955dbe3be9f2d3b0\")"
+      "Bash(curl -sk \"https://kateandtomsblocks.test/wp-content/plugins/kate-toms-core/build/mobile-nav-drilldown/view.js?ver=580c955dbe3be9f2d3b0\")",
+      "Bash(git -C /Users/elliottrichmond/Documents/Sites/kateandtomsblocks/wp-content/plugins/kate-toms-core checkout main)",
+      "Bash(git pull *)",
+      "Bash(git -C /Users/elliottrichmond/Documents/Sites/kateandtomsblocks/wp-content/plugins/kate-toms-core fetch origin)",
+      "Bash(git -C /Users/elliottrichmond/Documents/Sites/kateandtomsblocks/wp-content/plugins/kate-toms-core branch -r)",
+      "Bash(git *)"
     ],
     "deny": []
   }

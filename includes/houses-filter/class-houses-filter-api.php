@@ -53,6 +53,14 @@ class Houses_Filter_API {
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+					'context_taxonomy' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_key',
+					),
+					'context_term' => array(
+						'type'              => 'string',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 					'page'    => array(
 						'type'              => 'integer',
 						'default'           => 1,
@@ -278,6 +286,17 @@ class Houses_Filter_API {
 				'taxonomy' => 'feature',
 				'field'    => 'term_id',
 				'terms'    => $params['feature'],
+			);
+		}
+
+		// Context term: on taxonomy archives the houses-filtered-results block
+		// forwards the archived term so appended pages stay constrained to both
+		// the region (default_location, above) AND the archived term.
+		if ( ! empty( $params['context_taxonomy'] ) && ! empty( $params['context_term'] ) ) {
+			$tax_query[] = array(
+				'taxonomy' => $params['context_taxonomy'],
+				'field'    => 'term_id',
+				'terms'    => (int) $params['context_term'],
 			);
 		}
 
