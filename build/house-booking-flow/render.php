@@ -42,6 +42,11 @@ $wrapper_attributes = get_block_wrapper_attributes([
 // Get iPro Property ID for the house
 $property_id = get_post_meta( $post->post_parent, 'ipro_property_id', true );
 
+// reCAPTCHA v2 site key for the view script. The reCAPTCHA API (api.js) is
+// loaded globally by the get-in-touch plugin; view.js renders the checkbox
+// widget into the booking form and its token is verified server-side.
+$recaptcha_site_key = defined( 'GRCKEY' ) ? GRCKEY : '';
+
 // Pass data to JavaScript
 $js_data = [
 	'dateParam' => $date_param,
@@ -52,6 +57,7 @@ $js_data = [
 	'ajaxUrl' => admin_url( 'admin-ajax.php' ),
 	'nonce' => wp_create_nonce( 'house_booking_nonce' ),
 	'blockId' => $block_id,
+	'recaptchaSiteKey' => $recaptcha_site_key,
 ];
 
 $script_handle = 'kate-toms-core-house-booking-flow-view-script';

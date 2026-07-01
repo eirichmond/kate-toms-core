@@ -1876,6 +1876,36 @@ class House_Calendar_Manager {
 	}
 
 	/**
+	 * Verify a Google reCAPTCHA v2 token against the siteverify endpoint.
+	 *
+	 * Success-only check, matching the get-in-touch form handling. Uses the
+	 * shared GRCSECRET secret key.
+	 *
+	 * @param string $token The g-recaptcha-response token from the client.
+	 * @return bool True if Google reports success, false otherwise.
+	 */
+	private function verify_recaptcha( $token ) {
+		$response = wp_remote_post(
+			'https://www.google.com/recaptcha/api/siteverify',
+			array(
+				'body' => array(
+					'secret'   => GRCSECRET,
+					'response' => $token,
+				),
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			error_log( 'reCAPTCHA siteverify request failed: ' . $response->get_error_message() );
+			return false;
+		}
+
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+		return ! empty( $body['success'] );
+	}
+
+	/**
 	 * AJAX handler for booking enquiry submission.
 	 */
 	public function submit_booking_enquiry_callback() {
@@ -1883,6 +1913,18 @@ class House_Calendar_Manager {
 		if ( ! wp_verify_nonce( $_POST['nonce'], 'house_booking_nonce' ) ) {
 			wp_send_json_error( 'Invalid security token' );
 			return;
+		}
+
+		// Verify Google reCAPTCHA (when configured) before touching the CRM.
+		if ( defined( 'GRCSECRET' ) && GRCSECRET ) {
+			$recaptcha_token = isset( $_POST['g-recaptcha-response'] )
+				? sanitize_text_field( wp_unslash( $_POST['g-recaptcha-response'] ) )
+				: '';
+
+			if ( '' === $recaptcha_token || ! $this->verify_recaptcha( $recaptcha_token ) ) {
+				wp_send_json_error( 'reCAPTCHA verification failed. Please try again.' );
+				return;
+			}
 		}
 
 		// Sanitize all form fields using the field names expected by the iPro API
