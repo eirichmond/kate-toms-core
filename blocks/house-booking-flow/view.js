@@ -590,6 +590,8 @@ class HouseBookingFlow {
 							<input type="hidden" name="post_id" value="${ this.config.houseId }">
 						</div>
 						
+						<div class="booking-recaptcha" style="margin: 15px 0;"></div>
+
 						<div class="form-actions">
 							<button type="button" class="btn btn-secondary" id="back-to-step1">
 								← Back to Period Selection
@@ -638,6 +640,54 @@ class HouseBookingFlow {
 				}
 			} );
 		}
+
+		// Render the reCAPTCHA v2 checkbox widget.
+		this.renderRecaptcha();
+	}
+
+	renderRecaptcha() {
+		this.recaptchaWidgetId = null;
+
+		const siteKey = this.config.recaptchaSiteKey;
+		const container = this.containerEl.querySelector( '.booking-recaptcha' );
+		if ( ! siteKey || ! container ) {
+			return;
+		}
+
+		// The reCAPTCHA API (api.js) is loaded globally by the get-in-touch
+		// plugin, but may not be ready the instant this step renders. Wait for it.
+		const tryRender = ( attempts ) => {
+			if (
+				typeof window.grecaptcha !== 'undefined' &&
+				typeof window.grecaptcha.render === 'function'
+			) {
+				try {
+					this.recaptchaWidgetId = window.grecaptcha.render( container, {
+						sitekey: siteKey,
+					} );
+				} catch ( e ) {
+					// Already rendered into this container; ignore.
+				}
+			} else if ( attempts < 40 ) {
+				setTimeout( () => tryRender( attempts + 1 ), 100 );
+			}
+		};
+		tryRender( 0 );
+	}
+
+	resetRecaptcha() {
+		if (
+			this.recaptchaWidgetId !== null &&
+			this.recaptchaWidgetId !== undefined &&
+			typeof window.grecaptcha !== 'undefined' &&
+			typeof window.grecaptcha.reset === 'function'
+		) {
+			try {
+				window.grecaptcha.reset( this.recaptchaWidgetId );
+			} catch ( e ) {
+				// Widget no longer present; ignore.
+			}
+		}
 	}
 
 	goBackToStep1() {
@@ -657,6 +707,39 @@ class HouseBookingFlow {
 			return;
 		}
 
+		// reCAPTCHA: require a completed checkbox when a site key is configured.
+		const siteKey = this.config.recaptchaSiteKey;
+		const recaptchaContainer =
+			this.containerEl.querySelector( '.booking-recaptcha' );
+		const priorRecaptchaError = recaptchaContainer
+			? recaptchaContainer.querySelector( '.recaptcha-error' )
+			: null;
+		if ( priorRecaptchaError ) {
+			priorRecaptchaError.remove();
+		}
+
+		let recaptchaToken = '';
+		if (
+			siteKey &&
+			typeof window.grecaptcha !== 'undefined' &&
+			this.recaptchaWidgetId !== null &&
+			this.recaptchaWidgetId !== undefined
+		) {
+			recaptchaToken = window.grecaptcha.getResponse(
+				this.recaptchaWidgetId
+			);
+		}
+		if ( siteKey && ! recaptchaToken ) {
+			// Inline error keeps the form (and widget) visible for retry.
+			if ( recaptchaContainer ) {
+				const err = document.createElement( 'p' );
+				err.className = 'field-error recaptcha-error';
+				err.textContent = 'Please confirm you are not a robot.';
+				recaptchaContainer.appendChild( err );
+			}
+			return;
+		}
+
 		// Show loading state
 		this.showStep2Loading();
 
@@ -667,7 +750,14 @@ class HouseBookingFlow {
 		formData.append( 'checkin_date', this.config.dateParam );
 		formData.append( 'nonce', this.config.nonce );
 
-		// Submit form
+		if ( recaptchaToken ) {
+			formData.append( 'g-recaptcha-response', recaptchaToken );
+		}
+
+		this.submitBooking( formData );
+	}
+
+	submitBooking( formData ) {
 		fetch( this.config.ajaxUrl, {
 			method: 'POST',
 			body: formData,
@@ -678,6 +768,8 @@ class HouseBookingFlow {
 					// this.renderStep3( data.data );
 					window.location.href = '/thank-you';
 				} else {
+					// reCAPTCHA tokens are single-use; reset for retry.
+					this.resetRecaptcha();
 					this.showStep2Error(
 						data.data ||
 							'Unable to submit booking enquiry. Please try again.'
@@ -686,6 +778,7 @@ class HouseBookingFlow {
 			} )
 			.catch( ( error ) => {
 				console.error( 'Booking submission error:', error );
+				this.resetRecaptcha();
 				this.showStep2Error(
 					'Failed to submit booking enquiry. Please check your connection and try again.'
 				);
