@@ -55,6 +55,7 @@ class Autocomplete_Search_API {
 		$houses_query = new WP_Query(
 			array(
 				'post_type'      => 'houses',
+				'post_parent'    => 0,
 				'posts_per_page' => -1,
 				'post_status'    => 'publish',
 				'meta_key'       => 'sleeps_max',
