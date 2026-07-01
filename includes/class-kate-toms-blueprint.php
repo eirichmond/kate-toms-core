@@ -229,16 +229,18 @@ class Kate_Toms_Blueprint {
 	}
 
 	/**
-	 * Registers the crm_house_id post meta field on the houses post type.
+	 * Registers the ipro_property_id post meta field on the houses post type.
 	 *
-	 * Exposed via REST so the block editor and API consumers can read it.
+	 * Stores the iPro PropertyId (the value the booking enquiry API's
+	 * `&propertyids=` parameter needs). Exposed via REST so the block editor
+	 * and API consumers can read it.
 	 *
 	 * @return void
 	 */
 	public function register_meta(): void {
 		register_post_meta(
 			'houses',
-			'crm_house_id',
+			'ipro_property_id',
 			array(
 				'type'          => 'integer',
 				'single'        => true,
@@ -400,7 +402,7 @@ class Kate_Toms_Blueprint {
 	 * Inserts the parent Houses draft post and saves CRM meta.
 	 *
 	 * @param string $title  Post title (display title).
-	 * @param int    $crm_id CRM property ID to store as crm_house_id meta.
+	 * @param int    $crm_id iPro PropertyId to store as ipro_property_id meta.
 	 *
 	 * @return int|WP_Error New post ID on success, WP_Error on failure.
 	 */
@@ -419,7 +421,7 @@ class Kate_Toms_Blueprint {
 			return $post_id;
 		}
 
-		update_post_meta( $post_id, 'crm_house_id', $crm_id );
+		update_post_meta( $post_id, 'ipro_property_id', $crm_id );
 
 		return $post_id;
 	}
