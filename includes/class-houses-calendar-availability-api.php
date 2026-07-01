@@ -1829,29 +1829,26 @@ class House_Calendar_Manager {
 	}
 
 	/**
-	 * Get iPro PropertyId from WordPress house post ID using the reflookup API.
+	 * Get iPro PropertyId for a house from its ipro_property_id post meta.
 	 *
-	 * @param int $wp_house_id WordPress post ID
-	 * @return string|false iPro PropertyId or false if not found
+	 * The ipro_property_id meta is the single source of truth, populated by the
+	 * backfill CLI and the Blueprint at house creation. This replaces the previous
+	 * property-mapping reflookup (post ID = PropertyReference), which depended on
+	 * a live API call and on legacy post IDs matching PropertyReferences — an
+	 * assumption that does not hold for Blueprint-created houses.
+	 *
+	 * @param int $wp_house_id WordPress post ID of the parent house.
+	 * @return string|false iPro PropertyId, or false if the meta is not set.
 	 */
 	private function get_property_id_from_wp_house_id( $wp_house_id ) {
-		// Get property mapping from API (cached)
-		$property_mapping = $this->get_cached_property_mapping();
-		if ( ! $property_mapping ) {
+		$property_id = get_post_meta( (int) $wp_house_id, 'ipro_property_id', true );
+
+		if ( '' === $property_id || null === $property_id ) {
+			error_log( "No ipro_property_id set for WordPress house ID: {$wp_house_id}" );
 			return false;
 		}
 
-		// Search for PropertyReference matching the WordPress post ID
-		foreach ( $property_mapping as $property ) {
-			if ( isset( $property['PropertyReference'] ) &&
-				(int) $property['PropertyReference'] === $wp_house_id ) {
-
-				return isset( $property['PropertyId'] ) ? (string) $property['PropertyId'] : false;
-			}
-		}
-
-		error_log( "No iPro PropertyId found for WordPress house ID: {$wp_house_id}" );
-		return false;
+		return (string) $property_id;
 	}
 
 	/**
