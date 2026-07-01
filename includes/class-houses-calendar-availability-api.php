@@ -2021,9 +2021,21 @@ class House_Calendar_Manager {
 		$get_in_touch_public = new Kate_And_Toms_Get_In_Touch_Public( '', '' );
 
 		// Use the plugin's helper methods if available
-		$duration     = $get_in_touch_public->resolve_booking_period( $post_data['period'] );
-		$enddate      = date( 'Y-m-d', strtotime( $post_data['date_from'] . ' + ' . $duration . 'days' ) );
-		$property_id  = $get_in_touch_public->ipro_reflookup_callback( $post_data['post_id'] );
+		$duration = $get_in_touch_public->resolve_booking_period( $post_data['period'] );
+		$enddate  = date( 'Y-m-d', strtotime( $post_data['date_from'] . ' + ' . $duration . 'days' ) );
+
+		// Resolve the iPro PropertyId from the ipro_property_id meta on the parent
+		// house. This is the single source of truth, populated by the backfill CLI
+		// and the Blueprint at house creation. The legacy availability_site_post_id
+		// reflookup is intentionally NOT used: its references are stale and resolve
+		// to wrong/withdrawn PropertyIds.
+		$house_id    = (int) $post_data['post_id'];
+		$property_id = get_post_meta( $house_id, 'ipro_property_id', true );
+
+		if ( '' === $property_id || null === $property_id ) {
+			throw new Exception( 'This house has no ipro_property_id configured; cannot submit the booking to the CRM.' );
+		}
+
 		$access_token = $get_in_touch_public->generate_access_token();
 
 		// Build the same message format as original
