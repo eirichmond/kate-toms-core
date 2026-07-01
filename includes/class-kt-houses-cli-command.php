@@ -50,22 +50,27 @@ class KT_Houses_CLI_Command extends WP_CLI_Command {
 	 * : Also update houses that already have a non-empty ipro_property_id.
 	 *
 	 * [--refresh]
-	 * : Bypass the 24-hour CRM properties cache and fetch a fresh list.
+	 * : Bypass the CRM properties cache (and the property-mapping cache when combined with --from-mapping) and fetch fresh.
+	 *
+	 * [--from-mapping]
+	 * : For houses name-matching cannot resolve, fall back to the iPro property mapping (post ID = PropertyReference) via House_Calendar_Manager.
 	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp kt-houses backfill-ipro-property-id --dry-run
-	 *     wp kt-houses backfill-ipro-property-id
+	 *     wp kt-houses backfill-ipro-property-id --from-mapping --dry-run
+	 *     wp kt-houses backfill-ipro-property-id --from-mapping
 	 *
 	 * @subcommand backfill-ipro-property-id
 	 *
 	 * @param array $args       Positional arguments (unused).
-	 * @param array $assoc_args Associative arguments: dry-run, overwrite, refresh.
+	 * @param array $assoc_args Associative arguments: dry-run, overwrite, refresh, from-mapping.
 	 */
 	public function backfill_ipro_property_id( $args, $assoc_args ) {
-		$dry_run   = isset( $assoc_args['dry-run'] );
-		$overwrite = isset( $assoc_args['overwrite'] );
-		$refresh   = isset( $assoc_args['refresh'] );
+		$dry_run      = isset( $assoc_args['dry-run'] );
+		$overwrite    = isset( $assoc_args['overwrite'] );
+		$refresh      = isset( $assoc_args['refresh'] );
+		$from_mapping = isset( $assoc_args['from-mapping'] );
 
 		if ( ! class_exists( 'Kate_Toms_Blueprint_CRM_API' ) ) {
 			WP_CLI::error( 'Kate_Toms_Blueprint_CRM_API class not found.' );
@@ -108,11 +113,32 @@ class KT_Houses_CLI_Command extends WP_CLI_Command {
 			return;
 		}
 
-		// 3. Match and (optionally) write.
+		// 3. Optionally prepare the post-ID -> PropertyId mapping resolver, used
+		// as a fallback for houses that name-matching cannot resolve.
+		$mapping_resolver = null;
+		if ( $from_mapping ) {
+			if ( ! class_exists( 'House_Calendar_Manager' ) ) {
+				WP_CLI::error( 'House_Calendar_Manager class not found; cannot use --from-mapping.' );
+			}
+			if ( $refresh ) {
+				delete_transient( 'kt_property_mapping' );
+			}
+			$manager = new House_Calendar_Manager();
+			$method  = new ReflectionMethod( 'House_Calendar_Manager', 'get_property_id_from_wp_house_id' );
+			$method->setAccessible( true );
+			$mapping_resolver = static function ( int $house_id ) use ( $manager, $method ): int {
+				$pid = $method->invoke( $manager, $house_id );
+				return ( false === $pid || '' === $pid ) ? 0 : (int) $pid;
+			};
+			WP_CLI::log( 'Mapping fallback enabled (post ID = PropertyReference lookup).' );
+		}
+
+		// 4. Match and (optionally) write.
 		$updated   = array();
 		$skipped   = 0;
 		$unmatched = array();
 		$ambiguous = array();
+		$mapped    = 0; // Count filled via the post-ID mapping fallback.
 
 		foreach ( $houses as $house_id ) {
 			$title    = get_the_title( $house_id );
@@ -123,34 +149,52 @@ class KT_Houses_CLI_Command extends WP_CLI_Command {
 				continue;
 			}
 
-			$key = self::normalise_name( $title );
+			$key           = self::normalise_name( $title );
+			$candidate_ids = ( '' !== $key && isset( $name_index[ $key ] ) )
+				? array_values( array_unique( $name_index[ $key ] ) )
+				: array();
 
-			if ( '' === $key || ! isset( $name_index[ $key ] ) ) {
-				$unmatched[] = array(
-					'ID'    => $house_id,
-					'title' => $title,
-				);
+			$property_id = 0;
+			$source      = '';
+
+			if ( 1 === count( $candidate_ids ) ) {
+				$property_id = (int) $candidate_ids[0];
+				$source      = 'name';
+			} elseif ( null !== $mapping_resolver ) {
+				// Name match absent or ambiguous — try the post-ID mapping.
+				$mapped_id = $mapping_resolver( (int) $house_id );
+				if ( $mapped_id > 0 ) {
+					$property_id = $mapped_id;
+					$source      = 'mapping';
+				}
+			}
+
+			if ( $property_id <= 0 ) {
+				if ( count( $candidate_ids ) > 1 ) {
+					$ambiguous[] = array(
+						'ID'           => $house_id,
+						'title'        => $title,
+						'property_ids' => implode( ', ', $candidate_ids ),
+					);
+				} else {
+					$unmatched[] = array(
+						'ID'    => $house_id,
+						'title' => $title,
+					);
+				}
 				continue;
 			}
 
-			$candidate_ids = array_values( array_unique( $name_index[ $key ] ) );
-
-			if ( count( $candidate_ids ) > 1 ) {
-				$ambiguous[] = array(
-					'ID'           => $house_id,
-					'title'        => $title,
-					'property_ids' => implode( ', ', $candidate_ids ),
-				);
-				continue;
+			if ( 'mapping' === $source ) {
+				++$mapped;
 			}
-
-			$property_id = $candidate_ids[0];
 
 			$updated[] = array(
 				'ID'          => $house_id,
 				'title'       => $title,
-				'property_id' => $property_id,
 				'was'         => '' === $existing ? '(empty)' : $existing,
+				'property_id' => $property_id,
+				'source'      => $source,
 			);
 
 			if ( ! $dry_run ) {
@@ -158,10 +202,10 @@ class KT_Houses_CLI_Command extends WP_CLI_Command {
 			}
 		}
 
-		// 4. Report.
+		// 5. Report.
 		if ( ! empty( $updated ) ) {
 			WP_CLI::log( "\n" . ( $dry_run ? 'Would update:' : 'Updated:' ) );
-			WP_CLI\Utils\format_items( 'table', $updated, array( 'ID', 'title', 'was', 'property_id' ) );
+			WP_CLI\Utils\format_items( 'table', $updated, array( 'ID', 'title', 'was', 'property_id', 'source' ) );
 		}
 
 		if ( ! empty( $ambiguous ) ) {
@@ -175,9 +219,11 @@ class KT_Houses_CLI_Command extends WP_CLI_Command {
 		}
 
 		$summary = sprintf(
-			'%s %d, ambiguous %d, unmatched %d, already-set skipped %d, of %d parent houses.',
+			'%s %d (name %d, mapping %d), ambiguous %d, unmatched %d, already-set skipped %d, of %d parent houses.',
 			$dry_run ? 'Would update' : 'Updated',
 			count( $updated ),
+			count( $updated ) - $mapped,
+			$mapped,
 			count( $ambiguous ),
 			count( $unmatched ),
 			$skipped,
