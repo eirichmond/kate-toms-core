@@ -11,7 +11,7 @@ The Blueprint feature adds a React-powered admin wizard under the Houses CPT men
 
 - Allow non-technical staff to onboard a new house without developer involvement
 - Ensure consistent page structure and pattern placement across all properties
-- Store the CRM house ID (`crm_house_id`) on the parent post so blocks and APIs can reference it
+- Store the iPro PropertyId (`ipro_property_id`) on the parent post so blocks and APIs can reference it
 - Make the pattern-per-page configuration developer-maintainable via a PHP array, without touching the wizard UI
 
 ## Non-Goals
@@ -54,9 +54,9 @@ The Blueprint feature adds a React-powered admin wizard under the Houses CPT men
 
 | Meta key | Value |
 |---|---|
-| `crm_house_id` | CRM integer ID pulled from the API |
+| `ipro_property_id` | iPro PropertyId pulled from the API (used by the booking enquiry `&propertyids=`) |
 
-> **Retrospective note**: Existing block settings that reference `houseID` (e.g. House Calendar Availability block) should be migrated to read from `crm_house_id` post meta as a follow-up task. This is out of scope for the Blueprint prototype.
+> **Retrospective note**: Existing block settings that reference `houseID` (e.g. House Calendar Availability block) should be migrated to read from `ipro_property_id` post meta as a follow-up task. This is out of scope for the Blueprint prototype.
 
 **Child page slugs (fixed):**
 
@@ -156,7 +156,7 @@ private static array $blueprint_pages = [
 - Triggered by `POST /wp-json/kate-toms-core/v1/blueprint/create`
 - Request body: `{ crm_id, display_title }`
 - Server creates posts in order: parent first, then children
-- `crm_house_id` meta saved on parent post
+- `ipro_property_id` meta saved on parent post
 - Each post's `post_content` is assembled by loading the registered block patterns for that page and serialising them via `WP_Block_Patterns_Registry` + `serialize_blocks()`
 - All posts created with `post_status: draft`
 - Response returns an array of created post IDs and edit URLs
@@ -229,4 +229,4 @@ None for prototype. Could add `wp blueprint create --crm-id=123 --title="House N
 2. **Duplicate override behaviour**: When staff acknowledge a duplicate and choose to proceed, should the wizard append a suffix (e.g. `- Copy`) to the display title, or create the post with the exact same title and let WordPress handle the slug deduplication? Defer to implementation.
 3. ~~**Child page post type**~~ — resolved: all child posts use `houses` post type with `post_parent` set to the parent houses post ID.
 4. **Pattern injection method**: Confirm that `WP_Block_Patterns_Registry::get_instance()->get_registered( $slug )` is available in this WordPress version and returns serialisable block content, or whether patterns need to be loaded directly from the theme PHP files.
-5. **`houseID` migration**: Blocks currently reference `houseID` as a block attribute/setting rather than reading post meta. The migration to `crm_house_id` post meta is explicitly out of scope for this prototype but should be tracked as a follow-up task.
+5. **`houseID` migration**: Blocks currently reference `houseID` as a block attribute/setting rather than reading post meta. The migration to `ipro_property_id` post meta is explicitly out of scope for this prototype but should be tracked as a follow-up task.
