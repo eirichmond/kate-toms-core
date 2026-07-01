@@ -165,6 +165,25 @@ class Kate_Toms_Blueprint_CRM_API {
 	}
 
 	/**
+	 * Returns the active CRM properties list (public accessor).
+	 *
+	 * Exposes the same filtered, cached list used by search_houses() so other
+	 * callers (e.g. the ipro_property_id backfill CLI command) can match houses
+	 * against the CRM without duplicating the fetch/filter/cache logic.
+	 *
+	 * @param bool $force_refresh When true, bypass the transient and fetch fresh.
+	 *
+	 * @return array Array of active raw property objects from the CRM, or empty on failure.
+	 */
+	public function get_properties( bool $force_refresh = false ): array {
+		if ( $force_refresh ) {
+			delete_transient( $this->properties_transient_key );
+		}
+
+		return $this->get_all_properties();
+	}
+
+	/**
 	 * Returns the full CRM properties list, using a 24-hour transient cache.
 	 *
 	 * The initial fetch is slow (~60s) due to response size. After that, results
