@@ -261,7 +261,7 @@ class House_Calendar_Manager {
 		$rates_data        = $this->fetch_rates_data( $house_id, $access_token );
 
 		// Debug: Log raw API responses
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( $this->calendar_debug_enabled() ) {
 			error_log( 'Raw availability data: ' . print_r( $availability_data, true ) );
 			error_log( 'Raw rates data: ' . print_r( $rates_data, true ) );
 		}
@@ -281,7 +281,7 @@ class House_Calendar_Manager {
 		$calendar_data = $this->process_kt_calendar_data( $availability_data, $rates_data );
 
 		// TEMPORARY DEBUG: Return raw data to see what we're getting
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( $this->calendar_debug_enabled() ) {
 			$calendar_data['debug_raw_availability'] = $availability_data;
 			$calendar_data['debug_raw_rates']        = $rates_data;
 		}
@@ -290,6 +290,21 @@ class House_Calendar_Manager {
 		set_transient( $transient_key, $calendar_data, $this->cache_duration );
 
 		return $calendar_data;
+	}
+
+	/**
+	 * Whether verbose calendar debug logging is enabled.
+	 *
+	 * Gated behind its own constant rather than WP_DEBUG: the per-house,
+	 * per-week and per-day calendar logs are extremely high volume (the
+	 * `wp kt-cache warm` cron loops every published house) and were
+	 * flooding the debug log to hundreds of MB whenever WP_DEBUG was on.
+	 * Define KT_CALENDAR_DEBUG as true in wp-config.php to re-enable them.
+	 *
+	 * @return bool
+	 */
+	private function calendar_debug_enabled() {
+		return defined( 'KT_CALENDAR_DEBUG' ) && KT_CALENDAR_DEBUG;
 	}
 
 	/**
@@ -303,7 +318,7 @@ class House_Calendar_Manager {
 		// Initialize temporary storage for raw availability statuses
 		// Build a flat array of all raw statuses BEFORE processing
 		// This allows us to check adjacent day statuses during processing.
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( $this->calendar_debug_enabled() ) {
 			error_log( 'Processing rates structure: ' . print_r( array_keys( $rates ), true ) );
 		}
 
@@ -323,7 +338,7 @@ class House_Calendar_Manager {
 		);
 
 		// Debug: Log what we're processing
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( $this->calendar_debug_enabled() ) {
 			error_log( 'Processing availability structure: ' . print_r( array_keys( $availability ), true ) );
 			error_log( 'Processing rates structure: ' . print_r( array_keys( $rates ), true ) );
 		}
@@ -403,7 +418,7 @@ class House_Calendar_Manager {
 		}
 
 		// Debug: Log final processed counts
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( $this->calendar_debug_enabled() ) {
 			error_log( 'Processed availability days: ' . count( $processed_data['availability'] ) );
 			error_log( 'Processed rate periods: ' . count( $processed_data['rates'] ) );
 		}
@@ -444,7 +459,7 @@ class House_Calendar_Manager {
 		$cap_year   = (int) $parts[0];
 		$cap_month  = (int) $parts[1];
 
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		if ( $this->calendar_debug_enabled() ) {
 			error_log( "Capping availability to last rate month: {$last_rate_month}" );
 		}
 
@@ -624,7 +639,7 @@ class House_Calendar_Manager {
 						$processed_rates['weeks'][ $week_commencing ][ $stay_code ] = $processed_rate;
 
 						// Debug logging
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						if ( $this->calendar_debug_enabled() ) {
 							error_log( "Rate validation PASSED: Week {$week_commencing}, Stay {$stay_code}, Type {$processed_rate['type']}" );
 						}
 					} else {
@@ -636,7 +651,7 @@ class House_Calendar_Manager {
 						);
 
 						// Debug logging
-						if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+						if ( $this->calendar_debug_enabled() ) {
 							error_log( "Rate validation FAILED: Week {$week_commencing}, Stay {$stay_code}, Original type {$processed_rate['type']} -> Marked as Booked" );
 						}
 					}
@@ -645,7 +660,7 @@ class House_Calendar_Manager {
 					$processed_rates['weeks'][ $week_commencing ][ $stay_code ] = $processed_rate;
 
 					// Debug logging
-					if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+					if ( $this->calendar_debug_enabled() ) {
 						$reason = $should_validate ? 'no availability data' : 'rate already unavailable/hidden';
 						error_log( "Rate validation SKIPPED: Week {$week_commencing}, Stay {$stay_code}, Reason: {$reason}" );
 					}
@@ -1048,7 +1063,7 @@ class House_Calendar_Manager {
 			if ( 'U' === $status ) {
 				$days[ $day ] = 'B';
 
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				if ( $this->calendar_debug_enabled() ) {
 					error_log( "Normalized unavailable status: Day {$day} changed from U to B" );
 				}
 			}
@@ -1085,7 +1100,7 @@ class House_Calendar_Manager {
 				$days[ $current_key ] = 'B';
 
 				// Debug log if enabled
-				if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				if ( $this->calendar_debug_enabled() ) {
 					error_log( "Fixed sandwiched available day: Day {$current_key} changed from A to B" );
 				}
 			}
@@ -2161,8 +2176,10 @@ class House_Calendar_Manager {
 	 * @param array $booking_data The booking data to store
 	 */
 	private function store_booking_enquiry( $booking_data ) {
-		// For now, just log to debug log if WP_DEBUG is enabled
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+		// Gated behind the calendar debug constant (not WP_DEBUG): this dumps
+		// full booking data, which contains customer PII, so it must not land
+		// in the debug log during normal operation.
+		if ( $this->calendar_debug_enabled() ) {
 			error_log( 'Booking Enquiry Submitted: ' . print_r( $booking_data, true ) );
 		}
 

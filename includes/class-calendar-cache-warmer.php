@@ -129,6 +129,9 @@ class Calendar_Cache_CLI_Command extends WP_CLI_Command {
 			$skipped,
 			$total
 		) );
+
+		wp_mail( 'elliott@squareonemd.co.uk', 'Full warm complete', 'Full warm complete: ' . $warmed . ' properties warmed, ' . $failed . ' properties failed to warm, ' . $skipped . ' properties skipped (of ' . $total . ' houses).' );
+
 	}
 
 	/**
@@ -212,6 +215,8 @@ class Calendar_Cache_CLI_Command extends WP_CLI_Command {
 			$warmed,
 			$failed
 		) );
+
+		wp_mail( 'elliott@squareonemd.co.uk', 'Incremental update', 'Incremental update: checked last ' . $minutes . ' min, ' . count( $rate_changed_ids ) . ' properties changed rates, warmed ' . $warmed . ' properties, failed to warm ' . $failed . ' properties.' );
 	}
 
 	/**

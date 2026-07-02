@@ -21,8 +21,13 @@ const { state } = store( 'kate-toms-core/autocomplete-search', {
 			const context = getContext();
 
 			try {
+				// Omit credentials so WordPress treats this as an anonymous
+				// request. Otherwise, logged-in users' auth cookies trigger
+				// the REST cookie-nonce check (rest_cookie_invalid_nonce) and
+				// the request 403s — this endpoint serves only public data.
 				const response = await fetch(
-					'/wp-json/kate-toms/v1/autocomplete-search'
+					'/wp-json/kate-toms/v1/autocomplete-search',
+					{ credentials: 'omit' }
 				);
 				if ( response.ok ) {
 					allResults = await response.json();
