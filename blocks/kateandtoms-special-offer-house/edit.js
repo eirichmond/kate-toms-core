@@ -6,6 +6,7 @@ import {
 	TextControl,
 	Button,
 	DatePicker,
+	ToggleControl,
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
@@ -13,7 +14,8 @@ import ServerSideRender from '@wordpress/server-side-render';
 import { useState, useEffect } from '@wordpress/element';
 
 export default function Edit( { attributes, setAttributes } ) {
-	const { selectedPostId, offer, offerDate } = attributes;
+	const { selectedPostId, offer, offerDate, isPlaceholder, placeholderLocation } =
+		attributes;
 	const [ searchTerm, setSearchTerm ] = useState( '' );
 	const [ showSuggestions, setShowSuggestions ] = useState( false );
 	const [ isSearching, setIsSearching ] = useState( false );
@@ -111,6 +113,62 @@ export default function Edit( { attributes, setAttributes } ) {
 		<>
 			<InspectorControls>
 				<PanelBody title={ __( 'House Settings', 'kate-toms-core' ) }>
+					<ToggleControl
+						label={ __( 'Random Placeholder', 'kate-toms-core' ) }
+						help={ __(
+							'Override the house and show a random advert from the selected location instead.',
+							'kate-toms-core'
+						) }
+						checked={ !! isPlaceholder }
+						onChange={ ( value ) =>
+							setAttributes( { isPlaceholder: value } )
+						}
+					/>
+
+					{ isPlaceholder && (
+						<div style={ { marginTop: '16px' } }>
+							<SelectControl
+								label={ __( 'Location', 'kate-toms-core' ) }
+								value={ placeholderLocation }
+								options={ [
+									{
+										label: __(
+											'Select location…',
+											'kate-toms-core'
+										),
+										value: '',
+									},
+									{
+										label: __(
+											'Cotswolds',
+											'kate-toms-core'
+										),
+										value: 'cotswolds',
+									},
+									{
+										label: __( 'Coast', 'kate-toms-core' ),
+										value: 'coast',
+									},
+									{
+										label: __( 'Country', 'kate-toms-core' ),
+										value: 'country',
+									},
+									{
+										label: __( 'Town', 'kate-toms-core' ),
+										value: 'town',
+									},
+								] }
+								onChange={ ( value ) =>
+									setAttributes( {
+										placeholderLocation: value,
+									} )
+								}
+							/>
+						</div>
+					) }
+
+					{ ! isPlaceholder && (
+					<>
 					<div>
 						<label
 							style={ {
@@ -261,6 +319,8 @@ export default function Edit( { attributes, setAttributes } ) {
 							}
 						/>
 					</div>
+					</>
+					) }
 				</PanelBody>
 			</InspectorControls>
 

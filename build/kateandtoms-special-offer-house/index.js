@@ -43,7 +43,9 @@ function Edit({
   const {
     selectedPostId,
     offer,
-    offerDate
+    offerDate,
+    isPlaceholder,
+    placeholderLocation
   } = attributes;
   const [searchTerm, setSearchTerm] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_6__.useState)('');
   const [showSuggestions, setShowSuggestions] = (0,_wordpress_element__WEBPACK_IMPORTED_MODULE_6__.useState)(false);
@@ -133,104 +135,140 @@ function Edit({
     children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_block_editor__WEBPACK_IMPORTED_MODULE_1__.InspectorControls, {
       children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.PanelBody, {
         title: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('House Settings', 'kate-toms-core'),
-        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
-            style: {
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: 'bold'
-            },
-            children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Search Houses', 'kate-toms-core')
+        children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.ToggleControl, {
+          label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Random Placeholder', 'kate-toms-core'),
+          help: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Override the house and show a random advert from the selected location instead.', 'kate-toms-core'),
+          checked: !!isPlaceholder,
+          onChange: value => setAttributes({
+            isPlaceholder: value
+          })
+        }), isPlaceholder && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+          style: {
+            marginTop: '16px'
+          },
+          children: /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.SelectControl, {
+            label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Location', 'kate-toms-core'),
+            value: placeholderLocation,
+            options: [{
+              label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Select location…', 'kate-toms-core'),
+              value: ''
+            }, {
+              label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Cotswolds', 'kate-toms-core'),
+              value: 'cotswolds'
+            }, {
+              label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Coast', 'kate-toms-core'),
+              value: 'coast'
+            }, {
+              label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Country', 'kate-toms-core'),
+              value: 'country'
+            }, {
+              label: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Town', 'kate-toms-core'),
+              value: 'town'
+            }],
+            onChange: value => setAttributes({
+              placeholderLocation: value
+            })
+          })
+        }), !isPlaceholder && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)(react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.Fragment, {
+          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+              style: {
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 'bold'
+              },
+              children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Search Houses', 'kate-toms-core')
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+              style: {
+                position: 'relative'
+              },
+              children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
+                value: searchTerm,
+                onChange: handleSearchChange,
+                onFocus: handleSearchFocus,
+                onBlur: handleSearchBlur,
+                placeholder: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Type to search houses…', 'kate-toms-core'),
+                help: selectedPostId > 0 ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Click to search for a different house', 'kate-toms-core') : ''
+              }), selectedPostId > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
+                isSmall: true,
+                variant: "secondary",
+                onClick: handleClearSelection,
+                style: {
+                  marginTop: '8px'
+                },
+                children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Clear Selection', 'kate-toms-core')
+              }), showSuggestions && searchResults.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                style: {
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  backgroundColor: 'white',
+                  border: '1px solid #ccc',
+                  borderRadius: '4px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+                  zIndex: 1000,
+                  maxHeight: '200px',
+                  overflowY: 'auto'
+                },
+                children: searchResults.map(house => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
+                  onClick: () => handleHouseSelect(house),
+                  style: {
+                    padding: '8px 12px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #eee',
+                    backgroundColor: selectedPostId === house.id ? '#e6f3ff' : 'white'
+                  },
+                  onMouseEnter: e => e.target.style.backgroundColor = '#f5f5f5',
+                  onMouseLeave: e => e.target.style.backgroundColor = selectedPostId === house.id ? '#e6f3ff' : 'white',
+                  children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
+                    children: house.title.rendered
+                  }), house.meta && house.meta.location_text && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
+                    style: {
+                      fontSize: '12px',
+                      color: '#666',
+                      marginTop: '2px'
+                    },
+                    children: house.meta.location_text
+                  })]
+                }, house.id))
+              })]
+            })]
           }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
             style: {
-              position: 'relative'
+              marginTop: '16px'
             },
-            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
-              value: searchTerm,
-              onChange: handleSearchChange,
-              onFocus: handleSearchFocus,
-              onBlur: handleSearchBlur,
-              placeholder: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Type to search houses…', 'kate-toms-core'),
-              help: selectedPostId > 0 ? (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Click to search for a different house', 'kate-toms-core') : ''
-            }), selectedPostId > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.Button, {
-              isSmall: true,
-              variant: "secondary",
-              onClick: handleClearSelection,
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
               style: {
-                marginTop: '8px'
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 'bold'
               },
-              children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Clear Selection', 'kate-toms-core')
-            }), showSuggestions && searchResults.length > 0 && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-              style: {
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                right: 0,
-                backgroundColor: 'white',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-                zIndex: 1000,
-                maxHeight: '200px',
-                overflowY: 'auto'
-              },
-              children: searchResults.map(house => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-                onClick: () => handleHouseSelect(house),
-                style: {
-                  padding: '8px 12px',
-                  cursor: 'pointer',
-                  borderBottom: '1px solid #eee',
-                  backgroundColor: selectedPostId === house.id ? '#e6f3ff' : 'white'
-                },
-                onMouseEnter: e => e.target.style.backgroundColor = '#f5f5f5',
-                onMouseLeave: e => e.target.style.backgroundColor = selectedPostId === house.id ? '#e6f3ff' : 'white',
-                children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("strong", {
-                  children: house.title.rendered
-                }), house.meta && house.meta.location_text && /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("div", {
-                  style: {
-                    fontSize: '12px',
-                    color: '#666',
-                    marginTop: '2px'
-                  },
-                  children: house.meta.location_text
-                })]
-              }, house.id))
+              children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Offer', 'kate-toms-core')
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
+              value: offer,
+              onChange: value => setAttributes({
+                offer: value
+              }),
+              help: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Enter the special offer text', 'kate-toms-core')
             })]
-          })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-          style: {
-            marginTop: '16px'
-          },
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
             style: {
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: 'bold'
+              marginTop: '16px'
             },
-            children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Offer', 'kate-toms-core')
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.TextControl, {
-            value: offer,
-            onChange: value => setAttributes({
-              offer: value
-            }),
-            help: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Enter the special offer text', 'kate-toms-core')
-          })]
-        }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsxs)("div", {
-          style: {
-            marginTop: '16px'
-          },
-          children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
-            style: {
-              display: 'block',
-              marginBottom: '8px',
-              fontWeight: 'bold'
-            },
-            children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Offer Date', 'kate-toms-core')
-          }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.DatePicker, {
-            currentDate: offerDate,
-            onChange: value => setAttributes({
-              offerDate: value
-            })
+            children: [/*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)("label", {
+              style: {
+                display: 'block',
+                marginBottom: '8px',
+                fontWeight: 'bold'
+              },
+              children: (0,_wordpress_i18n__WEBPACK_IMPORTED_MODULE_0__.__)('Offer Date', 'kate-toms-core')
+            }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_7__.jsx)(_wordpress_components__WEBPACK_IMPORTED_MODULE_2__.DatePicker, {
+              currentDate: offerDate,
+              onChange: value => setAttributes({
+                offerDate: value
+              })
+            })]
           })]
         })]
       })
@@ -379,7 +417,7 @@ module.exports = window["wp"]["serverSideRender"];
   \***********************************************************/
 /***/ ((module) => {
 
-module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"kate-toms-core/kateandtoms-special-offer-house","version":"0.1.0","title":"Kate & Tom\'s Special Offer House","category":"widgets","icon":"admin-home","description":"Display a single house with special offer styling using typeahead search","example":{},"supports":{"html":false,"align":["wide","full"]},"usesContext":[],"textdomain":"kate-toms-core","attributes":{"selectedPostId":{"type":"number","default":0},"offer":{"type":"string","default":""},"offerDate":{"type":"string","default":""}},"editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php"}');
+module.exports = /*#__PURE__*/JSON.parse('{"$schema":"https://schemas.wp.org/trunk/block.json","apiVersion":3,"name":"kate-toms-core/kateandtoms-special-offer-house","version":"0.1.0","title":"Kate & Tom\'s Special Offer House","category":"widgets","icon":"admin-home","description":"Display a single house with special offer styling using typeahead search","example":{},"supports":{"html":false,"align":["wide","full"]},"usesContext":[],"textdomain":"kate-toms-core","attributes":{"selectedPostId":{"type":"number","default":0},"offer":{"type":"string","default":""},"offerDate":{"type":"string","default":""},"isPlaceholder":{"type":"boolean","default":false},"placeholderLocation":{"type":"string","default":""}},"editorScript":"file:./index.js","editorStyle":"file:./index.css","style":"file:./style-index.css","render":"file:./render.php"}');
 
 /***/ })
 

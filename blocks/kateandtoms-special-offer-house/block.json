@@ -26,6 +26,14 @@
 		"offerDate": {
 			"type": "string",
 			"default": ""
+		},
+		"isPlaceholder": {
+			"type": "boolean",
+			"default": false
+		},
+		"placeholderLocation": {
+			"type": "string",
+			"default": ""
 		}
 	},
 	"editorScript": "file:./index.js",

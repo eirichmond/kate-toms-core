@@ -9,6 +9,45 @@
  * @var WP_Block $block      Block instance.
  */
 
+// Random Placeholder mode: override the house entirely and render a single
+// advert card (plain image, no link) filling the same slot. Adverts come from
+// the same location-based system used by houses-filtered-results.
+if ( ! empty( $attributes['isPlaceholder'] ) ) {
+	$placeholder_location = ! empty( $attributes['placeholderLocation'] )
+		? sanitize_key( $attributes['placeholderLocation'] )
+		: '';
+
+	$advert = null;
+	if ( '' !== $placeholder_location && class_exists( 'Kate_Toms_Core_Admin' ) ) {
+		$admin   = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
+		$adverts = $admin->get_adverts_for_location( $placeholder_location, 100 );
+		if ( ! empty( $adverts ) ) {
+			// New random advert each render, hence "Random Placeholder".
+			$advert = $adverts[ array_rand( $adverts ) ];
+		}
+	}
+	?>
+	<div <?php echo wp_kses_post( get_block_wrapper_attributes( array( 'class' => 'wp-block-kate-toms-core-kateandtoms-single-house' ) ) ); ?>>
+		<div class="wp-block-group has-white-background-color has-background special-offer-advert-placeholder" style="min-height:365px;display:flex;overflow:hidden">
+			<?php if ( $advert && ! empty( $advert['image_url'] ) ) : ?>
+				<img src="<?php echo esc_url( $advert['image_url'] ); ?>" alt="Advertisement" style="width:100%;height:100%;min-height:365px;object-fit:cover;display:block;" />
+			<?php elseif ( is_user_logged_in() ) : ?>
+				<p style="margin:auto;padding:20px;text-align:center;color:#721c24;">
+					<?php
+					echo esc_html(
+						'' === $placeholder_location
+							? __( 'Random Placeholder is on — choose a location in the block settings.', 'kate-toms-core' )
+							: __( 'No adverts found for the selected location.', 'kate-toms-core' )
+					);
+					?>
+				</p>
+			<?php endif; ?>
+		</div>
+	</div>
+	<?php
+	return;
+}
+
 // Fallback house ID (Bixley Manor)
 $fallback_house_id = 104964;
 
