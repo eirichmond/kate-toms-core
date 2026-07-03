@@ -17,6 +17,7 @@ $house_id = !empty($attributes['selectedPostId']) ? absint($attributes['selected
 
 // Get offer details from attributes
 $offer = !empty($attributes['offer']) ? sanitize_text_field($attributes['offer']) : '';
+
 $offer_date = !empty($attributes['offerDate']) ? sanitize_text_field($attributes['offerDate']) : '';
 
 // Get the house post
@@ -62,6 +63,7 @@ $special_offer_attributes = [
 global $post;
 $original_post = $post;
 $post = $house_post;
+
 setup_postdata($post);
 
 ?>
@@ -73,8 +75,24 @@ setup_postdata($post);
 		echo $error_message;
 	}
 
-	// Use pattern slug approach like houses-filtered-results does
-	echo do_blocks('<!-- wp:pattern {"slug":"' . $pattern_slug . '"} /-->');
+	// NOTE: We deliberately do NOT render this via
+	// do_blocks('<!-- wp:pattern {"slug":...} /-->'). Core's
+	// WP_Block_Patterns_Registry includes a file-based pattern only once,
+	// caches the resulting content string and unsets its filePath — so the
+	// per-instance offer that this pattern bakes in via the
+	// $special_offer_attributes global would be captured from the FIRST
+	// block on the page and reused for every subsequent one. Instead we
+	// include the pattern file directly so its PHP re-runs for each block
+	// instance with this instance's global set, producing unique output.
+	$pattern_file = get_theme_file_path('patterns/house-card-search-special-offer.php');
+	if (file_exists($pattern_file)) {
+		ob_start();
+		include $pattern_file;
+		echo do_blocks(ob_get_clean());
+	} else {
+		// Fallback to the registered pattern if the file can't be located.
+		echo do_blocks('<!-- wp:pattern {"slug":"' . $pattern_slug . '"} /-->');
+	}
 	?>
 </div>
 

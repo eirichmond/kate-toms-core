@@ -173,7 +173,7 @@ function kate_toms_replace_image_srcset_url( $image, $attachment_id, $size, $ico
 	}
 	return $image;
 }
-//add_filter( 'wp_get_attachment_image_src', 'kate_toms_replace_image_srcset_url', 10, 4 );
+add_filter( 'wp_get_attachment_image_src', 'kate_toms_replace_image_srcset_url', 10, 4 );
 
 function kate_toms_calculate_image_srcset ( $sources, $size_array, $image_src, $image_meta, $attachment_id ) {
 	if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'staging' ) {
@@ -192,7 +192,7 @@ function kate_toms_calculate_image_srcset ( $sources, $size_array, $image_src, $
 	return $sources;
 }
 
-//add_filter( 'wp_calculate_image_srcset', 'kate_toms_calculate_image_srcset', 10, 5 );
+add_filter( 'wp_calculate_image_srcset', 'kate_toms_calculate_image_srcset', 10, 5 );
 
 // Register button form extension
 function register_button_form_extension() {
@@ -416,3 +416,10 @@ function kate_toms_add_image_size_names( $sizes ) {
 }
 add_filter( 'image_size_names_choose', 'kate_toms_add_image_size_names' );
 
+function kate_toms_the_content_filter( $content ) {
+	if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'staging' ) {
+		$content = str_replace( 'https://kateandtomsblocks.test', 'https://kateandtoms.com', $content );
+	}
+	return $content;
+}
+add_filter( 'the_content', 'kate_toms_the_content_filter', 10, 2 );
