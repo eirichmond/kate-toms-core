@@ -11,9 +11,10 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 - [x] **P.1** Create branch — `git checkout -b feature/special-offers-grid` off a clean `main` in `wp-content/plugins/kate-toms-core`.
   - Test: `git branch --show-current` returns `feature/special-offers-grid`; `git status` is clean.
-- [ ] **P.2** Confirm toolchain — `npm install` and `composer install` complete; `npm run build` succeeds on the untouched tree.
+- [x] **P.2** Confirm toolchain — `npm install` and `composer install` complete; `npm run build` succeeds on the untouched tree.
   - Test: `npm run build` exits 0 and `build/` is regenerated.
-- [ ] **P.3** Add a minimal standalone PHPUnit harness (no WordPress bootstrap needed — the ordering helper is pure PHP).
+  - Note: `build/` is TRACKED (not gitignored); a full build churns every block's output. Stage only the relevant block's build files per commit and revert unrelated churn.
+- [x] **P.3** Add a minimal standalone PHPUnit harness (no WordPress bootstrap needed — the ordering helper is pure PHP).
   - What: add `phpunit/phpunit` to `require-dev` in `composer.json`, a `phpunit.xml` targeting `tests/unit/`, and a `"test:unit-php"` composer script; create `tests/unit/bootstrap.php` that just `require_once`s the helper file.
   - Test: `composer install` then `vendor/bin/phpunit --version` runs; an empty test class in `tests/unit/` is discovered.
 
