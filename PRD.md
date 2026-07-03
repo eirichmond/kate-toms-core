@@ -53,7 +53,7 @@ This is delivered on a **new branch** off the plugin repo for review on a PR, in
   - `placeholderLocation` (string enum: `cotswolds` | `coast` | `country` | `town`).
 - Parent block attributes:
   - `align` (`wide` | `full`) via supports.
-  - Optional (Phase 2 / open question) heading text attribute, if the `{special-offer-header}` heading from the current pattern should live on the block rather than the surrounding pattern.
+  - No heading attribute — the `{special-offer-header}` heading stays in the surrounding theme pattern; this block is the section container placed beneath it.
 
 ### Roles and Capabilities
 - None. Standard editor capabilities to edit posts/pages.
@@ -115,7 +115,7 @@ This is delivered on a **new branch** off the plugin repo for review on a PR, in
 **Details**:
 - Cards laid out 4 per row on desktop, collapsing to 2 (tablet) / 1 (mobile) via CSS.
 - Row-completion math keys off **4**: after building the ordered card list (including manual placeholders as real cards), if `count % 4 !== 0`, append `4 - (count % 4)` advert placeholders to fill the final row.
-- Adverts sourced via `Kate_Toms_Core_Admin::get_adverts_for_location( $location_key, $needed )`, mirroring `houses-filtered-results`. **Open question:** which location drives auto-fill adverts (a parent-level location setting vs. derived) — see Open Questions.
+- **No location** drives auto-fill (confirmed). Auto-fill adverts are **location-agnostic**: pool all adverts across every location and pick `$needed` at random. `Kate_Toms_Core_Admin::get_adverts_for_location()` is location-scoped, so add a small helper (e.g. `get_all_adverts()`) that flattens `get_parsed_adverts()` into one pool, or flatten inline in the parent render. (Manual placeholder *children* still keep their own `placeholderLocation` — that selector is unchanged; "no location" applies only to Phase 2 auto row-fill.)
 - Reuse/align advert card markup + grid classes/breakpoints with `houses-filtered-results` (`house-card advert-placeholder`, `house-card__image`) so both grids look consistent.
 
 ### F6 — Pattern rewrite + migration of existing content
@@ -123,7 +123,7 @@ This is delivered on a **new branch** off the plugin repo for review on a PR, in
 **Description**: Update the placement pattern and migrate old flat structure.
 **User-facing**: Editor (pattern) + one-off migration.
 **Details**:
-- Rewrite `wp-content/themes/katomswold/patterns/houses-special-offers.php`: replace the hardcoded `wp:columns` + flat blocks with a single `special-offers-grid` parent containing child blocks (placeholders for the editor to fill).
+- Rewrite `wp-content/themes/katomswold/patterns/houses-special-offers.php`: **keep** the outer full-width `wp:group` and the `{special-offer-header}` heading — the parent `special-offers-grid` block acts as a **section container that sits inside this wrapper, below the heading**. Only the inner `wp:columns` + flat blocks are replaced by the single parent block containing child blocks. The heading/wrapper stays in the theme pattern (not a block attribute).
 - Provide a migration path for any live pages using the old structure: a block `transform`/`deprecation` and/or a one-off migration routine (via the block-editor-content-migration plugin or a `wp eval` action) that wraps existing flat `kateandtoms-special-offer-house` siblings into a `special-offers-grid` parent and drops the `wp:columns` wrapper.
 - Preserve child attribute names so existing child block markup remains valid when re-parented.
 
@@ -173,15 +173,19 @@ This is delivered on a **new branch** off the plugin repo for review on a PR, in
 - **e2e (Playwright, local Valet)**: add a Special Offers Grid, insert several children with different dates + a manual placeholder, publish, assert front-end order (soonest first), expired omitted, and (Phase 2) rows-of-four with adverts.
 - **Manual**: editor compact-card rendering; sidebar controls unchanged; pattern insertion; migration of an existing flat-structure page.
 
+## Resolved Decisions
+
+- **Auto-fill advert location (Phase 2):** ✅ **No location.** Row-fill adverts are pooled across all locations and picked at random (add a `get_all_adverts()`-style flatten helper over `get_parsed_adverts()`). Manual placeholder children keep their own location selector.
+- **Heading / container role:** ✅ The `{special-offer-header}` heading and full-width group **stay in the theme pattern**; the parent block is a **section container** placed inside that wrapper, below the heading. No heading block attribute.
+- **Branch & working tree:** ✅ Working tree is **clean** on `main`. Create `feature/special-offers-grid` off `main` in the `kate-toms-core` plugin repo; keep `build/` churn out of the PR per repo convention.
+- **Child placed outside a parent:** ✅ Render **nothing** on the front end (logged-out); show a **logged-in-only** inline hint "Place this inside a Special Offers Grid." (matches the existing `is_user_logged_in()` editor-notice pattern in the current `render.php`).
+- **Expiry granularity/timezone:** ✅ "Expired" = offer date **before today** in **site timezone** (`wp_timezone()` / `current_time()`), **today inclusive** (an offer still shows on its expiry date). Normalise the `DatePicker` value to its **date component** for comparison.
+- **Editor ordering cue:** ✅ The compact card shows the formatted offer date (already in the F2 card design); **no** sorted editor preview. That date is the ordering cue.
+- **Migration reach:** ✅ Ship a **one-off migration routine** (a `do_action(...)` run via `wp eval`, or through the block-editor-content-migration plugin) that wraps existing flat sibling `kateandtoms-special-offer-house` blocks into a `special-offers-grid` parent and drops the `wp:columns` wrapper. Child attribute names stay stable so re-parented markup remains valid. An ongoing block transform/deprecation for pasted old markup is **out of scope for now** (revisit only if needed).
+
 ## Open Questions
 
-- **Auto-fill advert location (Phase 2):** where does the location key for row-fill adverts come from? Options: a new parent-level location setting, inferred from the children, or a fixed default. Needs a decision before Phase 2.
-- **Heading ownership:** the current pattern includes a `{special-offer-header}` heading and full-width group wrapper. Should the heading/wrapper stay in the theme pattern around the block, or become a parent block attribute/`RichText`?
-- **Child placed outside a parent:** should a lone child render nothing silently, or show a logged-in-only "Place inside a Special Offers Grid" hint?
-- **Expiry granularity/timezone:** confirm "expired" = strictly before today's date in site timezone (today inclusive). Confirm `DatePicker` value normalisation (date vs datetime).
-- **Editor ordering cue:** editor stays in placement order — is a small "will display: {formatted date}" hint on each compact card enough, or do editors want a non-authoritative sorted preview later?
-- **Migration reach:** confirm whether any live/published pages currently use the flat structure, and whether migration is one-off (script) or must also support ongoing paste of old markup (block transform/deprecation).
-- **Branch & working tree:** create a new branch off the plugin repo (`kate-toms-core`) — suggested `feature/special-offers-grid`. Note: `main` currently has **uncommitted changes** to this block plus deleted `PRD.md`/`TASKS.md` and `build/` churn; decide whether to stash/commit/discard those before branching so the PR is clean (per repo convention, keep `build/` out of the PR).
+- None outstanding — all decisions resolved (auto-mode defaults applied). Reopen if any assumption above proves wrong during Phase 1.
 
 ## Phases (delivery order)
 
