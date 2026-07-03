@@ -39,13 +39,13 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 2. Parent block — "Special Offers Grid"
 
-- [ ] **2.1** Scaffold the parent block folder.
+- [x] **2.1** Scaffold the parent block folder.
   - What: create `blocks/special-offers-grid/` with `block.json` (name `kate-toms-core/special-offers-grid`, title "Kate & Tom's Special Offers Grid", apiVersion 3, `supports.align: ["wide","full"]`, `render: file:./render.php`, editor/style script refs), `index.js` (registerBlockType), `edit.js`, `style.scss`, `editor.scss`.
   - Test: `npm run build` produces `build/special-offers-grid/`; block appears in the inserter (auto-registered from `build/`).
-- [ ] **2.2** Build the editor `InnerBlocks` UI.
+- [x] **2.2** Build the editor `InnerBlocks` UI.
   - What: `edit.js` uses `useInnerBlocksProps` / `InnerBlocks` with `allowedBlocks: ['kate-toms-core/kateandtoms-special-offer-house']`, a starter `template` of one child, and an appender.
   - Test: in the editor, insert the parent; you can only add special-offer-house children inside it.
-- [ ] **2.3** Parent `render.php` — collect children + order (Phase 1 flow).
+- [x] **2.3** Parent `render.php` — collect children + order (Phase 1 flow).
   - What: read child attributes from `$block->inner_blocks` (fallback `$block->parsed_block['innerBlocks']`), pass to the ordering helper with `wp_timezone()`/`current_time()`, and render cards in a single ordered flow (no row-fill yet). Ignore the auto-generated inner-blocks `$content`.
   - Test: place 3 children with out-of-order dates; front end lists them soonest-expiry-first; an expired child is omitted.
 
@@ -54,13 +54,13 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 - [ ] **3.1** Restrict the child to the parent.
   - What: in `blocks/kateandtoms-special-offer-house/block.json`, add `"parent": ["kate-toms-core/special-offers-grid"]` (attributes otherwise unchanged).
   - Test: after build, the child no longer appears as a top-level inserter option, only inside the parent.
-- [ ] **3.2** Replace the editor preview with a compact summary card.
+- [x] **3.2** Replace the editor preview with a compact summary card.
   - What: in `edit.js`, remove `ServerSideRender` + the `@wordpress/server-side-render` import; render a compact card — house mode: 🏠 house name (via `core-data` `getEntityRecord`) + offer text + formatted offer date; placeholder mode: "Random placeholder — {location}"; empty state: "Choose a house in the sidebar".
   - Test: each child shows the compact card (not a full preview); editing sidebar fields updates the card text.
-- [ ] **3.3** Preserve the sidebar controls unchanged.
+- [x] **3.3** Preserve the sidebar controls unchanged.
   - What: keep the existing `InspectorControls` (typeahead search + Clear, Offer `TextControl`, Offer Date `DatePicker`, Random Placeholder `ToggleControl`, Location `SelectControl`) with current behaviour (min 2 chars, parent houses only).
   - Test: search returns parent houses; selecting one populates the card; toggling placeholder swaps to the location select.
-- [ ] **3.4** Make the child render nothing standalone (+ stray-child hint).
+- [x] **3.4** Make the child render nothing standalone (+ stray-child hint).
   - What: change `blocks/kateandtoms-special-offer-house/render.php` to return an empty string; if rendered outside a parent and `is_user_logged_in()`, output only the inline notice "Place this inside a Special Offers Grid."
   - Test: a child placed directly on a page renders nothing for logged-out users; logged-in sees the notice; inside a parent it produces no double output.
 

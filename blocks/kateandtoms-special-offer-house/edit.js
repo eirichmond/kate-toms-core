@@ -10,15 +10,37 @@ import {
 } from '@wordpress/components';
 import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
-import ServerSideRender from '@wordpress/server-side-render';
+import { dateI18n } from '@wordpress/date';
 import { useState, useEffect } from '@wordpress/element';
 
+/**
+ * Human-readable label for a placeholder location key.
+ *
+ * @param {string} location Location key.
+ *
+ * @return {string} Display label, falling back to the raw key.
+ */
+function placeholderLocationLabel( location ) {
+	const labels = {
+		cotswolds: __( 'Cotswolds', 'kate-toms-core' ),
+		coast: __( 'Coast', 'kate-toms-core' ),
+		country: __( 'Country', 'kate-toms-core' ),
+		town: __( 'Town', 'kate-toms-core' ),
+	};
+
+	return labels[ location ] || location;
+}
+
 export default function Edit( { attributes, setAttributes } ) {
-	const { selectedPostId, offer, offerDate, isPlaceholder, placeholderLocation } =
-		attributes;
+	const {
+		selectedPostId,
+		offer,
+		offerDate,
+		isPlaceholder,
+		placeholderLocation,
+	} = attributes;
 	const [ searchTerm, setSearchTerm ] = useState( '' );
 	const [ showSuggestions, setShowSuggestions ] = useState( false );
-	const [ isSearching, setIsSearching ] = useState( false );
 	const [ isUserTyping, setIsUserTyping ] = useState( false );
 
 	const blockProps = useBlockProps( {
@@ -109,6 +131,11 @@ export default function Edit( { attributes, setAttributes } ) {
 		}, 200 );
 	};
 
+	// Compact card summary values.
+	const houseTitle = selectedHouseData?.title?.rendered || '';
+	const formattedDate = offerDate ? dateI18n( 'j M Y', offerDate ) : '';
+	const houseMeta = [ offer, formattedDate ].filter( Boolean ).join( ' · ' );
+
 	return (
 		<>
 			<InspectorControls>
@@ -150,7 +177,10 @@ export default function Edit( { attributes, setAttributes } ) {
 										value: 'coast',
 									},
 									{
-										label: __( 'Country', 'kate-toms-core' ),
+										label: __(
+											'Country',
+											'kate-toms-core'
+										),
 										value: 'country',
 									},
 									{
@@ -168,167 +198,268 @@ export default function Edit( { attributes, setAttributes } ) {
 					) }
 
 					{ ! isPlaceholder && (
-					<>
-					<div>
-						<label
-							style={ {
-								display: 'block',
-								marginBottom: '8px',
-								fontWeight: 'bold',
-							} }
-						>
-							{ __( 'Search Houses', 'kate-toms-core' ) }
-						</label>
-						<div style={ { position: 'relative' } }>
-							<TextControl
-								value={ searchTerm }
-								onChange={ handleSearchChange }
-								onFocus={ handleSearchFocus }
-								onBlur={ handleSearchBlur }
-								placeholder={ __(
-									'Type to search houses…',
-									'kate-toms-core'
-								) }
-								help={
-									selectedPostId > 0
-										? __(
-												'Click to search for a different house',
-												'kate-toms-core'
-										  )
-										: ''
-								}
-							/>
-
-							{ selectedPostId > 0 && (
-								<Button
-									isSmall
-									variant="secondary"
-									onClick={ handleClearSelection }
-									style={ { marginTop: '8px' } }
-								>
-									{ __(
-										'Clear Selection',
-										'kate-toms-core'
-									) }
-								</Button>
-							) }
-
-							{ showSuggestions && searchResults.length > 0 && (
-								<div
+						<>
+							<div>
+								<span
+									className="kate-toms-single-house-field-label"
 									style={ {
-										position: 'absolute',
-										top: '100%',
-										left: 0,
-										right: 0,
-										backgroundColor: 'white',
-										border: '1px solid #ccc',
-										borderRadius: '4px',
-										boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
-										zIndex: 1000,
-										maxHeight: '200px',
-										overflowY: 'auto',
+										display: 'block',
+										marginBottom: '8px',
+										fontWeight: 'bold',
 									} }
 								>
-									{ searchResults.map( ( house ) => (
-										<div
-											key={ house.id }
-											onClick={ () =>
-												handleHouseSelect( house )
-											}
-											style={ {
-												padding: '8px 12px',
-												cursor: 'pointer',
-												borderBottom: '1px solid #eee',
-												backgroundColor:
-													selectedPostId === house.id
-														? '#e6f3ff'
-														: 'white',
-											} }
-											onMouseEnter={ ( e ) =>
-												( e.target.style.backgroundColor =
-													'#f5f5f5' )
-											}
-											onMouseLeave={ ( e ) =>
-												( e.target.style.backgroundColor =
-													selectedPostId === house.id
-														? '#e6f3ff'
-														: 'white' )
-											}
+									{ __( 'Search Houses', 'kate-toms-core' ) }
+								</span>
+								<div style={ { position: 'relative' } }>
+									<TextControl
+										value={ searchTerm }
+										onChange={ handleSearchChange }
+										onFocus={ handleSearchFocus }
+										onBlur={ handleSearchBlur }
+										placeholder={ __(
+											'Type to search houses…',
+											'kate-toms-core'
+										) }
+										help={
+											selectedPostId > 0
+												? __(
+														'Click to search for a different house',
+														'kate-toms-core'
+												  )
+												: ''
+										}
+									/>
+
+									{ selectedPostId > 0 && (
+										<Button
+											isSmall
+											variant="secondary"
+											onClick={ handleClearSelection }
+											style={ { marginTop: '8px' } }
 										>
-											<strong>
-												{ house.title.rendered }
-											</strong>
-											{ house.meta &&
-												house.meta.location_text && (
-													<div
-														style={ {
-															fontSize: '12px',
-															color: '#666',
-															marginTop: '2px',
-														} }
-													>
-														{
-															house.meta
-																.location_text
-														}
-													</div>
+											{ __(
+												'Clear Selection',
+												'kate-toms-core'
+											) }
+										</Button>
+									) }
+
+									{ showSuggestions &&
+										searchResults.length > 0 && (
+											<div
+												style={ {
+													position: 'absolute',
+													top: '100%',
+													left: 0,
+													right: 0,
+													backgroundColor: 'white',
+													border: '1px solid #ccc',
+													borderRadius: '4px',
+													boxShadow:
+														'0 2px 6px rgba(0,0,0,0.1)',
+													zIndex: 1000,
+													maxHeight: '200px',
+													overflowY: 'auto',
+												} }
+											>
+												{ searchResults.map(
+													( house ) => (
+														<div
+															key={ house.id }
+															role="button"
+															tabIndex={ 0 }
+															onClick={ () =>
+																handleHouseSelect(
+																	house
+																)
+															}
+															onKeyDown={ (
+																event
+															) => {
+																if (
+																	'Enter' ===
+																		event.key ||
+																	' ' ===
+																		event.key
+																) {
+																	event.preventDefault();
+																	handleHouseSelect(
+																		house
+																	);
+																}
+															} }
+															style={ {
+																padding:
+																	'8px 12px',
+																cursor: 'pointer',
+																borderBottom:
+																	'1px solid #eee',
+																backgroundColor:
+																	selectedPostId ===
+																	house.id
+																		? '#e6f3ff'
+																		: 'white',
+															} }
+															onMouseEnter={ (
+																e
+															) =>
+																( e.target.style.backgroundColor =
+																	'#f5f5f5' )
+															}
+															onMouseLeave={ (
+																e
+															) =>
+																( e.target.style.backgroundColor =
+																	selectedPostId ===
+																	house.id
+																		? '#e6f3ff'
+																		: 'white' )
+															}
+														>
+															<strong>
+																{
+																	house.title
+																		.rendered
+																}
+															</strong>
+															{ house.meta &&
+																house.meta
+																	.location_text && (
+																	<div
+																		style={ {
+																			fontSize:
+																				'12px',
+																			color: '#666',
+																			marginTop:
+																				'2px',
+																		} }
+																	>
+																		{
+																			house
+																				.meta
+																				.location_text
+																		}
+																	</div>
+																) }
+														</div>
+													)
 												) }
-										</div>
-									) ) }
+											</div>
+										) }
 								</div>
-							) }
-						</div>
-					</div>
+							</div>
 
-					<div style={ { marginTop: '16px' } }>
-						<label
-							style={ {
-								display: 'block',
-								marginBottom: '8px',
-								fontWeight: 'bold',
-							} }
-						>
-							{ __( 'Offer', 'kate-toms-core' ) }
-						</label>
-						<TextControl
-							value={ offer }
-							onChange={ ( value ) =>
-								setAttributes( { offer: value } )
-							}
-							help={ __(
-								'Enter the special offer text',
-								'kate-toms-core'
-							) }
-						/>
-					</div>
+							<div style={ { marginTop: '16px' } }>
+								<span
+									className="kate-toms-single-house-field-label"
+									style={ {
+										display: 'block',
+										marginBottom: '8px',
+										fontWeight: 'bold',
+									} }
+								>
+									{ __( 'Offer', 'kate-toms-core' ) }
+								</span>
+								<TextControl
+									value={ offer }
+									onChange={ ( value ) =>
+										setAttributes( { offer: value } )
+									}
+									help={ __(
+										'Enter the special offer text',
+										'kate-toms-core'
+									) }
+								/>
+							</div>
 
-					<div style={ { marginTop: '16px' } }>
-						<label
-							style={ {
-								display: 'block',
-								marginBottom: '8px',
-								fontWeight: 'bold',
-							} }
-						>
-							{ __( 'Offer Date', 'kate-toms-core' ) }
-						</label>
-						<DatePicker
-							currentDate={ offerDate }
-							onChange={ ( value ) =>
-								setAttributes( { offerDate: value } )
-							}
-						/>
-					</div>
-					</>
+							<div style={ { marginTop: '16px' } }>
+								<span
+									className="kate-toms-single-house-field-label"
+									style={ {
+										display: 'block',
+										marginBottom: '8px',
+										fontWeight: 'bold',
+									} }
+								>
+									{ __( 'Offer Date', 'kate-toms-core' ) }
+								</span>
+								<DatePicker
+									currentDate={ offerDate }
+									onChange={ ( value ) =>
+										setAttributes( { offerDate: value } )
+									}
+								/>
+							</div>
+						</>
 					) }
 				</PanelBody>
 			</InspectorControls>
 
 			<div { ...blockProps }>
-				<ServerSideRender
-					block="kate-toms-core/kateandtoms-special-offer-house"
-					attributes={ attributes }
-				/>
+				{ isPlaceholder ? (
+					<div className="kate-toms-single-house-card kate-toms-single-house-card--placeholder">
+						<span
+							className="kate-toms-single-house-card__icon"
+							aria-hidden="true"
+						>
+							🖼️
+						</span>
+						<div className="kate-toms-single-house-card__body">
+							<span className="kate-toms-single-house-card__title">
+								{ __( 'Random placeholder', 'kate-toms-core' ) }
+							</span>
+							<span className="kate-toms-single-house-card__meta">
+								{ placeholderLocation
+									? placeholderLocationLabel(
+											placeholderLocation
+									  )
+									: __(
+											'Choose a location in the sidebar',
+											'kate-toms-core'
+									  ) }
+							</span>
+						</div>
+					</div>
+				) : (
+					<div
+						className={
+							'kate-toms-single-house-card' +
+							( selectedPostId
+								? ''
+								: ' kate-toms-single-house-card--empty' )
+						}
+					>
+						<span
+							className="kate-toms-single-house-card__icon"
+							aria-hidden="true"
+						>
+							🏠
+						</span>
+						<div className="kate-toms-single-house-card__body">
+							<span className="kate-toms-single-house-card__title">
+								{ selectedPostId
+									? houseTitle ||
+									  __( 'Loading…', 'kate-toms-core' )
+									: __(
+											'No house selected',
+											'kate-toms-core'
+									  ) }
+							</span>
+							<span className="kate-toms-single-house-card__meta">
+								{ selectedPostId
+									? houseMeta ||
+									  __(
+											'Add an offer in the sidebar',
+											'kate-toms-core'
+									  )
+									: __(
+											'Choose a house in the sidebar',
+											'kate-toms-core'
+									  ) }
+							</span>
+						</div>
+					</div>
+				) }
 			</div>
 		</>
 	);
