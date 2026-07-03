@@ -156,6 +156,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-custom-block-bindings.php';
 
 		/**
+		 * Pure ordering/filtering logic for the Special Offers Grid block.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-special-offers-grid.php';
+
+		/**
 		 * The CRM API client used by the Blueprint onboarding feature.
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-blueprint-crm-api.php';

@@ -24,16 +24,16 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 1. Ordering / filtering helper (data layer, pure PHP)
 
-- [ ] **1.1** Create the pure ordering helper.
+- [x] **1.1** Create the pure ordering helper.
   - What: add `includes/special-offers/class-special-offers-grid.php` with a static method (e.g. `Kate_Toms_Special_Offers_Grid::order_cards( array $children, DateTimeInterface $now, DateTimeZone $tz )`) that takes raw child attribute arrays + "now" and returns the render list — no WordPress calls, no globals.
   - Test: instantiate directly in a scratch script with sample arrays; returns an array.
-- [ ] **1.2** Implement filter + sort rules.
+- [x] **1.2** Implement filter + sort rules.
   - What: exclude house cards whose `offerDate` (date component, site tz) is **before today** (today inclusive); sort remaining house cards **ascending by `offerDate`**; keep dateless cards and manual placeholders (`isPlaceholder = true`) after dated cards in stable (input) order; never date-filter placeholders.
   - Test: covered by 1.3.
-- [ ] **1.3** Unit-test the helper (`tests/unit/test-order-cards.php`).
+- [x] **1.3** Unit-test the helper (`tests/unit/OrderCardsTest.php` — renamed from `test-order-cards.php` for PHPUnit `*Test.php` discovery).
   - What: assert ascending sort; expired excluded; today kept; dateless/placeholder sort last & stable; empty input → empty; all-placeholder input preserved.
   - Test: `composer test:unit-php` (or `vendor/bin/phpunit`) — all green.
-- [ ] **1.4** Wire the helper into plugin dependency loading.
+- [x] **1.4** Wire the helper into plugin dependency loading.
   - What: add a `require_once` for `includes/special-offers/class-special-offers-grid.php` in `load_dependencies()` in `includes/class-kate-toms-core.php`.
   - Test: `wp eval "var_dump( class_exists('Kate_Toms_Special_Offers_Grid') );"` prints `true`.
 
