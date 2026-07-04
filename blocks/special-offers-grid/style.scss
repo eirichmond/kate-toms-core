@@ -1,6 +1,31 @@
-// Front-end (and shared editor) styles for the Special Offers Grid.
-// The responsive rows-of-four grid layout is added in a later phase; this
-// establishes the block wrapper only.
-.wp-block-kate-toms-core-special-offers-grid {
-	display: block;
+// Front-end grid: four cards per row, collapsing to two then one. The parent
+// render tops the final row up with adverts (advert_fill_count). Scoped off the
+// editor wrapper so the compact editor cards keep their own layout.
+.wp-block-kate-toms-core-special-offers-grid:not(.kate-toms-special-offers-grid-editor) {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 1rem;
+
+	@media (max-width: 1024px) {
+		grid-template-columns: repeat(2, 1fr);
+	}
+
+	@media (max-width: 600px) {
+		grid-template-columns: 1fr;
+	}
+
+	// Each card (house pattern or advert) fills its grid cell.
+	.special-offer-card {
+		display: flex;
+		min-width: 0;
+
+		> * {
+			width: 100%;
+		}
+	}
+
+	// Advert placeholders (manual and auto-fill) match the house card height.
+	.special-offer-advert-placeholder {
+		width: 100%;
+	}
 }

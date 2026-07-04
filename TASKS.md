@@ -99,22 +99,22 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 7. Location-agnostic advert pool
 
-- [ ] **7.1** Add an all-locations advert helper.
+- [x] **7.1** Add an all-locations advert helper.
   - What: add `Kate_Toms_Core_Admin::get_all_adverts( $limit )` (or a small flatten in the parent render) that flattens `get_parsed_adverts()` across every location into one pool.
   - Test: `wp eval "print_r( (new Kate_Toms_Core_Admin('kate-toms-core','1.0.0'))->get_all_adverts(4) );"` returns adverts spanning locations.
 
 ## 8. Grid layout + auto row-fill
 
-- [ ] **8.1** Extend the helper with chunking + row-fill count.
+- [x] **8.1** Extend the helper with chunking + row-fill count. (Fill-count method; CSS grid handles visual row wrapping so no literal row-chunking needed.)
   - What: add a Phase 2 method (or option) that, given the ordered card list, returns rows chunked by 4 and the number of fill adverts needed (`count % 4 === 0 ? 0 : 4 - count % 4`); manual placeholders count as real cards.
   - Test: unit tests in `tests/unit/` — 4→0 fill, 5→3 fill, 8→0 fill, all-placeholder cases; `composer test:unit-php` green.
-- [ ] **8.2** Render rows of four with random auto-fill adverts.
+- [x] **8.2** Render rows of four with random auto-fill adverts.
   - What: in the parent `render.php`, group ordered cards into rows of 4 and append `$needed` random adverts (from 7.1) to complete the final row.
   - Test: a grid of 5 real cards renders 8 slots (5 + 3 adverts); 8 real cards render no adverts.
 
 ## 9. Grid styling
 
-- [ ] **9.1** Responsive grid CSS aligned to houses-filtered-results.
+- [x] **9.1** Responsive grid CSS aligned to houses-filtered-results.
   - What: in `blocks/special-offers-grid/style.scss`, lay out 4 cards per row (desktop) → 2 (tablet) → 1 (mobile); reuse/align advert markup classes (`house-card advert-placeholder`, `house-card__image`) so both grids look consistent.
   - Test: at desktop/tablet/mobile widths the grid shows 4/2/1 columns; advert cards match the filtered-results styling.
 

@@ -32,6 +32,13 @@ class Kate_Toms_Special_Offers_Grid {
 	public const TYPE_PLACEHOLDER = 'placeholder';
 
 	/**
+	 * Number of cards per full row on the widest layout.
+	 *
+	 * @var int
+	 */
+	public const CARDS_PER_ROW = 4;
+
+	/**
 	 * Builds the ordered, filtered render list from raw child attributes.
 	 *
 	 * House cards whose offer has expired (offer date before today, site
@@ -70,6 +77,29 @@ class Kate_Toms_Special_Offers_Grid {
 		usort( $dated, array( self::class, 'compare_by_offer_date' ) );
 
 		return array_merge( $dated, $trailing );
+	}
+
+	/**
+	 * Counts the advert placeholders needed to complete the final row.
+	 *
+	 * Callers pass the number of cells actually rendered (house cards plus
+	 * manual placeholders, excluding any skipped invalid houses). The result
+	 * tops that up to the next multiple of $per_row so the last desktop row is
+	 * never left short. An empty grid needs no adverts.
+	 *
+	 * @param int $card_count Number of rendered cells.
+	 * @param int $per_row    Cards per full row (defaults to CARDS_PER_ROW).
+	 *
+	 * @return int Number of advert placeholders to append (0 when already full or empty).
+	 */
+	public static function advert_fill_count( int $card_count, int $per_row = self::CARDS_PER_ROW ): int {
+		if ( $per_row < 1 || $card_count < 1 ) {
+			return 0;
+		}
+
+		$remainder = $card_count % $per_row;
+
+		return 0 === $remainder ? 0 : $per_row - $remainder;
 	}
 
 	/**

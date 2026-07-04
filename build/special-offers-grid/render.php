@@ -49,6 +49,9 @@ $special_offers_pattern_file = get_theme_file_path( 'patterns/house-card-search-
 
 global $post;
 $special_offers_original_post = $post;
+
+// Cells actually rendered (houses + manual placeholders); drives the row-fill.
+$special_offers_cell_count = 0;
 ?>
 <div <?php echo wp_kses_post( get_block_wrapper_attributes() ); ?>>
 	<?php
@@ -84,6 +87,7 @@ $special_offers_original_post = $post;
 				</div>
 			</div>
 			<?php
+			++$special_offers_cell_count;
 			continue;
 		endif;
 
@@ -139,6 +143,7 @@ $special_offers_original_post = $post;
 			echo do_blocks( ob_get_clean() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Trusted rendered block HTML.
 		}
 		echo '</div>';
+		++$special_offers_cell_count;
 	endforeach;
 
 	// Restore the original global post context for the rest of the page.
@@ -147,6 +152,30 @@ $special_offers_original_post = $post;
 		setup_postdata( $special_offers_original_post );
 	} else {
 		wp_reset_postdata();
+	}
+
+	// Complete the final row with location-agnostic random adverts.
+	$special_offers_fill = Kate_Toms_Special_Offers_Grid::advert_fill_count( $special_offers_cell_count );
+	if ( $special_offers_fill > 0 && class_exists( 'Kate_Toms_Core_Admin' ) ) {
+		$special_offers_fill_admin = new Kate_Toms_Core_Admin( 'kate-toms-core', '1.0.0' );
+		$special_offers_pool       = $special_offers_fill_admin->get_all_adverts();
+
+		if ( ! empty( $special_offers_pool ) ) {
+			shuffle( $special_offers_pool );
+
+			foreach ( array_slice( $special_offers_pool, 0, $special_offers_fill ) as $special_offers_fill_advert ) :
+				if ( empty( $special_offers_fill_advert['image_url'] ) ) {
+					continue;
+				}
+				?>
+				<div class="special-offer-card special-offer-card--placeholder special-offer-card--autofill">
+					<div class="wp-block-group has-white-background-color has-background special-offer-advert-placeholder" style="min-height:365px;display:flex;overflow:hidden">
+						<img src="<?php echo esc_url( $special_offers_fill_advert['image_url'] ); ?>" alt="<?php esc_attr_e( 'Advertisement', 'kate-toms-core' ); ?>" style="width:100%;height:100%;min-height:365px;object-fit:cover;display:block;" />
+					</div>
+				</div>
+				<?php
+			endforeach;
+		}
 	}
 	?>
 </div>
