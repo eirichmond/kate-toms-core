@@ -75,10 +75,10 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 5. Pattern rewrite + content migration
 
-- [ ] **5.1** Rewrite the placement pattern.
+- [x] **5.1** Rewrite the placement pattern.
   - What: in `wp-content/themes/katomswold/patterns/houses-special-offers.php`, keep the outer full-width `wp:group` + `{special-offer-header}` heading; replace the inner `wp:columns` + flat blocks with a single `special-offers-grid` parent containing placeholder child blocks.
   - Test: insert the "Houses Special Offers" pattern; it drops in the heading + a Special Offers Grid with children.
-- [ ] **5.2** One-off migration routine for existing flat content.
+- [x] **5.2** One-off migration routine for existing flat content.
   - What: add a `do_action('migrate_special_offers_to_grid')` handler that finds posts containing flat sibling `kateandtoms-special-offer-house` blocks (inside the old `wp:columns`), wraps them in a `special-offers-grid` parent, and removes the `wp:columns` wrapper — child attributes preserved.
   - Test: on a copied post using the old structure, run `wp eval "do_action('migrate_special_offers_to_grid');"`; post now uses the parent/child structure and renders identically (order aside).
 

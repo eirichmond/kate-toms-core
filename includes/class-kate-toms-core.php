@@ -161,6 +161,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-special-offers-grid.php';
 
 		/**
+		 * One-off migration of legacy flat special-offer layouts to the grid.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-special-offers-migration.php';
+
+		/**
 		 * The CRM API client used by the Blueprint onboarding feature.
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-blueprint-crm-api.php';
@@ -182,6 +187,9 @@ class Kate_Toms_Core {
 		// Initialize custom block bindings
 		$custom_bindings = new Kate_Toms_Custom_Block_Bindings();
 		$custom_bindings->register_bindings();
+
+		// Register the one-off special offers migration action.
+		new Kate_Toms_Special_Offers_Migration();
 	}
 
 	/**
