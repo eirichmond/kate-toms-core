@@ -51,7 +51,7 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 3. Child block rebuild — compact card, no ServerSideRender
 
-- [ ] **3.1** Restrict the child to the parent.
+- [x] **3.1** Restrict the child to the parent.
   - What: in `blocks/kateandtoms-special-offer-house/block.json`, add `"parent": ["kate-toms-core/special-offers-grid"]` (attributes otherwise unchanged).
   - Test: after build, the child no longer appears as a top-level inserter option, only inside the parent.
 - [x] **3.2** Replace the editor preview with a compact summary card.
@@ -130,9 +130,9 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## Final Checks
 
-- [ ] Run PHPCS — `npm run phpcs` (or `composer run phpcs:plugin` from site root)
-- [ ] Run JS/CSS lint — `npm run lint:js` && `npm run lint:css`
-- [ ] Run PHP unit tests — `vendor/bin/phpunit` (pure ordering/chunking helper)
-- [ ] Run e2e if configured — `npm run test:e2e:local` (Playwright against Valet)
-- [ ] Manual smoke test in browser — editor compact cards, front-end order, expiry, Phase 2 grid
-- [ ] Confirm `build/` churn excluded from the PR diff
+- [x] Run PHPCS — feature PHP clean (pre-existing violations elsewhere left untouched)
+- [x] Run JS/CSS lint — our blocks clean
+- [x] Run PHP unit tests — `vendor/bin/phpunit` → 16 tests, 24 assertions green
+- [ ] Run e2e if configured — `npm run test:e2e:local` (Playwright against Valet) — optional, your call
+- [~] Manual smoke test in browser — editor compact cards, front-end order, expiry, Phase 2 grid — render paths verified via `do_blocks`; live editor/responsive eyeball outstanding (6.1 / 10.1)
+- [x] Confirm `build/` churn excluded from the PR diff — only the two feature blocks' build output staged
