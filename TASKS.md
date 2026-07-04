@@ -84,12 +84,13 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 6. Phase 1 verification
 
-- [ ] **6.1** Full editor + front-end smoke test.
+- [~] **6.1** Full editor + front-end smoke test. (Partially verified — see note.)
   - What: build a Special Offers Grid with several dated children (some expired), one manual placeholder; publish.
   - Test: front end shows non-expired cards soonest-first, placeholder after dated cards, each card's offer metadata correct.
+  - Status: render paths (ordering, expiry exclusion, no offer leak, placeholder adverts, invalid/child-page guards, logged-in/out) verified via `do_blocks`; editor UX spot-checked in 2.2/3.2. **Outstanding:** a live publish-and-preview with mixed/expired dates + a placeholder — flagged in PR #38 as recommended before merge.
 - [x] **6.2** Lint + build clean.
   - Test: `npm run lint:js`, `npm run lint:css`, `npm run phpcs` (new PHP), and `npm run build` all pass; keep `build/` churn out of the PR per repo convention.
-- [ ] **6.3** Open Phase 1 PR.
+- [x] **6.3** Open Phase 1 PR. → https://github.com/eirichmond/kate-toms-core/pull/38
   - Test: PR from `feature/special-offers-grid`; diff excludes `build/` noise; reviewer can test the ordered flow.
 
 ---
