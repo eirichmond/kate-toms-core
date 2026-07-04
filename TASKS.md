@@ -87,7 +87,7 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 - [ ] **6.1** Full editor + front-end smoke test.
   - What: build a Special Offers Grid with several dated children (some expired), one manual placeholder; publish.
   - Test: front end shows non-expired cards soonest-first, placeholder after dated cards, each card's offer metadata correct.
-- [ ] **6.2** Lint + build clean.
+- [x] **6.2** Lint + build clean.
   - Test: `npm run lint:js`, `npm run lint:css`, `npm run phpcs` (new PHP), and `npm run build` all pass; keep `build/` churn out of the PR per repo convention.
 - [ ] **6.3** Open Phase 1 PR.
   - Test: PR from `feature/special-offers-grid`; diff excludes `build/` noise; reviewer can test the ordered flow.
