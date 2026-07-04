@@ -120,9 +120,10 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 10. Phase 2 verification
 
-- [ ] **10.1** Grid smoke test across counts.
+- [~] **10.1** Grid smoke test across counts. (Fill maths verified programmatically; live responsive eyeball outstanding.)
   - Test: verify 1–8 real cards each produce full rows of four with correct adverts; layout responsive; expired still excluded; ordering intact.
-- [ ] **10.2** Lint + build clean; update the PR.
+  - Status: fill/exclusion/ordering verified via `do_blocks` for 2–8 cards incl. invalid/expired/manual-placeholder mixes (all complete to multiples of four). **Outstanding:** live 4/2/1 responsive eyeball at desktop/tablet/mobile — flagged in PR #38.
+- [x] **10.2** Lint + build clean; update the PR.
   - Test: `npm run lint:js`, `lint:css`, `phpcs`, `build` all pass; Phase 2 added to the PR (or a follow-up PR), `build/` kept out.
 
 ---
