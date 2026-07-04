@@ -66,10 +66,10 @@ Rebuild the special-offer-house block into a **parent container block** ("Specia
 
 ## 4. Faithful front-end card rendering (in parent render)
 
-- [ ] **4.1** Port the per-instance pattern-include rendering into the parent loop.
+- [x] **4.1** Port the per-instance pattern-include rendering into the parent loop.
   - What: for each house card, set `global $post` to the house, set the `$special_offer_attributes` global (`offer`, `offerDate`), `include` `patterns/house-card-search-special-offer.php` (NOT `do_blocks('<!-- wp:pattern … /-->')`), `do_blocks()` the buffer, then restore `$post`.
   - Test: two children with different offers render distinct offer text (no leak of the first offer to the second).
-- [ ] **4.2** Port invalid/fallback-house guards + manual placeholder rendering.
+- [x] **4.2** Port invalid/fallback-house guards + manual placeholder rendering.
   - What: skip invalid/unpublished/child-page houses (logged-in editor notice as today); render manual placeholder children as the advert image markup (image, no link).
   - Test: point a child at a trashed house → it's skipped (notice when logged in); a manual placeholder child renders its advert image.
 
