@@ -59,6 +59,7 @@ jQuery( document ).ready( function ( $ ) {
 								? 'load_booking_form'
 								: 'load_contact_form',
 						nonce: ktFormSettings.nonce,
+						post_id: ktFormSettings.postId || 0,
 					},
 					success( response ) {
 						if ( response.success ) {

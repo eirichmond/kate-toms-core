@@ -298,6 +298,7 @@ function enqueue_button_form_scripts() {
 			array(
 				'nonce'   => wp_create_nonce( 'kt_form_nonce' ),
 				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+				'postId'  => is_singular() ? get_queried_object_id() : 0,
 			)
 		);
 
@@ -311,9 +312,42 @@ function enqueue_button_form_scripts() {
 }
 add_action( 'wp_enqueue_scripts', 'enqueue_button_form_scripts' );
 
+/**
+ * Rebuild the visitor's page context inside an admin-ajax request.
+ *
+ * The form partials are included from admin-ajax.php, where there is no main
+ * query: get_the_ID()/get_the_title() return nothing and REQUEST_URI points
+ * at admin-ajax.php itself. The front end posts the ID of the page the
+ * visitor is on so the partial's post context and permalink resolve to that
+ * page instead.
+ */
+function kate_toms_setup_ajax_form_post_context() {
+	// phpcs:ignore WordPress.Security.NonceVerification.Missing -- callers verify via check_ajax_referer().
+	$post_id = isset( $_POST['post_id'] ) ? absint( wp_unslash( $_POST['post_id'] ) ) : 0;
+	if ( ! $post_id ) {
+		return;
+	}
+
+	$form_post = get_post( $post_id );
+	if ( ! $form_post || 'publish' !== $form_post->post_status ) {
+		return;
+	}
+
+	global $post;
+	$post = $form_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+	setup_postdata( $post );
+
+	$permalink_path = wp_parse_url( get_permalink( $form_post ), PHP_URL_PATH );
+	if ( $permalink_path ) {
+		$_SERVER['REQUEST_URI'] = $permalink_path;
+	}
+}
+
 // AJAX handler for loading contact form
 function load_contact_form_callback() {
 	check_ajax_referer( 'kt_form_nonce', 'nonce' );
+
+	kate_toms_setup_ajax_form_post_context();
 
 	ob_start();
 	include plugin_dir_path( __FILE__ ) . '../kate-and-toms-get-in-touch/public/partials/kate-and-toms-get-in-touch-form.php';
