@@ -1,6 +1,6 @@
 .wp-block-kate-toms-core-kateandtoms-single-house {
 	// Main block wrapper styles
-	
+
 	// Error message styling
 	.wp-block-kate-toms-core-kateandtoms-single-house-error {
 		padding: 20px;
@@ -9,38 +9,38 @@
 		border: 1px solid #f5c6cb;
 		border-radius: 4px;
 		margin-bottom: 20px;
-		
+
 		strong {
 			font-weight: 600;
 		}
 	}
-	
+
 	// Ensure proper spacing for nested patterns
 	.wp-block-group {
 		margin-bottom: 0;
 	}
-	
+
 	// Override any pattern-specific styles if needed
 	.wp-block-post-title {
 		margin-bottom: 0;
-		
+
 		a {
 			text-decoration: none;
-			
+
 			&:hover {
 				text-decoration: none;
 			}
 		}
 	}
-	
+
 	// Featured image styling
 	.wp-block-post-featured-image {
 		margin-bottom: 0;
-		
+
 		img {
 			display: block;
 			max-width: 100%;
 			height: auto;
 		}
 	}
-} 
+}

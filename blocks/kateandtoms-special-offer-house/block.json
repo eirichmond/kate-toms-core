@@ -8,6 +8,7 @@
 	"icon": "admin-home",
 	"description": "Display a single house with special offer styling using typeahead search",
 	"example": {},
+	"parent": ["kate-toms-core/special-offers-grid"],
 	"supports": {
 		"html": false,
 		"align": ["wide", "full"]

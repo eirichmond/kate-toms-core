@@ -1,0 +1,15 @@
+// Editor-only styles for the Special Offers Grid container.
+.kate-toms-special-offers-grid-editor {
+	padding: 12px;
+	border: 1px dashed #c3c4c7;
+	border-radius: 4px;
+
+	&__hint {
+		margin: 0;
+		color: #757575;
+		font-size: 13px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.5px;
+	}
+}

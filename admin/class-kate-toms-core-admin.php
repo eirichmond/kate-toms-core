@@ -1442,6 +1442,31 @@ class Kate_Toms_Core_Admin {
 	}
 
 	/**
+	 * Get adverts pooled across every location (location-agnostic).
+	 *
+	 * Flattens get_parsed_adverts() into a single list. Used by the Special
+	 * Offers Grid to fill incomplete rows with adverts regardless of location.
+	 *
+	 * @param int $limit Optional maximum number of adverts to return; 0 for all.
+	 * @return array Array of advert data spanning all locations.
+	 */
+	public function get_all_adverts( $limit = 0 ) {
+		$pool = array();
+
+		foreach ( $this->get_parsed_adverts() as $location_adverts ) {
+			foreach ( $location_adverts as $advert ) {
+				$pool[] = $advert;
+			}
+		}
+
+		if ( $limit > 0 && count( $pool ) > $limit ) {
+			$pool = array_slice( $pool, 0, $limit );
+		}
+
+		return $pool;
+	}
+
+	/**
 	 * Handle advert upload
 	 */
 	private function handle_advert_upload() {
