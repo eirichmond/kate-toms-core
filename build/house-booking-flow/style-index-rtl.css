@@ -1,1 +1,434 @@
-.wp-block-kate-toms-core-house-booking-flow{color:var(--wp--preset--color--charcoal);font-family:var(--wp--preset--font-family--system-font);font-size:var(--wp--preset--font-size--small);line-height:1.6;margin:0 auto}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section{margin-bottom:30px}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress-labels{display:flex;margin-bottom:10px}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress-labels p{flex:1;margin:0 0 0 2px;padding:8px;text-align:center}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress-labels p:last-child{margin-left:0}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress{background:var(--wp--preset--color--progressbar);border-radius:0;box-shadow:none;display:flex;height:40px;overflow:hidden}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar{height:100%;transition:width .3s ease}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar.bar-info,.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar:first-child{background:#5bc0de}.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar:last-child{background:var(--wp--preset--color--progressactive)}.wp-block-kate-toms-core-house-booking-flow .booking-content{display:flex;gap:20px;margin-top:20px}@media(max-width:768px){.wp-block-kate-toms-core-house-booking-flow .booking-content{flex-direction:column}}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info{background:var(--wp--preset--color--progressbar);flex:1;padding:var(--wp--preset--spacing--50)}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info h2{font-size:var(--wp--preset--font-size--medium);margin-bottom:20px;text-align:center}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info ul{list-style:disc}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info ul li{line-height:1.4;margin-bottom:10px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details{background:#f9f9f9;border:1px solid #ddd;margin-top:var(--wp--preset--spacing--50);padding:15px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details h3{font-size:1.2rem;margin-bottom:15px;margin-top:0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details p{margin:0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details p .label{color:#666;display:inline-block;min-width:80px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details p strong{color:#333}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options{flex:1}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options h3{font-size:var(--wp--preset--font-size--medium);font-weight:400;margin-bottom:20px;text-align:center}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .no-periods{background:#f9f9f9;border:1px solid #ddd;border-radius:6px;font-style:italic;padding:20px;text-align:center}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .booking-period{align-items:flex-start;background:#fff;border:2px solid #dee2e6;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,.1);cursor:pointer;display:flex;justify-content:space-between;margin-bottom:15px;padding:var(--wp--preset--spacing--40);transition:all .2s ease}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .booking-period:hover{background:#f8f9fa;border-color:#428bca;box-shadow:0 4px 12px rgba(66,139,202,.15);transform:translateY(-2px)}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .booking-period:last-child{margin-bottom:0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details{flex:1}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details h4{color:var(--wp--preset--color--charcoal);font-size:var(--wp--preset--font-size--small);margin:0 0 8px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details .period-description{font-size:0var --wp--preset--font-size--small;margin:0 0 8px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details .period-dates{color:var(--wp--preset--color--charcoal);font-size:var(--wp--preset--font-size--small);line-height:1.4;margin:0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-price{color:var(--wp--preset--color--colorsix);font-size:1.4rem;font-weight:700;min-width:120px;text-align:left}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form{flex:1}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section{margin-bottom:30px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section h3{border-bottom:2px solid #e5e7eb;font-size:1.2rem;font-weight:700;margin-bottom:20px;padding-bottom:10px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row{display:flex;gap:15px;margin-bottom:15px}@media(max-width:768px){.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row{flex-direction:column}}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row .form-field{flex:1}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row .form-field.full-width{flex:100%}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field{display:flex;flex-direction:column}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field label{font-size:.95rem;margin-bottom:5px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field input,.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field select,.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field textarea{border:1px solid #ddd;border-radius:4px;font-family:inherit;font-size:1rem;padding:10px 12px;transition:border-color .2s ease}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field input:focus,.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field select:focus,.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field textarea:focus{border-color:#428bca;box-shadow:0 0 5px rgba(66,139,202,.3);outline:none}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field textarea{font-family:inherit;min-height:80px;resize:vertical}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field select{background-color:#fff;cursor:pointer}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field.error input,.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field.error select,.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field.error textarea{background-color:#fdf2f2;border-color:#d9534f}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field .field-error{color:#d9534f;font-size:.85rem;font-weight:400;margin-top:5px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions{border-top:1px solid #ddd;display:flex;gap:15px;justify-content:space-between;margin-top:30px;padding-top:20px}@media(max-width:768px){.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions{flex-direction:column}}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn{align-items:center;border:none;border-radius:4px;cursor:pointer;display:inline-flex;font-size:1rem;font-weight:700;justify-content:center;min-width:200px;padding:12px 24px;text-decoration:none;transition:all .2s ease}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-primary{background:var(--wp--preset--color--colorthree);border:1px solid var(--wp--preset--color--colorfour);color:#fff}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-primary:hover:not(:disabled){background:#357ebd;border-color:#285e8e}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-primary:disabled{background:#95a5a6;border-color:#7f8c8d;cursor:not-allowed;opacity:.8}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-secondary{background:#f8f9fa;border:1px solid #ddd;color:#333}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-secondary:hover:not(:disabled){background:#e9ecef;border-color:#adb5bd}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-secondary:disabled{cursor:not-allowed;opacity:.6}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn .spinner{animation:spin 1s linear infinite;border:2px solid transparent;border-radius:50%;border-top-color:currentcolor;height:16px;margin-left:8px;width:16px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success{flex:100%;margin:0 auto;max-width:600px;text-align:center}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .success-icon{color:#5cb85c;margin-bottom:20px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .success-icon svg{height:64px;width:64px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success h2{color:#5cb85c;font-size:2rem;margin-bottom:20px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success p{color:#666;font-size:1.1rem;line-height:1.6;margin-bottom:20px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .reference-number{background:#d9edf7;border:1px solid #bce8f1;border-radius:6px;margin:20px 0;padding:15px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .reference-number p{color:#31708f;font-size:1.1rem;margin:0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps{background:#f8f9fa;border:1px solid #dee2e6;border-radius:6px;margin:30px 0;padding:20px;text-align:right}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps h3{color:#333;font-size:1.2rem;margin-top:0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps ul{margin:0;padding-right:20px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps ul li{color:#555;line-height:1.5;margin:8px 0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .contact-info{background:#fcf8e3;border:1px solid #faebcc;border-radius:6px;margin:20px 0;padding:15px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .contact-info p{color:#8a6d3b;margin:5px 0}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .contact-info p:first-child{font-weight:700}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .form-actions{margin-top:30px}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .form-actions .btn{background:#428bca;border:1px solid #357ebd;border-radius:4px;color:#fff;font-weight:700;padding:12px 24px;text-decoration:none}.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .form-actions .btn:hover{background:#357ebd;border-color:#285e8e}.wp-block-kate-toms-core-house-booking-flow .booking-period.selected{background:#f0f8ff!important;border-color:#428bca!important;box-shadow:0 4px 12px rgba(66,139,202,.25)!important}.wp-block-kate-toms-core-house-booking-flow .booking-error{background:#f8d7da;border:1px solid #f5c6cb;border-radius:8px;color:#721c24;margin:20px 0;padding:25px}.wp-block-kate-toms-core-house-booking-flow .booking-error h3{color:#721c24;margin-top:0}.wp-block-kate-toms-core-house-booking-flow .booking-error a{color:#721c24;text-decoration:underline}.wp-block-kate-toms-core-house-booking-flow .booking-error a:hover{text-decoration:none}.wp-block-kate-toms-core-house-booking-flow .loading-spinner{padding:40px;text-align:center}.wp-block-kate-toms-core-house-booking-flow .loading-spinner .spinner{animation:spin 1s linear infinite;border:4px solid #f3f3f3;border-radius:50%;border-top-color:#007cba;height:40px;margin:0 auto 20px;width:40px}@keyframes spin{0%{transform:rotate(0deg)}to{transform:rotate(-1turn)}}
+/*!*************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/house-booking-flow/style.scss ***!
+  \*************************************************************************************************************************************************************************************************************************************************************/
+.wp-block-kate-toms-core-house-booking-flow {
+  margin: 0 auto;
+  font-family: var(--wp--preset--font-family--system-font);
+  line-height: 1.6;
+  font-size: var(--wp--preset--font-size--small);
+  color: var(--wp--preset--color--charcoal);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section {
+  margin-bottom: 30px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress-labels {
+  display: flex;
+  margin-bottom: 10px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress-labels p {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  padding: 8px;
+  margin-left: 2px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress-labels p:last-child {
+  margin-left: 0;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress {
+  height: 40px;
+  background: var(--wp--preset--color--progressbar);
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  display: flex;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar:first-child {
+  background: #5bc0de;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar.bar-info {
+  background: #5bc0de;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-progress-section .progress .bar:last-child {
+  background: var(--wp--preset--color--progressactive);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+@media (max-width: 768px) {
+  .wp-block-kate-toms-core-house-booking-flow .booking-content {
+    flex-direction: column;
+  }
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info {
+  flex: 1;
+  background: var(--wp--preset--color--progressbar);
+  padding: var(--wp--preset--spacing--50);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info h2 {
+  margin-bottom: 20px;
+  font-size: var(--wp--preset--font-size--medium);
+  text-align: center;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info ul {
+  list-style: disc;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info ul li {
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details {
+  background: #f9f9f9;
+  padding: 15px;
+  border: 1px solid #ddd;
+  margin-top: var(--wp--preset--spacing--50);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 1.2rem;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details p {
+  margin: 0;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details p .label {
+  display: inline-block;
+  min-width: 80px;
+  color: #666;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-info .booking_details p strong {
+  color: #333;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options {
+  flex: 1;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options h3 {
+  margin-bottom: 20px;
+  font-size: var(--wp--preset--font-size--medium);
+  text-align: center;
+  font-weight: normal;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .no-periods {
+  padding: 20px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-style: italic;
+  text-align: center;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .booking-period {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: var(--wp--preset--spacing--40);
+  border: 2px solid #dee2e6;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .booking-period:hover {
+  border-color: #428bca;
+  background: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(66, 139, 202, 0.15);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .booking-period:last-child {
+  margin-bottom: 0;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details {
+  flex: 1;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details h4 {
+  margin: 0 0 8px 0;
+  color: var(--wp--preset--color--charcoal);
+  font-size: var(--wp--preset--font-size--small);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details .period-description {
+  margin: 0 0 8px 0;
+  font-size: 0var --wp--preset--font-size--small;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-details .period-dates {
+  margin: 0;
+  font-size: var(--wp--preset--font-size--small);
+  color: var(--wp--preset--color--charcoal);
+  line-height: 1.4;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-options .period-price {
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--wp--preset--color--colorsix);
+  text-align: left;
+  min-width: 120px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form {
+  flex: 1;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section {
+  margin-bottom: 30px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section h3 {
+  margin-bottom: 20px;
+  font-size: 1.2rem;
+  font-weight: bold;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+@media (max-width: 768px) {
+  .wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row {
+    flex-direction: column;
+  }
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row .form-field {
+  flex: 1;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-row .form-field.full-width {
+  flex: 100%;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field {
+  display: flex;
+  flex-direction: column;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field label {
+  margin-bottom: 5px;
+  font-size: 0.95rem;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field input,
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field select,
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field textarea {
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
+  transition: border-color 0.2s ease;
+  font-family: inherit;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field input:focus,
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field select:focus,
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field textarea:focus {
+  outline: none;
+  border-color: #428bca;
+  box-shadow: 0 0 5px rgba(66, 139, 202, 0.3);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field select {
+  cursor: pointer;
+  background-color: white;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field.error input,
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field.error select,
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field.error textarea {
+  border-color: #d9534f;
+  background-color: #fdf2f2;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-section .form-field .field-error {
+  color: #d9534f;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  font-weight: normal;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-top: 30px;
+  border-top: 1px solid #ddd;
+  padding-top: 20px;
+}
+@media (max-width: 768px) {
+  .wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions {
+    flex-direction: column;
+  }
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 200px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-primary {
+  background: var(--wp--preset--color--colorthree);
+  color: white;
+  border: 1px solid var(--wp--preset--color--colorfour);
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-primary:hover:not(:disabled) {
+  background: #357ebd;
+  border-color: #285e8e;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-primary:disabled {
+  background: #95a5a6;
+  border-color: #7f8c8d;
+  cursor: not-allowed;
+  opacity: 0.8;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-secondary {
+  background: #f8f9fa;
+  color: #333;
+  border: 1px solid #ddd;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-secondary:hover:not(:disabled) {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-form .personal-details-form .form-actions .btn .spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success {
+  flex: 100%;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .success-icon {
+  color: #5cb85c;
+  margin-bottom: 20px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .success-icon svg {
+  width: 64px;
+  height: 64px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success h2 {
+  color: #5cb85c;
+  margin-bottom: 20px;
+  font-size: 2rem;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  color: #666;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .reference-number {
+  background: #d9edf7;
+  border: 1px solid #bce8f1;
+  border-radius: 6px;
+  padding: 15px;
+  margin: 20px 0;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .reference-number p {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #31708f;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps {
+  text-align: right;
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 6px;
+  margin: 30px 0;
+  border: 1px solid #dee2e6;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 1.2rem;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps ul {
+  margin: 0;
+  padding-right: 20px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .next-steps ul li {
+  margin: 8px 0;
+  color: #555;
+  line-height: 1.5;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .contact-info {
+  background: #fcf8e3;
+  border: 1px solid #faebcc;
+  border-radius: 6px;
+  padding: 15px;
+  margin: 20px 0;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .contact-info p {
+  margin: 5px 0;
+  color: #8a6d3b;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .contact-info p:first-child {
+  font-weight: bold;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .form-actions {
+  margin-top: 30px;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .form-actions .btn {
+  padding: 12px 24px;
+  background: #428bca;
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+  border: 1px solid #357ebd;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-content .booking-success .form-actions .btn:hover {
+  background: #357ebd;
+  border-color: #285e8e;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-period.selected {
+  border-color: #428bca !important;
+  background: #f0f8ff !important;
+  box-shadow: 0 4px 12px rgba(66, 139, 202, 0.25) !important;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-error {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 25px;
+  border-radius: 8px;
+  border: 1px solid #f5c6cb;
+  margin: 20px 0;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-error h3 {
+  margin-top: 0;
+  color: #721c24;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-error a {
+  color: #721c24;
+  text-decoration: underline;
+}
+.wp-block-kate-toms-core-house-booking-flow .booking-error a:hover {
+  text-decoration: none;
+}
+.wp-block-kate-toms-core-house-booking-flow .loading-spinner {
+  text-align: center;
+  padding: 40px;
+}
+.wp-block-kate-toms-core-house-booking-flow .loading-spinner .spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007cba;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(-360deg);
+  }
+}

@@ -33,6 +33,10 @@
     border: none;
 }
 
+.kt-form-modal input[type="submit"]:hover {
+    cursor: pointer;
+}
+
 .kt-form-modal select {
     appearance: none;
     -webkit-appearance: none;
