@@ -613,18 +613,6 @@ class House_Calendar_Manager {
 		foreach ( $rate_period['WeekPriceList'] as $week_data ) {
 			$week_commencing = $week_data['WeekCommencing'];
 
-			// check the dates left in the month from the $week_commencing date
-			// check if the $availability_data[date][status] is available
-			$dates_left_in_month = $this->get_dates_left_in_month( $week_commencing, $availability_data );
-
-			if ( count( $dates_left_in_month ) < 5 ) {
-				foreach ( $dates_left_in_month as $date ) {
-					if ( $availability_data[ $date ]['status'] !== 'available' ) {
-						break 2;
-					}
-				}
-			}
-
 			$processed_rates['weeks'][ $week_commencing ] = array();
 
 			foreach ( $week_data['Amount'] as $stay_code => $rate ) {
@@ -669,46 +657,6 @@ class House_Calendar_Manager {
 		}
 
 		return $processed_rates;
-	}
-
-	/**
-	 * Get all dates remaining in the month from a given week commencing date.
-	 *
-	 * @param string $week_commencing Week commencing date in YYYY-MM-DD format.
-	 * @param array  $availability_data Processed availability data indexed by date.
-	 * @return array Array of date strings in YYYY-MM-DD format from week_commencing to end of month.
-	 */
-	private function get_dates_left_in_month( $week_commencing, $availability_data ) {
-		$dates = array();
-
-		try {
-			$current_date = new DateTime( $week_commencing );
-			$month        = (int) $current_date->format( 'm' );
-			$year         = (int) $current_date->format( 'Y' );
-
-			// Get the last day of this month.
-			$last_day_of_month = new DateTime( $year . '-' . $month . '-01' );
-			$last_day_of_month->modify( 'last day of this month' );
-
-			// Loop through each day from week_commencing to end of month.
-			while ( $current_date <= $last_day_of_month ) {
-				$date_key = $current_date->format( 'Y-m-d' );
-
-				// Only include dates that exist in availability data.
-				if ( isset( $availability_data[ $date_key ] ) ) {
-					$dates[] = $date_key;
-				}
-
-				$current_date->add( new DateInterval( 'P1D' ) );
-			}
-		} catch ( Exception $e ) {
-			// Log error if date parsing fails.
-			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-				error_log( 'Error getting dates left in month: ' . $e->getMessage() );
-			}
-		}
-
-		return $dates;
 	}
 
 	/**
