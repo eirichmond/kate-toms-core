@@ -114,6 +114,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/region-sections.php';
 
 		/**
+		 * Yoast SEO sitemap tweaks (enables Yoast's built-in sitemap cache).
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-sitemaps.php';
+
+		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
