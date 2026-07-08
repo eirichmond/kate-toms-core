@@ -629,8 +629,50 @@ class HouseCalendar {
 	}
 
 	/**
-	 * Find the best checkin date from multiple options by checking which has rate data.
-	 * Prefers dates that fall within the calendar month being viewed.
+	 * Check whether a stay of the given length starting on a date is fully available.
+	 * Mirrors the server-side validate_booking_period(): every night of the stay
+	 * must have status 'available'.
+	 * @param {Date}   checkinDate - The checkin date
+	 * @param {number} nights      - Number of nights in the stay
+	 * @return {boolean} True if all nights are available
+	 */
+	isStayAvailable( checkinDate, nights ) {
+		for ( let i = 0; i < nights; i++ ) {
+			const night = new Date( checkinDate );
+			night.setDate( night.getDate() + i );
+			const dayData =
+				this.calendarData.availability?.[
+					this.formatDateLocal( night )
+				];
+			if ( ! dayData || dayData.status !== 'available' ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Get the number of nights for a rate key.
+	 * @param {string} rateKey - The rate key (50, 60, 70, 80, 85, 90)
+	 * @return {number} Number of nights
+	 */
+	getRateNights( rateKey ) {
+		const nights = {
+			50: 2,
+			60: 3,
+			70: 7,
+			80: 4,
+			85: 2,
+			90: 5,
+		};
+		return nights[ rateKey ] || 7;
+	}
+
+	/**
+	 * Find the best checkin date from multiple options by checking which has rate data
+	 * and an actually-available stay period.
+	 * Prefers dates that fall within the calendar month being viewed, so a price only
+	 * shows in a month's table when a valid checkin exists in that month.
 	 * @param {Date[]} possibleDates    - Array of possible checkin dates
 	 * @param {string} rateKey          - The rate key being looked up
 	 * @param {string} storageMonthKey  - The month key where data is stored (YYYY-MM format)
@@ -649,7 +691,10 @@ class HouseCalendar {
 			return possibleDates[ 0 ];
 		}
 
-		// First, try to find a date that's in the calendar month being viewed AND has data
+		const nights = this.getRateNights( rateKey );
+
+		// First, try to find a date in the calendar month being viewed that has rate
+		// data AND a fully available stay period
 		for ( const date of possibleDates ) {
 			const dateKey = this.formatDateLocal( date );
 			const dateMonth = dateKey.substring( 0, 7 );
@@ -665,9 +710,13 @@ class HouseCalendar {
 				if ( weekRates && weekRates[ rateKey ] ) {
 					const rateData = weekRates[ rateKey ];
 					// Return this date if it has actual rate data (not just 'unavailable' or 'hidden')
+					// and the stay starting on it is bookable
 					if (
 						rateData.type &&
-						! [ 'unavailable', 'hidden' ].includes( rateData.type )
+						! [ 'unavailable', 'hidden' ].includes(
+							rateData.type
+						) &&
+						this.isStayAvailable( date, nights )
 					) {
 						return date;
 					}
@@ -675,17 +724,23 @@ class HouseCalendar {
 			}
 		}
 
-		// If no date in calendar month has data, check all dates for any with data
+		// If no date in calendar month qualifies, check all dates for any with data
+		// and availability. Returning an out-of-month date makes getWeekRate() render
+		// an empty cell in this month's table — the price belongs to the other month.
 		for ( const date of possibleDates ) {
 			const dateKey = this.formatDateLocal( date );
-			const weekRates = monthRates.weeks[ dateKey ];
+			const weekRates =
+				monthRates.weeks[ dateKey ] ||
+				this.getWeekRatesForDate( monthRates.weeks, date );
 
 			if ( weekRates && weekRates[ rateKey ] ) {
 				const rateData = weekRates[ rateKey ];
 				// Return this date if it has actual rate data (not just 'unavailable' or 'hidden')
+				// and the stay starting on it is bookable
 				if (
 					rateData.type &&
-					! [ 'unavailable', 'hidden' ].includes( rateData.type )
+					! [ 'unavailable', 'hidden' ].includes( rateData.type ) &&
+					this.isStayAvailable( date, nights )
 				) {
 					return date;
 				}
