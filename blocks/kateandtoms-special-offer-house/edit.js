@@ -53,11 +53,17 @@ export default function Edit( { attributes, setAttributes } ) {
 			if ( ! isUserTyping || ! searchTerm || searchTerm.length < 2 ) {
 				return [];
 			}
-
 			const { getEntityRecords } = select( coreStore );
 			return (
 				getEntityRecords( 'postType', 'houses', {
 					search: searchTerm,
+					// Restrict matching to the post title only. The default
+					// REST search for houses also weights location/content
+					// (e.g. searching the village "Blockley" returns
+					// "Wellacres House"), which is confusing here — editors
+					// expect to find a house by typing its name. Scoped to
+					// this block; global search is unaffected.
+					search_columns: [ 'post_title' ],
 					status: 'publish',
 					parent: 0,
 					per_page: 10,
@@ -66,6 +72,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		},
 		[ searchTerm, isUserTyping ]
 	);
+
 
 	const selectedHouseData = useSelect(
 		( select ) => {
