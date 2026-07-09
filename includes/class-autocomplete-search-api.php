@@ -73,8 +73,11 @@ class Autocomplete_Search_API {
 					'category' => 'Houses',
 					'url'      => $this->normalize_url( get_permalink( $post_id ) ),
 					'thumb'    => $this->normalize_url( get_the_post_thumbnail_url( $post_id, 'thumbnail' ) ),
-					'label'    => get_the_title(),
-					'desc'     => get_post_meta( $post_id, 'brief_description', true ),
+					// Decode entities: the frontend renders labels via
+					// data-wp-text (textContent), so encoded entities such as
+					// &#8217; (’) or &amp; (&) would otherwise show literally.
+					'label'    => html_entity_decode( get_the_title(), ENT_QUOTES, 'UTF-8' ),
+					'desc'     => html_entity_decode( (string) get_post_meta( $post_id, 'brief_description', true ), ENT_QUOTES, 'UTF-8' ),
 					'house_id' => $post_id,
 					'blog_id'  => $blog_id,
 					'post_id'  => $post_id,
@@ -212,8 +215,9 @@ class Autocomplete_Search_API {
 			'category' => $category,
 			'url'      => $this->normalize_url( $url ),
 			'thumb'    => $this->normalize_url( $thumb ),
-			'label'    => $label,
-			'desc'     => $desc,
+			// Decode entities so ’ / & render correctly via data-wp-text.
+			'label'    => html_entity_decode( $label, ENT_QUOTES, 'UTF-8' ),
+			'desc'     => html_entity_decode( $desc, ENT_QUOTES, 'UTF-8' ),
 			'house_id' => null,
 			'blog_id'  => $blog_id,
 			'post_id'  => null,
