@@ -668,12 +668,15 @@ class House_Calendar_Manager {
 	private function process_single_rate( $rate ) {
 		// Handle v2 API format where rate is an object with rental/mandatory_extras_total/total.
 		$price_breakdown = null;
+		$has_from_marker = false;
 		if ( is_array( $rate ) && isset( $rate['total'] ) ) {
 			$price_breakdown = array(
 				'rental'                 => $rate['rental'] ?? null,
 				'mandatory_extras_total' => $rate['mandatory_extras_total'] ?? null,
 				'total'                  => $rate['total'],
 			);
+			// A '+' on the rental component (e.g. "+3301") flags the total as a "from" minimum price.
+			$has_from_marker = is_string( $price_breakdown['rental'] ) && false !== strpos( $price_breakdown['rental'], '+' );
 			// Use the total value for all downstream processing.
 			$rate = $rate['total'];
 		}
@@ -691,6 +694,17 @@ class House_Calendar_Manager {
 					'display' => '£' . number_format( $numeric_value ),
 					'value'   => $numeric_value,
 					'offer'   => strlen( $offer_stars ),
+				);
+			}
+
+			// Check for a numeric rate with a trailing '+' (price is a "from" minimum, e.g. "150+").
+			if ( null === $result && preg_match( '/^(\d+)\s*\+$/', trim( $rate ), $matches ) ) {
+				$numeric_value = intval( $matches[1] );
+				$result        = array(
+					'type'    => 'price',
+					'display' => 'From £' . number_format( $numeric_value ),
+					'value'   => $numeric_value,
+					'from'    => true,
 				);
 			}
 
@@ -781,6 +795,12 @@ class House_Calendar_Manager {
 				'display' => 'Booked',
 				'value'   => null,
 			);
+		}
+
+		// Apply "from" marker for v2 rates whose rental component carried a '+'.
+		if ( $has_from_marker && isset( $result['type'] ) && 'price' === $result['type'] ) {
+			$result['display'] = 'From ' . $result['display'];
+			$result['from']    = true;
 		}
 
 		// Attach v2 price breakdown if available.
@@ -2520,6 +2540,11 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 						// Add offer indicator if present
 						if ( isset( $rate_data['offer'] ) && $rate_data['offer'] > 0 ) {
 							$rate_value .= str_repeat( '*', $rate_data['offer'] );
+						}
+
+						// Preserve "from" indicator (e.g. from a "150+" rate) for consumers like the landing-page blocks.
+						if ( ! empty( $rate_data['from'] ) ) {
+							$rate_value .= '+';
 						}
 
 						$available_dates[ $period_label ][] = $rate_value;
