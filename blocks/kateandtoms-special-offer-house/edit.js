@@ -143,6 +143,22 @@ export default function Edit( { attributes, setAttributes } ) {
 	const formattedDate = offerDate ? dateI18n( 'j M Y', offerDate ) : '';
 	const houseMeta = [ offer, formattedDate ].filter( Boolean ).join( ' · ' );
 
+	// Flag offers whose date has passed so editors can spot them for removal
+	// or updating. Mirrors the strict "before today" cutoff that
+	// Kate_Toms_Special_Offers_Grid::order_cards() uses to drop expired
+	// offers from the front end (today itself is not expired).
+	let isExpired = false;
+	if ( offerDate ) {
+		const today = new Date();
+		today.setHours( 0, 0, 0, 0 );
+		const [ offerYear, offerMonth, offerDay ] = offerDate
+			.slice( 0, 10 )
+			.split( '-' )
+			.map( Number );
+		const offerDateOnly = new Date( offerYear, offerMonth - 1, offerDay );
+		isExpired = offerDateOnly < today;
+	}
+
 	return (
 		<>
 			<InspectorControls>
@@ -433,7 +449,10 @@ export default function Edit( { attributes, setAttributes } ) {
 							'kate-toms-single-house-card' +
 							( selectedPostId
 								? ''
-								: ' kate-toms-single-house-card--empty' )
+								: ' kate-toms-single-house-card--empty' ) +
+							( selectedPostId && isExpired
+								? ' kate-toms-single-house-card--expired'
+								: '' )
 						}
 					>
 						<span

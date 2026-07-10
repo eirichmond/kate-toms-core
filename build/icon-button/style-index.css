@@ -1,1 +1,44 @@
-.wp-block-kate-and-toms-icon-button{align-items:center;cursor:pointer;display:inline-flex;gap:8px;justify-content:center}.wp-block-kate-and-toms-icon-button.icon-position-prepend{flex-direction:row}.wp-block-kate-and-toms-icon-button.icon-position-prepend .icon-button__icon{order:1}.wp-block-kate-and-toms-icon-button.icon-position-prepend .icon-button__text{order:2}.wp-block-kate-and-toms-icon-button.icon-position-append{flex-direction:row}.wp-block-kate-and-toms-icon-button.icon-position-append .icon-button__icon{order:2}.wp-block-kate-and-toms-icon-button.icon-position-append .icon-button__text{order:1}.wp-block-kate-and-toms-icon-button .icon-button__icon{align-items:center;display:inline-flex;flex-shrink:0;justify-content:center}.wp-block-kate-and-toms-icon-button .icon-button__icon svg{height:var(--icon-size,20px);width:var(--icon-size,20px)}
+/*!******************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/icon-button/style.scss ***!
+  \******************************************************************************************************************************************************************************************************************************************************/
+/**
+ * Minimal styles for the Icon Button block.
+ * Most styling should come from theme.json.
+ */
+.wp-block-kate-and-toms-icon-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  cursor: pointer;
+}
+.wp-block-kate-and-toms-icon-button.icon-position-prepend {
+  flex-direction: row;
+}
+.wp-block-kate-and-toms-icon-button.icon-position-prepend .icon-button__icon {
+  order: 1;
+}
+.wp-block-kate-and-toms-icon-button.icon-position-prepend .icon-button__text {
+  order: 2;
+}
+.wp-block-kate-and-toms-icon-button.icon-position-append {
+  flex-direction: row;
+}
+.wp-block-kate-and-toms-icon-button.icon-position-append .icon-button__icon {
+  order: 2;
+}
+.wp-block-kate-and-toms-icon-button.icon-position-append .icon-button__text {
+  order: 1;
+}
+.wp-block-kate-and-toms-icon-button .icon-button__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.wp-block-kate-and-toms-icon-button .icon-button__icon svg {
+  width: var(--icon-size, 20px);
+  height: var(--icon-size, 20px);
+}
+
+/*# sourceMappingURL=style-index.css.map*/

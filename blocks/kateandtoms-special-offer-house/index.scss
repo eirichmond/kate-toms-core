@@ -93,6 +93,16 @@
 			border-style: dashed;
 		}
 
+		&--expired {
+			border-color: #c00;
+			background: #fdf0f0;
+
+			.kate-toms-single-house-card__meta {
+				color: #c00;
+				font-weight: 600;
+			}
+		}
+
 		&__icon {
 			font-size: 20px;
 			line-height: 1;

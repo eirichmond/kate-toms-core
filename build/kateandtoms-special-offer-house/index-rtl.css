@@ -1,1 +1,101 @@
-.wp-block-kate-toms-core-kateandtoms-single-house{margin-bottom:20px}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions{background:#fff;border:1px solid #ccc;border-radius:4px;box-shadow:0 2px 6px rgba(0,0,0,.1);right:0;max-height:200px;overflow-y:auto;position:absolute;left:0;top:100%;z-index:1000}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item{border-bottom:1px solid #eee;cursor:pointer;padding:8px 12px}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item:hover{background-color:#f5f5f5}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item.selected{background-color:#e6f3ff}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item strong{font-weight:600}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item .suggestion-meta{color:#666;font-size:12px;margin-top:2px}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-wrapper{position:relative}.wp-block-kate-toms-core-kateandtoms-single-house .house-search-wrapper .components-base-control__help{font-style:italic;margin-top:8px}.wp-block-kate-toms-core-kateandtoms-single-house .editor-preview{border:2px dashed #ddd;padding:20px;text-align:center}.wp-block-kate-toms-core-kateandtoms-single-house .editor-preview.has-selection{background-color:#f0f8ff;border-color:#007cba}.wp-block-kate-toms-core-kateandtoms-single-house .editor-preview .preview-meta{color:#666;font-size:14px;margin-top:10px}.kate-toms-single-house-editor .kate-toms-single-house-card{align-items:center;background:#fff;border:1px solid #dcdcde;border-radius:4px;display:flex;gap:12px;padding:12px 14px}.kate-toms-single-house-editor .kate-toms-single-house-card--placeholder{background:#f6f7f7;border-style:dashed}.kate-toms-single-house-editor .kate-toms-single-house-card--empty{border-style:dashed}.kate-toms-single-house-editor .kate-toms-single-house-card__icon{font-size:20px;line-height:1}.kate-toms-single-house-editor .kate-toms-single-house-card__body{display:flex;flex-direction:column;min-width:0}.kate-toms-single-house-editor .kate-toms-single-house-card__title{color:#1e1e1e;font-weight:600}.kate-toms-single-house-editor .kate-toms-single-house-card__meta{color:#757575;font-size:12px}
+/*!**************************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/kateandtoms-special-offer-house/index.scss ***!
+  \**************************************************************************************************************************************************************************************************************************************************************************/
+.wp-block-kate-toms-core-kateandtoms-single-house {
+  margin-bottom: 20px;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item:hover {
+  background-color: #f5f5f5;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item.selected {
+  background-color: #e6f3ff;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item strong {
+  font-weight: 600;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-suggestions .suggestion-item .suggestion-meta {
+  font-size: 12px;
+  color: #666;
+  margin-top: 2px;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-wrapper {
+  position: relative;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .house-search-wrapper .components-base-control__help {
+  margin-top: 8px;
+  font-style: italic;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .editor-preview {
+  border: 2px dashed #ddd;
+  padding: 20px;
+  text-align: center;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .editor-preview.has-selection {
+  border-color: #007cba;
+  background-color: #f0f8ff;
+}
+.wp-block-kate-toms-core-kateandtoms-single-house .editor-preview .preview-meta {
+  font-size: 14px;
+  color: #666;
+  margin-top: 10px;
+}
+
+.kate-toms-single-house-editor .kate-toms-single-house-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #dcdcde;
+  border-radius: 4px;
+  background: #fff;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card--placeholder {
+  border-style: dashed;
+  background: #f6f7f7;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card--empty {
+  border-style: dashed;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card--expired {
+  border-color: #c00;
+  background: #fdf0f0;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card--expired .kate-toms-single-house-card__meta {
+  color: #c00;
+  font-weight: 600;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card__icon {
+  font-size: 20px;
+  line-height: 1;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card__body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card__title {
+  font-weight: 600;
+  color: #1e1e1e;
+}
+.kate-toms-single-house-editor .kate-toms-single-house-card__meta {
+  font-size: 12px;
+  color: #757575;
+}
