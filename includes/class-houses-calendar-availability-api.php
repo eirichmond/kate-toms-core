@@ -944,8 +944,8 @@ class House_Calendar_Manager {
 			),   // 2-night midweek: Monday, Tuesday, Wednesday
 			'90' => array(
 				'nights'       => 5,
-				'checkin_days' => array( 5 ),
-			),         // 5 nights: Friday
+				'checkin_days' => array( 0, 1, 2, 3, 4, 5, 6 ),
+			),         // 5 nights: any arrival day (no fixed checkin day briefed)
 		);
 
 		return $stay_map[ $stay_code ] ?? false;

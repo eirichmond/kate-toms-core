@@ -620,8 +620,20 @@ class HouseCalendar {
 					monthKey
 				);
 
-			case '90': // 5 nights - assume Friday for now
-				return friday;
+			case '90': { // 5 nights - no fixed checkin day, any day in the week works
+				const candidates90 = [];
+				for ( let i = 0; i < 7; i++ ) {
+					const candidate = new Date( friday );
+					candidate.setDate( friday.getDate() + i );
+					candidates90.push( candidate );
+				}
+				return this.findBestCheckinDate(
+					candidates90,
+					rateKey,
+					fridayMonthKey,
+					monthKey
+				);
+			}
 
 			default:
 				return friday;
@@ -820,9 +832,10 @@ class HouseCalendar {
 			if ( rateKey === '50' || rateKey === '60' ) {
 				return { type: 'empty', display: '' };
 			}
-			// For WEEK rate (70), it depends on which checkin day has data
-			// If checkin is not in the calendar month, don't show it
-			if ( rateKey === '70' ) {
+			// For WEEK rate (70) and the flexible 5 night rate (90), it depends on
+			// which checkin day has data. If checkin is not in the calendar month,
+			// don't show it.
+			if ( rateKey === '70' || rateKey === '90' ) {
 				return { type: 'empty', display: '' };
 			}
 			// For other rates, show n/a
