@@ -70,6 +70,7 @@ register_deactivation_hook( __FILE__, 'deactivate_kate_toms_core' );
 if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-calendar-cache-warmer.php';
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-kt-houses-cli-command.php';
+	require_once plugin_dir_path( __FILE__ ) . 'includes/class-sitemap-cache-warmer.php';
 }
 
 /**
