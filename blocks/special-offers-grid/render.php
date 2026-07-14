@@ -45,6 +45,16 @@ if ( empty( $special_offers ) ) {
 	return;
 }
 
+/*
+ * Offers whose break has already been booked are no longer sellable, so they
+ * are not advertised. The verdicts are precomputed by `wp kt-offers-cache warm`
+ * — this is a single transient read, not a calendar lookup per card. A cold or
+ * partial map hides nothing.
+ */
+$special_offers_booked_map = class_exists( 'Kate_Toms_Special_Offer_Availability' )
+	? Kate_Toms_Special_Offer_Availability::get_booked_map()
+	: array();
+
 $special_offers_pattern_file = get_theme_file_path( 'patterns/house-card-search-special-offer.php' );
 
 global $post;
@@ -105,6 +115,18 @@ $special_offers_cell_count = 0;
 					esc_html__( 'A selected special-offer house is no longer available and was skipped.', 'kate-toms-core' )
 				);
 			}
+			continue;
+		}
+
+		// The break this offer advertises has been booked — stop selling it.
+		if (
+			class_exists( 'Kate_Toms_Special_Offer_Availability' )
+			&& Kate_Toms_Special_Offer_Availability::is_booked(
+				$special_offers_booked_map,
+				$special_offer_card['selectedPostId'],
+				$special_offer_card['offerDateNormalized']
+			)
+		) {
 			continue;
 		}
 

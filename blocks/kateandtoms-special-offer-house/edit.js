@@ -12,6 +12,45 @@ import { useSelect } from '@wordpress/data';
 import { store as coreStore } from '@wordpress/core-data';
 import { dateI18n } from '@wordpress/date';
 import { useState, useEffect } from '@wordpress/element';
+import apiFetch from '@wordpress/api-fetch';
+
+/**
+ * Minimum lead time, in days, between today and an offer's expiry date.
+ *
+ * Must track Kate_Toms_Special_Offers_Grid::MIN_LEAD_DAYS — this is what makes
+ * the editor's red tint mean "not on the front end".
+ *
+ * @type {number}
+ */
+const MIN_LEAD_DAYS = 3;
+
+/**
+ * The offers page holds hundreds of these blocks, and they all need the same
+ * booked map, so the request is made once and shared rather than once per card.
+ *
+ * @type {Promise<Set<string>>|null}
+ */
+let bookedKeysPromise = null;
+
+/**
+ * Fetch the set of booked offer keys ("houseId|YYYY-MM-DD").
+ *
+ * Failures resolve to an empty set: not knowing which offers are booked must
+ * never be mistaken for knowing that none are.
+ *
+ * @return {Promise<Set<string>>} Booked offer keys.
+ */
+function fetchBookedKeys() {
+	if ( ! bookedKeysPromise ) {
+		bookedKeysPromise = apiFetch( {
+			path: '/kate-toms/v1/special-offers/booked',
+		} )
+			.then( ( response ) => new Set( response?.booked || [] ) )
+			.catch( () => new Set() );
+	}
+
+	return bookedKeysPromise;
+}
 
 /**
  * Human-readable label for a placeholder location key.
@@ -72,7 +111,6 @@ export default function Edit( { attributes, setAttributes } ) {
 		},
 		[ searchTerm, isUserTyping ]
 	);
-
 
 	const selectedHouseData = useSelect(
 		( select ) => {
@@ -143,20 +181,56 @@ export default function Edit( { attributes, setAttributes } ) {
 	const formattedDate = offerDate ? dateI18n( 'j M Y', offerDate ) : '';
 	const houseMeta = [ offer, formattedDate ].filter( Boolean ).join( ' · ' );
 
-	// Flag offers whose date has passed so editors can spot them for removal
-	// or updating. Mirrors the strict "before today" cutoff that
-	// Kate_Toms_Special_Offers_Grid::order_cards() uses to drop expired
-	// offers from the front end (today itself is not expired).
+	// Flag offers that are no longer on the front end so editors can spot them
+	// for removal or updating. Mirrors the lead-time cutoff that
+	// Kate_Toms_Special_Offers_Grid::order_cards() uses to drop offers: an offer
+	// expiring today, in the past, or within MIN_LEAD_DAYS days is gone.
 	let isExpired = false;
 	if ( offerDate ) {
-		const today = new Date();
-		today.setHours( 0, 0, 0, 0 );
+		const cutoff = new Date();
+		cutoff.setHours( 0, 0, 0, 0 );
+		cutoff.setDate( cutoff.getDate() + MIN_LEAD_DAYS );
 		const [ offerYear, offerMonth, offerDay ] = offerDate
 			.slice( 0, 10 )
 			.split( '-' )
 			.map( Number );
 		const offerDateOnly = new Date( offerYear, offerMonth - 1, offerDay );
-		isExpired = offerDateOnly < today;
+		isExpired = offerDateOnly <= cutoff;
+	}
+
+	// Offers whose break has already been booked are also pulled from the front
+	// end. The verdicts come from the precomputed map, so an offer only reads as
+	// booked when the nightly warm positively determined it.
+	const [ bookedKeys, setBookedKeys ] = useState( null );
+
+	useEffect( () => {
+		let cancelled = false;
+
+		fetchBookedKeys().then( ( keys ) => {
+			if ( ! cancelled ) {
+				setBookedKeys( keys );
+			}
+		} );
+
+		return () => {
+			cancelled = true;
+		};
+	}, [] );
+
+	const isBooked = Boolean(
+		selectedPostId &&
+			offerDate &&
+			bookedKeys?.has(
+				`${ selectedPostId }|${ offerDate.slice( 0, 10 ) }`
+			)
+	);
+
+	// Why the offer is not showing, for the card's status line.
+	let hiddenReason = '';
+	if ( selectedPostId && isBooked ) {
+		hiddenReason = __( 'Booked — not shown', 'kate-toms-core' );
+	} else if ( selectedPostId && isExpired ) {
+		hiddenReason = __( 'Expired — not shown', 'kate-toms-core' );
 	}
 
 	return (
@@ -450,8 +524,11 @@ export default function Edit( { attributes, setAttributes } ) {
 							( selectedPostId
 								? ''
 								: ' kate-toms-single-house-card--empty' ) +
-							( selectedPostId && isExpired
+							( selectedPostId && ( isExpired || isBooked )
 								? ' kate-toms-single-house-card--expired'
+								: '' ) +
+							( selectedPostId && isBooked
+								? ' kate-toms-single-house-card--booked'
 								: '' )
 						}
 					>
@@ -483,6 +560,11 @@ export default function Edit( { attributes, setAttributes } ) {
 											'kate-toms-core'
 									  ) }
 							</span>
+							{ hiddenReason && (
+								<span className="kate-toms-single-house-card__status">
+									{ hiddenReason }
+								</span>
+							) }
 						</div>
 					</div>
 				) }

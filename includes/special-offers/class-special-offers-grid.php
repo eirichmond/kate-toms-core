@@ -39,10 +39,22 @@ class Kate_Toms_Special_Offers_Grid {
 	public const CARDS_PER_ROW = 4;
 
 	/**
+	 * Minimum lead time, in days, between today and an offer's expiry date.
+	 *
+	 * An offer is pulled from the grid once it is this close to expiring, so
+	 * guests are not shown breaks they realistically can no longer book. The
+	 * legacy site used five days; the business asked for three.
+	 *
+	 * @var int
+	 */
+	public const MIN_LEAD_DAYS = 3;
+
+	/**
 	 * Builds the ordered, filtered render list from raw child attributes.
 	 *
-	 * House cards whose offer has expired (offer date before today, site
-	 * timezone, today inclusive) are dropped. Remaining dated house cards are
+	 * House cards are dropped once their offer is within MIN_LEAD_DAYS of its
+	 * expiry date (site timezone) — so an offer expiring today, in the past, or
+	 * in the next three days is not rendered. Remaining dated house cards are
 	 * sorted ascending by offer date (soonest expiry first). Dateless house
 	 * cards and manual placeholder cards are never date-filtered and trail the
 	 * dated houses in their original editor order.
@@ -53,7 +65,7 @@ class Kate_Toms_Special_Offers_Grid {
 	 * @return array<int, array<string, mixed>> Ordered, filtered card arrays ready for rendering.
 	 */
 	public static function order_cards( array $children, \DateTimeImmutable $now ): array {
-		$today    = $now->format( 'Y-m-d' );
+		$cutoff   = self::expiry_cutoff( $now );
 		$dated    = array();
 		$trailing = array();
 
@@ -66,8 +78,8 @@ class Kate_Toms_Special_Offers_Grid {
 				continue;
 			}
 
-			// Expired offers (before today) are dropped; today is kept.
-			if ( $card['offerDateNormalized'] < $today ) {
+			// Offers at or inside the lead-time cutoff are dropped.
+			if ( $card['offerDateNormalized'] <= $cutoff ) {
 				continue;
 			}
 
@@ -77,6 +89,21 @@ class Kate_Toms_Special_Offers_Grid {
 		usort( $dated, array( self::class, 'compare_by_offer_date' ) );
 
 		return array_merge( $dated, $trailing );
+	}
+
+	/**
+	 * The latest offer date that is still too close to expiry to be shown.
+	 *
+	 * An offer is rendered only when its date is strictly after this cutoff, so
+	 * an offer expiring in exactly MIN_LEAD_DAYS days is dropped and one
+	 * expiring a day later is kept.
+	 *
+	 * @param \DateTimeImmutable $now Current moment in the site timezone.
+	 *
+	 * @return string Cutoff date as Y-m-d.
+	 */
+	public static function expiry_cutoff( \DateTimeImmutable $now ): string {
+		return $now->modify( '+' . self::MIN_LEAD_DAYS . ' days' )->format( 'Y-m-d' );
 	}
 
 	/**
