@@ -1814,6 +1814,9 @@ class House_Calendar_Manager {
 	/**
 	 * Get iPro PropertyId for a house from its ipro_property_id post meta.
 	 *
+	 * Public because several callers need it; it used to be private and was
+	 * reached through ReflectionMethod from four different places.
+	 *
 	 * The ipro_property_id meta is the single source of truth, populated by the
 	 * backfill CLI and the Blueprint at house creation. This replaces the previous
 	 * property-mapping reflookup (post ID = PropertyReference), which depended on
@@ -1823,7 +1826,7 @@ class House_Calendar_Manager {
 	 * @param int $wp_house_id WordPress post ID of the parent house.
 	 * @return string|false iPro PropertyId, or false if the meta is not set.
 	 */
-	private function get_property_id_from_wp_house_id( $wp_house_id ) {
+	public function get_property_id_from_wp_house_id( $wp_house_id ) {
 		$property_id = get_post_meta( (int) $wp_house_id, 'ipro_property_id', true );
 
 		if ( '' === $property_id || null === $property_id ) {
