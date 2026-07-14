@@ -136,6 +136,12 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'public/class-kate-toms-core-public.php';
 
 		/**
+		 * Builds the location clauses shared by the landing page block render
+		 * and the paginated houses-load endpoint.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-kate-toms-location-tax-query.php';
+
+		/**
 		 * The class responsible for the Houses Filter API functionality
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-houses-filter-api.php';

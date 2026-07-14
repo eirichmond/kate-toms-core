@@ -68,3 +68,20 @@ if ( ! function_exists( 'kate_toms_core_get_region_sections' ) ) {
 		return apply_filters( 'kate_toms_core_region_sections', $sections );
 	}
 }
+
+if ( ! function_exists( 'kate_toms_core_get_region_term_ids' ) ) {
+	/**
+	 * Get the `location` term IDs of the four broad regions.
+	 *
+	 * Used to tell a section's broad region apart from the granular locations
+	 * the migration injects alongside it.
+	 *
+	 * @return int[] Region location term IDs.
+	 */
+	function kate_toms_core_get_region_term_ids() {
+		return array_map(
+			'intval',
+			wp_list_pluck( kate_toms_core_get_region_sections(), 'term_id' )
+		);
+	}
+}
