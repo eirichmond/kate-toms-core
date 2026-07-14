@@ -195,7 +195,6 @@ class Kate_Toms_Core_Admin {
 				}
 
 				$block_path = plugin_dir_path( __DIR__ ) . '/build/' . $folder;
-				error_log( 'Registering block: ' . $folder . ' from path: ' . $block_path );
 
 				// Special handling for single-house-display
 				if ( $folder === 'single-house-display' ) {
@@ -290,10 +289,11 @@ class Kate_Toms_Core_Admin {
 					$result = register_block_type( $block_path );
 				}
 				
+				// Only failures are worth a line. Logging every successful
+				// registration wrote ~30 lines to disk on every request, on
+				// every page of the site.
 				if ( ! $result ) {
 					error_log( 'Failed to register block: ' . $folder );
-				} else {
-					error_log( 'Successfully registered block: ' . $folder );
 				}
 			}
 		} else {
