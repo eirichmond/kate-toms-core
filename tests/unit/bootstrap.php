@@ -18,8 +18,13 @@ require_once dirname( __DIR__, 2 ) . '/vendor/autoload.php';
  * verified before the class exists (added in task 1.1). Once present, tests can
  * instantiate it directly without WordPress.
  */
-$kate_toms_helper = dirname( __DIR__, 2 ) . '/includes/special-offers/class-special-offers-grid.php';
+$kate_toms_helpers = array(
+	dirname( __DIR__, 2 ) . '/includes/special-offers/class-special-offers-grid.php',
+	dirname( __DIR__, 2 ) . '/includes/houses-filter/class-kate-toms-location-tax-query.php',
+);
 
-if ( file_exists( $kate_toms_helper ) ) {
-	require_once $kate_toms_helper;
+foreach ( $kate_toms_helpers as $kate_toms_helper ) {
+	if ( file_exists( $kate_toms_helper ) ) {
+		require_once $kate_toms_helper;
+	}
 }

@@ -59,13 +59,12 @@ $query_args = array(
 $tax_query = array();
 
 if ( ! empty( $location_term_ids ) ) {
-	$tax_query[] = array(
-		'taxonomy' => 'location',
-		'field'    => 'term_id',
-		'terms'    => $location_term_ids,
-		// AND: when multiple location terms are set (e.g. a broad region plus a
-		// granular location injected by the migration), a house must match all.
-		'operator' => 'AND',
+	// A section pairs a broad region with the granular locations injected by the
+	// migration. The granular locations are alternatives, so this yields a region
+	// clause and a granular clause, ANDed together below.
+	$tax_query = array_merge(
+		$tax_query,
+		Kate_Toms_Location_Tax_Query::build( $location_term_ids, kate_toms_core_get_region_term_ids() )
 	);
 }
 
