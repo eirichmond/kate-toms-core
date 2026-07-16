@@ -136,6 +136,12 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'public/class-kate-toms-core-public.php';
 
 		/**
+		 * Builds the location clauses shared by the landing page block render
+		 * and the paginated houses-load endpoint.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-kate-toms-location-tax-query.php';
+
+		/**
 		 * The class responsible for the Houses Filter API functionality
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-houses-filter-api.php';
@@ -176,6 +182,16 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-special-offers-migration.php';
 
 		/**
+		 * Booked-out detection for special offers (cached verdict map).
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-kate-toms-special-offer-availability.php';
+
+		/**
+		 * REST endpoint serving the booked map to the block editor.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-kate-toms-special-offer-availability-api.php';
+
+		/**
 		 * The CRM API client used by the Blueprint onboarding feature.
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-blueprint-crm-api.php';
@@ -200,6 +216,9 @@ class Kate_Toms_Core {
 
 		// Register the one-off special offers migration action.
 		new Kate_Toms_Special_Offers_Migration();
+
+		// Serves the booked-offer map to the block editor.
+		new Kate_Toms_Special_Offer_Availability_API();
 	}
 
 	/**

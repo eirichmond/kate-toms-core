@@ -89,11 +89,12 @@ final class OrderCardsTest extends TestCase {
 	}
 
 	/**
-	 * An offer expiring today is still shown (today is inclusive).
+	 * An offer expiring today is dropped: guests cannot realistically book a
+	 * break that expires the same day.
 	 *
 	 * @return void
 	 */
-	public function test_keeps_offer_expiring_today(): void {
+	public function test_drops_offer_expiring_today(): void {
 		$children = array(
 			array(
 				'selectedPostId' => 1,
@@ -103,11 +104,60 @@ final class OrderCardsTest extends TestCase {
 
 		$result = Kate_Toms_Special_Offers_Grid::order_cards( $children, $this->now() );
 
-		$this->assertSame( array( 1 ), $this->ids( $result ) );
+		$this->assertSame( array(), $this->ids( $result ) );
+	}
+
+	/**
+	 * The lead-time boundary. "Now" is 2026-07-03 and MIN_LEAD_DAYS is 3, so the
+	 * cutoff is the 6th: offers up to and including the 6th are dropped, and the
+	 * 7th is the first date still shown.
+	 *
+	 * @return void
+	 */
+	public function test_drops_offers_within_the_lead_time_and_keeps_the_first_beyond_it(): void {
+		$children = array(
+			array(
+				'selectedPostId' => 1,
+				'offerDate'      => '2026-07-04',
+			),
+			array(
+				'selectedPostId' => 2,
+				'offerDate'      => '2026-07-05',
+			),
+			array(
+				'selectedPostId' => 3,
+				'offerDate'      => '2026-07-06',
+			),
+			array(
+				'selectedPostId' => 4,
+				'offerDate'      => '2026-07-07',
+			),
+		);
+
+		$result = Kate_Toms_Special_Offers_Grid::order_cards( $children, $this->now() );
+
+		$this->assertSame( array( 4 ), $this->ids( $result ) );
+	}
+
+	/**
+	 * The cutoff tracks MIN_LEAD_DAYS rather than a hard-coded date.
+	 *
+	 * @return void
+	 */
+	public function test_expiry_cutoff_is_min_lead_days_after_today(): void {
+		$this->assertSame(
+			'2026-07-06',
+			Kate_Toms_Special_Offers_Grid::expiry_cutoff( $this->now() )
+		);
+		$this->assertSame( 3, Kate_Toms_Special_Offers_Grid::MIN_LEAD_DAYS );
 	}
 
 	/**
 	 * Time/zone suffixes on the stored date do not shift the calendar date.
+	 *
+	 * Anchored either side of the lead-time cutoff (the 6th), where a one-day
+	 * shift would flip the outcome: the 6th is dropped even with a late
+	 * time-of-day suffix, and the 7th is kept even with a midnight one.
 	 *
 	 * @return void
 	 */
@@ -115,13 +165,17 @@ final class OrderCardsTest extends TestCase {
 		$children = array(
 			array(
 				'selectedPostId' => 1,
-				'offerDate'      => '2026-07-03T00:00:00',
+				'offerDate'      => '2026-07-06T23:59:59',
+			),
+			array(
+				'selectedPostId' => 2,
+				'offerDate'      => '2026-07-07T00:00:00',
 			),
 		);
 
 		$result = Kate_Toms_Special_Offers_Grid::order_cards( $children, $this->now() );
 
-		$this->assertSame( array( 1 ), $this->ids( $result ) );
+		$this->assertSame( array( 2 ), $this->ids( $result ) );
 	}
 
 	/**

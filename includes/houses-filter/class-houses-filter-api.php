@@ -656,13 +656,11 @@ class Houses_Filter_API {
 		$tax_query = array();
 
 		if ( ! empty( $location_term_ids ) ) {
-			$tax_query[] = array(
-				'taxonomy' => 'location',
-				'field'    => 'term_id',
-				'terms'    => $location_term_ids,
-				// AND: when multiple location terms are set (e.g. a broad region
-				// plus a granular location), a house must match all of them.
-				'operator' => 'AND',
+			// Must mirror the house-load-search block render, or page 1 and the
+			// infinite-scroll pages would disagree about what qualifies.
+			$tax_query = array_merge(
+				$tax_query,
+				Kate_Toms_Location_Tax_Query::build( $location_term_ids, kate_toms_core_get_region_term_ids() )
 			);
 		}
 
