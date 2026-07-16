@@ -128,7 +128,10 @@ if ( ! class_exists( 'Kate_Toms_Special_Offer_Availability' ) ) {
 				return null;
 			}
 
-			$periods = $manager->get_booking_periods_for_date( $property_id, $checkin );
+			// Strict, exact-date check: pass false so a booked date is not masked
+			// by the calendar UI's "nearest available date" forward search, which
+			// would otherwise report a nearby free date and hide the booking.
+			$periods = $manager->get_booking_periods_for_date( $property_id, $checkin, false );
 
 			// No period can still start on the offer date: the break is gone.
 			return empty( $periods );
