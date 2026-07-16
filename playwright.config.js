@@ -26,6 +26,9 @@ module.exports = defineConfig( {
 	projects: [
 		{
 			name: 'mobile-chromium',
+			// The drilldown only exists below the 1100px breakpoint, so this
+			// project takes only the specs written for a mobile viewport.
+			testMatch: /mobile-nav-drilldown\.spec\.js/,
 			use: {
 				// Pixel 5 is a Chromium-based mobile device descriptor,
 				// unlike iPhone 13 which defaults to WebKit. Sticking to
@@ -34,6 +37,13 @@ module.exports = defineConfig( {
 				// Force an explicit viewport narrower than the 1100px
 				// drilldown breakpoint for clarity.
 				viewport: { width: 375, height: 812 },
+			},
+		},
+		{
+			name: 'desktop-chromium',
+			testMatch: /party-houses-landing\.spec\.js/,
+			use: {
+				...devices[ 'Desktop Chrome' ],
 			},
 		},
 	],
