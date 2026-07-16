@@ -71,7 +71,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-calendar-cache-warmer.php';
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-kt-houses-cli-command.php';
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-sitemap-cache-warmer.php';
-	require_once plugin_dir_path( __FILE__ ) . 'includes/class-special-offers-cache-warmer.php';
+	require_once plugin_dir_path( __FILE__ ) . 'includes/class-seasonal-cache-warmer.php';
 }
 
 /**

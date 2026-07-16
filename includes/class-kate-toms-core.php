@@ -147,6 +147,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-houses-filter-api.php';
 		
 		/**
+		 * Precomputed house lists for the seasonal / availability landing pages.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/seasonal/class-kate-toms-seasonal-results-cache.php';
+
+		/**
 		 * The class responsible for the House Availability API functionality
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-houses-calendar-availability-api.php';

@@ -15,8 +15,6 @@
 $current_post_id = get_the_ID();
 $current_post_type = get_post_type( $current_post_id );
 
-error_log( sprintf( 'House Availability Landing Pages render.php executing for post ID %d, type: %s', $current_post_id, $current_post_type ) );
-
 // Only proceed if we're on an availability post
 if ( $current_post_type !== 'availability' ) {
 	echo '<p>' . __( 'This block only works on Availability post types.', 'kate-toms-core' ) . '</p>';
@@ -36,13 +34,6 @@ if ( empty( $rolling_upcoming_period ) || empty( $periods_to_include ) ) {
 // Calculate dynamic date range based on rolling period
 $beginning_date = current_time( 'Y-m-d' ); // Today
 $ending_date = date( 'Y-m-d', strtotime( "+{$rolling_upcoming_period} weeks", current_time( 'timestamp' ) ) );
-
-error_log( sprintf(
-	'Availability dates calculated: rolling_period=%s weeks, beginning=%s, ending=%s',
-	$rolling_upcoming_period,
-	$beginning_date,
-	$ending_date
-) );
 
 // Map availability period names to API period keys
 $period_mapping = array(
@@ -132,57 +123,83 @@ if ( $order_by === 'meta_value_num' ) {
 	);
 }
 
-// Execute the query to get all houses (we'll filter by availability after)
-$houses_query = new WP_Query( $query_args );
-
-if ( ! $houses_query->have_posts() ) {
-	echo '<p>' . __( 'No houses found.', 'kate-toms-core' ) . '</p>';
-	return;
-}
-
-// Log filtering attempt
-error_log( sprintf(
-	'Availability filtering: %d houses, dates %s to %s (%s weeks), periods: %s',
-	count( $houses_query->posts ),
-	$beginning_date,
-	$ending_date,
-	$rolling_upcoming_period,
-	implode( ', ', $api_periods )
-) );
-
-// Filter houses by availability using the same function as seasonal
-$filtered_houses = kate_toms_filter_houses_by_seasonal_availability(
-	$houses_query->posts,
-	$beginning_date,
-	$ending_date,
-	$api_periods
+/*
+ * Same story as the seasonal pages: which houses are both bookable and carrying
+ * an offer in this window cannot be asked of WP_Query, so it is precomputed by
+ * `wp kt-seasonal-cache warm` and read here in one hit. On a cold cache we fall
+ * back to warm calendars only ($allow_api = false) rather than fetching a cold
+ * calendar per house, which is what made this page time out.
+ *
+ * 'offers' marks this as the offers-only variant, so it cannot collide with a
+ * seasonal page asking the same region/date/period question.
+ */
+$availability_criteria = array(
+	'location'  => $location_slug,
+	'beginning' => $beginning_date,
+	'ending'    => $ending_date,
+	'periods'   => array_merge( $api_periods, array( 'offers' ) ),
+	'orderby'   => $order_by,
+	'order'     => $order,
+	'meta_key'  => $meta_key,
 );
 
-error_log( sprintf( 'Availability filtering result: %d houses matched', count( $filtered_houses ) ) );
+$cached_house_ids = class_exists( 'Kate_Toms_Seasonal_Results_Cache' )
+	? Kate_Toms_Seasonal_Results_Cache::get( $availability_criteria )
+	: null;
 
-if ( empty( $filtered_houses ) ) {
-	echo '<p>' . __( 'No houses available for the selected dates and periods.', 'kate-toms-core' ) . '</p>';
-	echo '<p><small>Checked ' . count( $houses_query->posts ) . ' houses for availability in the next ' . esc_html( $rolling_upcoming_period ) . ' weeks (' . esc_html( $beginning_date ) . ' to ' . esc_html( $ending_date ) . ') for periods: ' . esc_html( implode( ', ', $api_periods ) ) . '</small></p>';
-	return;
+if ( is_array( $cached_house_ids ) ) {
+	$filtered_houses = empty( $cached_house_ids )
+		? array()
+		: get_posts(
+			array(
+				'post_type'        => 'houses',
+				'post_status'      => 'publish',
+				'post__in'         => $cached_house_ids,
+				'orderby'          => 'post__in',
+				'posts_per_page'   => -1,
+				'suppress_filters' => false,
+			)
+		);
+} else {
+	$houses_query = new WP_Query( $query_args );
+
+	if ( ! $houses_query->have_posts() ) {
+		echo '<p>' . esc_html__( 'No houses found.', 'kate-toms-core' ) . '</p>';
+		return;
+	}
+
+	$filtered_houses = kate_toms_filter_houses_by_seasonal_availability(
+		$houses_query->posts,
+		$beginning_date,
+		$ending_date,
+		$api_periods,
+		false
+	);
+
+	/*
+	 * The availability filter only confirms a house is bookable. This block
+	 * surfaces offers, so keep just the houses whose rate carries the '*' offer
+	 * marker for an included period in the window.
+	 */
+	$filtered_houses = array_values(
+		array_filter(
+			$filtered_houses,
+			function ( $house ) use ( $beginning_date, $ending_date, $api_periods ) {
+				return kate_toms_house_has_seasonal_offer( $house->ID, $beginning_date, $ending_date, $api_periods );
+			}
+		)
+	);
+
+	if ( class_exists( 'Kate_Toms_Seasonal_Results_Cache' ) ) {
+		Kate_Toms_Seasonal_Results_Cache::set(
+			$availability_criteria,
+			wp_list_pluck( $filtered_houses, 'ID' )
+		);
+	}
 }
 
-// Restrict to houses that carry a special offer (indicated by '*') for the
-// included periods within the rolling window. The availability filter above
-// only confirms a house is bookable; this block should surface offers only.
-$available_count = count( $filtered_houses );
-$filtered_houses = array_values(
-	array_filter(
-		$filtered_houses,
-		function ( $house ) use ( $beginning_date, $ending_date, $api_periods ) {
-			return kate_toms_house_has_seasonal_offer( $house->ID, $beginning_date, $ending_date, $api_periods );
-		}
-	)
-);
-
-error_log( sprintf( 'Availability offer filtering: %d available, %d with offers', $available_count, count( $filtered_houses ) ) );
-
 if ( empty( $filtered_houses ) ) {
-	echo '<p>' . __( 'No houses with special offers available for the selected dates and periods.', 'kate-toms-core' ) . '</p>';
+	echo '<p>' . esc_html__( 'No houses with special offers available for the selected dates and periods.', 'kate-toms-core' ) . '</p>';
 	return;
 }
 

@@ -1830,7 +1830,9 @@ class House_Calendar_Manager {
 		$property_id = get_post_meta( (int) $wp_house_id, 'ipro_property_id', true );
 
 		if ( '' === $property_id || null === $property_id ) {
-			error_log( "No ipro_property_id set for WordPress house ID: {$wp_house_id}" );
+			// Not logged: the seasonal filters call this for every house in a
+			// region, so an unmapped house would write a line per house per
+			// request. Unmapped houses are reported by the warm command instead.
 			return false;
 		}
 
@@ -2288,6 +2290,17 @@ class House_Calendar_Manager {
 }
 
 /**
+ * How long a per-house seasonal availability verdict stays valid.
+ *
+ * Was ten minutes, which never survived to the next page view, so the pages
+ * kept re-deriving every verdict from scratch. The underlying calendar cache is
+ * refreshed daily, so a verdict is good for about as long.
+ */
+if ( ! defined( 'KATE_TOMS_SEASONAL_VERDICT_TTL' ) ) {
+	define( 'KATE_TOMS_SEASONAL_VERDICT_TTL', 12 * HOUR_IN_SECONDS );
+}
+
+/**
  * Filter houses by seasonal availability criteria.
  *
  * Checks if houses have availability for specific periods within a date range.
@@ -2297,53 +2310,32 @@ class House_Calendar_Manager {
  * @param string $beginning_date Start date (Y-m-d format)
  * @param string $ending_date End date (Y-m-d format)
  * @param array  $periods Array of period keys to check (week, 2-night-weekend, etc.)
+ * @param bool   $allow_api Whether a cold calendar may be fetched from the booking API.
+ *                          False during a page request: a web request must never
+ *                          block on the network, and hundreds of houses fetched
+ *                          one at a time is what made these pages time out. Houses
+ *                          whose calendar is not warm are skipped instead.
  * @return array Filtered array of houses that have availability
  */
-function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_date, $ending_date, $periods ) {
+function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_date, $ending_date, $periods, $allow_api = true ) {
 	if ( empty( $houses ) || ! is_array( $houses ) ) {
 		return array();
 	}
 
-	// Get an instance of the calendar manager
 	$calendar_manager = new House_Calendar_Manager();
-
-	// Use reflection to access private methods
-	$reflection             = new ReflectionClass( $calendar_manager );
-	$get_property_id_method = $reflection->getMethod( 'get_property_id_from_wp_house_id' );
-	$get_property_id_method->setAccessible( true );
-
-	$filtered_houses      = array();
-	$checked_count        = 0;
-	$no_property_id_count = 0;
+	$filtered_houses  = array();
 
 	foreach ( $houses as $house ) {
-		// Get the iPro PropertyId for this house
-		$property_id = $get_property_id_method->invoke( $calendar_manager, $house->ID );
+		$property_id = $calendar_manager->get_property_id_from_wp_house_id( $house->ID );
 
 		if ( ! $property_id ) {
-			// Skip if no property ID mapping found
-			++$no_property_id_count;
 			continue;
 		}
 
-		++$checked_count;
-
-		// Check if house has availability for ANY of the required periods within the date range
-		if ( kate_toms_check_house_seasonal_availability( $property_id, $beginning_date, $ending_date, $periods ) ) {
+		if ( kate_toms_check_house_seasonal_availability( $property_id, $beginning_date, $ending_date, $periods, $allow_api ) ) {
 			$filtered_houses[] = $house;
-			error_log( sprintf( 'House ID %d (PropertyId %s) MATCHED seasonal criteria', $house->ID, $property_id ) );
 		}
 	}
-
-	error_log(
-		sprintf(
-			'Seasonal filtering stats: Total houses=%d, Checked=%d, No PropertyId=%d, Matched=%d',
-			count( $houses ),
-			$checked_count,
-			$no_property_id_count,
-			count( $filtered_houses )
-		)
-	);
 
 	return $filtered_houses;
 }
@@ -2357,7 +2349,7 @@ function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_d
  * @param array  $periods Array of period keys to check
  * @return bool True if house has availability for at least one period
  */
-function kate_toms_check_house_seasonal_availability( $property_id, $beginning_date, $ending_date, $periods ) {
+function kate_toms_check_house_seasonal_availability( $property_id, $beginning_date, $ending_date, $periods, $allow_api = true ) {
 	// Check cache first for this specific availability check
 	$cache_key     = 'kt_seasonal_avail_' . $property_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
 	$cached_result = get_transient( $cache_key );
@@ -2368,18 +2360,33 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 
 	$calendar_manager = new House_Calendar_Manager();
 
-	// Use reflection to get the private access token
-	$reflection     = new ReflectionClass( $calendar_manager );
-	$token_property = $reflection->getProperty( 'api_access_token' );
-	$token_property->setAccessible( true );
-	$access_token = $token_property->getValue( $calendar_manager );
+	/*
+	 * Without the API, only a house whose calendar is already warm can be
+	 * judged. This is checked up front because get_booking_periods_for_date()
+	 * below silently falls back to fetching a cold calendar — which is exactly
+	 * the per-house HTTP call a page request must not make.
+	 */
+	if ( ! $allow_api ) {
+		$warm_calendar = get_transient( "kt_house_calendar_{$property_id}" );
 
-	// Get calendar data for this house with the access token (uses 20-minute cache)
-	$calendar_data = $calendar_manager->get_calendar_data( $property_id, $access_token, false );
+		if ( false === $warm_calendar || ! isset( $warm_calendar['availability'] ) ) {
+			return false;
+		}
+
+		$calendar_data = $warm_calendar;
+	} else {
+		// Use reflection to get the private access token
+		$reflection     = new ReflectionClass( $calendar_manager );
+		$token_property = $reflection->getProperty( 'api_access_token' );
+		$token_property->setAccessible( true );
+		$access_token = $token_property->getValue( $calendar_manager );
+
+		// Get calendar data for this house with the access token (uses the cache).
+		$calendar_data = $calendar_manager->get_calendar_data( $property_id, $access_token, false );
+	}
 
 	if ( ! $calendar_data || ! isset( $calendar_data['availability'] ) ) {
-		// Cache negative result for 10 minutes
-		set_transient( $cache_key, 0, 10 * MINUTE_IN_SECONDS );
+		set_transient( $cache_key, 0, KATE_TOMS_SEASONAL_VERDICT_TTL );
 		return false;
 	}
 
@@ -2413,7 +2420,7 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 					if ( in_array( $available_period['id'], $periods, true ) ) {
 						// Found at least one matching period - this house qualifies
 						// Cache positive result for 10 minutes
-						set_transient( $cache_key, 1, 10 * MINUTE_IN_SECONDS );
+						set_transient( $cache_key, 1, KATE_TOMS_SEASONAL_VERDICT_TTL );
 						return true;
 					}
 				}
@@ -2425,8 +2432,7 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 	}
 
 	// No matching periods found in the entire date range
-	// Cache negative result for 10 minutes
-	set_transient( $cache_key, 0, 10 * MINUTE_IN_SECONDS );
+	set_transient( $cache_key, 0, KATE_TOMS_SEASONAL_VERDICT_TTL );
 	return false;
 }
 

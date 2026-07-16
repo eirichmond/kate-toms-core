@@ -124,25 +124,69 @@ if ( $order_by === 'meta_value_num' ) {
 	);
 }
 
-// Execute the query to get all houses (we'll filter by availability after).
-$houses_query = new WP_Query( $query_args );
-
-if ( ! $houses_query->have_posts() ) {
-	echo '<p>' . __( 'No houses found.', 'kate-toms-core' ) . '</p>';
-	return;
-}
-
-// Filter houses by seasonal availability.
-$filtered_houses = kate_toms_filter_houses_by_seasonal_availability(
-	$houses_query->posts,
-	$beginning_date,
-	$ending_date,
-	$api_periods
+/*
+ * Which houses still have a free period in this range cannot be asked of
+ * WP_Query — every house has to be checked against the booking calendar. That
+ * answer is precomputed by `wp kt-seasonal-cache warm`, so the usual path here
+ * is one transient read.
+ *
+ * On a cold cache we still render, but strictly from calendars that are already
+ * warm ($allow_api = false). Fetching a cold calendar per house is what made
+ * this page hang and 504.
+ */
+$seasonal_criteria = array(
+	'location'  => $location_slug,
+	'beginning' => $beginning_date,
+	'ending'    => $ending_date,
+	'periods'   => $api_periods,
+	'orderby'   => $order_by,
+	'order'     => $order,
+	'meta_key'  => $meta_key,
 );
 
+$cached_house_ids = class_exists( 'Kate_Toms_Seasonal_Results_Cache' )
+	? Kate_Toms_Seasonal_Results_Cache::get( $seasonal_criteria )
+	: null;
+
+if ( is_array( $cached_house_ids ) ) {
+	$filtered_houses = empty( $cached_house_ids )
+		? array()
+		: get_posts(
+			array(
+				'post_type'        => 'houses',
+				'post_status'      => 'publish',
+				'post__in'         => $cached_house_ids,
+				'orderby'          => 'post__in',
+				'posts_per_page'   => -1,
+				'suppress_filters' => false,
+			)
+		);
+} else {
+	$houses_query = new WP_Query( $query_args );
+
+	if ( ! $houses_query->have_posts() ) {
+		echo '<p>' . esc_html__( 'No houses found.', 'kate-toms-core' ) . '</p>';
+		return;
+	}
+
+	$filtered_houses = kate_toms_filter_houses_by_seasonal_availability(
+		$houses_query->posts,
+		$beginning_date,
+		$ending_date,
+		$api_periods,
+		false
+	);
+
+	if ( class_exists( 'Kate_Toms_Seasonal_Results_Cache' ) ) {
+		Kate_Toms_Seasonal_Results_Cache::set(
+			$seasonal_criteria,
+			wp_list_pluck( $filtered_houses, 'ID' )
+		);
+	}
+}
+
 if ( empty( $filtered_houses ) ) {
-	echo '<p>' . __( 'No houses available for the selected dates and periods.', 'kate-toms-core' ) . '</p>';
-	echo '<p><small>Checked ' . count( $houses_query->posts ) . ' houses for availability between ' . esc_html( $beginning_date ) . ' and ' . esc_html( $ending_date ) . ' for periods: ' . esc_html( implode( ', ', $api_periods ) ) . '</small></p>';
+	echo '<p>' . esc_html__( 'No houses available for the selected dates and periods.', 'kate-toms-core' ) . '</p>';
 	return;
 }
 
