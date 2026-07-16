@@ -142,31 +142,62 @@ $special_offers_cell_count = 0;
 		}
 
 		/*
-		 * Point the global post at this house and expose its offer to the
-		 * pattern. We include the pattern file directly (NOT do_blocks of a
-		 * wp:pattern reference) so its PHP re-runs for every card: core caches
-		 * a file-based pattern's content after the first include and unsets its
-		 * filePath, which would otherwise bake the first card's offer into every
-		 * subsequent card.
+		 * A card's HTML depends only on the house, its offer and the pattern, so
+		 * it is rendered once and kept. Rendering the pattern per card was the
+		 * bulk of this page's time (BugHerd #316). Adverts below are excluded on
+		 * purpose — they are meant to be random on every render.
 		 */
-		$post = $special_offer_house; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Temporarily set the post context so the pattern's post-meta bindings resolve to this house.
-		setup_postdata( $post );
+		$special_offer_card_key = class_exists( 'Kate_Toms_Special_Offer_Card_Cache' )
+			? Kate_Toms_Special_Offer_Card_Cache::key(
+				$special_offer_house,
+				$special_offer_card['offer'],
+				$special_offer_card['offerDate'],
+				$special_offers_pattern_file
+			)
+			: '';
 
-		global $special_offer_attributes;
-		$special_offer_attributes = array(
-			'offer'     => $special_offer_card['offer'],
-			'offerDate' => $special_offer_card['offerDate'],
-		);
+		$special_offer_renderer = static function () use ( $special_offer_house, $special_offer_card, $special_offers_pattern_file ) {
+			if ( ! $special_offers_pattern_file || ! file_exists( $special_offers_pattern_file ) ) {
+				return '';
+			}
 
-		echo '<div class="special-offer-card special-offer-card--house">';
-		if ( $special_offers_pattern_file && file_exists( $special_offers_pattern_file ) ) {
+			/*
+			 * Point the global post at this house and expose its offer to the
+			 * pattern. We include the pattern file directly (NOT do_blocks of a
+			 * wp:pattern reference) so its PHP re-runs for every card: core caches
+			 * a file-based pattern's content after the first include and unsets its
+			 * filePath, which would otherwise bake the first card's offer into every
+			 * subsequent card.
+			 */
+			global $post, $special_offer_attributes;
+
+			$post = $special_offer_house; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Temporarily set the post context so the pattern's post-meta bindings resolve to this house.
+			setup_postdata( $post );
+
+			$special_offer_attributes = array(
+				'offer'     => $special_offer_card['offer'],
+				'offerDate' => $special_offer_card['offerDate'],
+			);
+
 			ob_start();
 			include $special_offers_pattern_file;
-			echo do_blocks( ob_get_clean() ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Trusted rendered block HTML.
+
+			return do_blocks( ob_get_clean() );
+		};
+
+		echo '<div class="special-offer-card special-offer-card--house">';
+		if ( '' !== $special_offer_card_key ) {
+			echo Kate_Toms_Special_Offer_Card_Cache::remember( $special_offer_card_key, $special_offer_renderer ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Trusted rendered block HTML.
+		} else {
+			echo $special_offer_renderer(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Trusted rendered block HTML.
 		}
 		echo '</div>';
 		++$special_offers_cell_count;
 	endforeach;
+
+	if ( class_exists( 'Kate_Toms_Special_Offer_Card_Cache' ) ) {
+		Kate_Toms_Special_Offer_Card_Cache::persist();
+	}
 
 	// Restore the original global post context for the rest of the page.
 	$post = $special_offers_original_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Restore the post context swapped out above.

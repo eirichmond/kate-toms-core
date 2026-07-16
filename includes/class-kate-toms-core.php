@@ -192,6 +192,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-kate-toms-special-offer-availability-api.php';
 
 		/**
+		 * Rendered-card cache for the special offers grid.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/special-offers/class-kate-toms-special-offer-card-cache.php';
+
+		/**
 		 * The CRM API client used by the Blueprint onboarding feature.
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-blueprint-crm-api.php';
