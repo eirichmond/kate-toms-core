@@ -1350,11 +1350,19 @@ class House_Calendar_Manager {
 	/**
 	 * Get available booking periods for a specific date and house.
 	 *
-	 * @param string   $property_id The iPro Property ID
-	 * @param DateTime $checkin_date The desired check-in date
+	 * @param string   $property_id    The iPro Property ID
+	 * @param DateTime $checkin_date   The desired check-in date
+	 * @param bool     $include_nearby When true (the calendar UI default), and nothing
+	 *                                 is available on the exact date, search forward for
+	 *                                 the nearest bookable dates in the same week and
+	 *                                 return those instead. Pass false to ask strictly
+	 *                                 "what can start on THIS date" — callers deciding
+	 *                                 whether a specific date is booked must use false,
+	 *                                 or the nearby fallback makes almost every date look
+	 *                                 bookable.
 	 * @return array Available booking periods with pricing
 	 */
-	public function get_booking_periods_for_date( $property_id, $checkin_date ) {
+	public function get_booking_periods_for_date( $property_id, $checkin_date, $include_nearby = true ) {
 		$periods = array();
 
 		// Get calendar data using the correct transient key.
@@ -1425,6 +1433,13 @@ class House_Calendar_Manager {
 					'formatted_price' => '£' . number_format( $period_price ),
 				);
 			}
+		}
+
+		// Strict callers (booked detection) want only what starts on this exact
+		// date: no arrival-day message, no forward search — an empty result means
+		// nothing is bookable here.
+		if ( ! $include_nearby ) {
+			return $periods;
 		}
 
 		// If no eligible periods exist for this arrival day (Sat, Sun, Thu),
