@@ -243,10 +243,10 @@ class House_Calendar_Manager {
 	 *
 	 * @param string $house_id House ID for API calls.
 	 * @param string $access_token API access token.
-	 * @param bool   $force_refresh Force refresh of cached data.
+	 * @param bool   $force_refresh Skip the transient cache and fetch fresh data from the API.
 	 * @return array Processed calendar data.
 	 */
-	public function get_calendar_data( $house_id, $access_token, $force_refresh = true ) {
+	public function get_calendar_data( $house_id, $access_token, $force_refresh = false ) {
 		$transient_key = "kt_house_calendar_{$house_id}";
 
 		if ( ! $force_refresh ) {
@@ -1159,7 +1159,7 @@ class House_Calendar_Manager {
 		}
 
 		// Use the hardcoded access token
-		$data = $this->get_calendar_data( $house_id, $this->api_access_token, true );
+		$data = $this->get_calendar_data( $house_id, $this->api_access_token );
 
 		if ( isset( $data['error'] ) ) {
 			wp_send_json_error( $data['error'] );
