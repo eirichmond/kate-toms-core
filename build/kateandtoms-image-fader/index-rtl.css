@@ -1,1 +1,26 @@
-.wp-block-create-block-kateandtoms-image-fader{border:1px dotted red}.wp-block-create-block-kateandtoms-image-fader .slide{opacity:1}.wp-block-create-block-kateandtoms-image-fader .add-fade-slider-img.is-primary{right:1em;position:absolute;top:1em;z-index:999}.wp-block-create-block-kateandtoms-image-fader .remove-fade-slider-img.is-destructive{background:hsla(0,77%,88%,.55);bottom:1em;position:absolute;left:1em}
+/*!*******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/kateandtoms-image-fader/editor.scss ***!
+  \*******************************************************************************************************************************************************************************************************************************************************************/
+/**
+ * The following styles get applied inside the editor only.
+ *
+ * Replace them with your own styles or remove the file completely.
+ */
+.wp-block-create-block-kateandtoms-image-fader {
+  border: 1px dotted #f00;
+}
+.wp-block-create-block-kateandtoms-image-fader .slide {
+  opacity: 1;
+}
+.wp-block-create-block-kateandtoms-image-fader .add-fade-slider-img.is-primary {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  z-index: 999;
+}
+.wp-block-create-block-kateandtoms-image-fader .remove-fade-slider-img.is-destructive {
+  position: absolute;
+  bottom: 1em;
+  left: 1em;
+  background: rgba(248, 200, 200, 0.55);
+}

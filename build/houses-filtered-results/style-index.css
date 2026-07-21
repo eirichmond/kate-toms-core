@@ -1,1 +1,73 @@
-.wp-block-kate-toms-core-houses-filtered-results .houses-filtered-results-skeletons{display:grid;gap:1rem;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));margin-top:1rem}.wp-block-kate-toms-core-houses-filtered-results .houses-filtered-results-skeletons[hidden]{display:none}.wp-block-kate-toms-core-houses-filtered-results .house-card-skeleton{background:#fff;min-height:365px;overflow:hidden}.wp-block-kate-toms-core-houses-filtered-results .skeleton-image{animation:skeleton-shimmer 1.5s infinite;aspect-ratio:1;background:linear-gradient(-45deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;width:100%}.wp-block-kate-toms-core-houses-filtered-results .skeleton-title{animation:skeleton-shimmer 1.5s infinite;background:linear-gradient(-45deg,#e8e8e8 25%,#b3b3b3 50%,#e1e1e1 75%);background-size:200% 100%;height:48px}.wp-block-kate-toms-core-houses-filtered-results .skeleton-description{padding:var(--wp--preset--spacing--30,15px)}.wp-block-kate-toms-core-houses-filtered-results .skeleton-line{animation:skeleton-shimmer 1.5s infinite;background:linear-gradient(-45deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%);background-size:200% 100%;border-radius:4px;height:14px;margin-bottom:8px}.wp-block-kate-toms-core-houses-filtered-results .skeleton-line--short{width:70%}.wp-block-kate-toms-core-houses-filtered-results .skeleton-line--tiny{height:12px;width:40%}.wp-block-kate-toms-core-houses-filtered-results .skeleton-footer{border-top:1px solid #eee;display:flex;justify-content:space-between;padding:var(--wp--preset--spacing--30,15px)}@keyframes skeleton-shimmer{0%{background-position:200% 0}to{background-position:-200% 0}}.wp-block-kate-toms-core-houses-filtered-results .houses-filtered-results-sentinel{height:1px;visibility:hidden;width:100%}
+/*!******************************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/houses-filtered-results/style.scss ***!
+  \******************************************************************************************************************************************************************************************************************************************************************/
+/**
+ * The following styles get applied both on the front of your site
+ * and in the editor.
+ */
+.wp-block-kate-toms-core-houses-filtered-results .houses-filtered-results-skeletons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+.wp-block-kate-toms-core-houses-filtered-results .houses-filtered-results-skeletons[hidden] {
+  display: none;
+}
+.wp-block-kate-toms-core-houses-filtered-results .house-card-skeleton {
+  min-height: 365px;
+  background: #fff;
+  overflow: hidden;
+}
+.wp-block-kate-toms-core-houses-filtered-results .skeleton-image {
+  width: 100%;
+  aspect-ratio: 1;
+  background: linear-gradient(-45deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+.wp-block-kate-toms-core-houses-filtered-results .skeleton-title {
+  height: 48px;
+  background: linear-gradient(-45deg, #e8e8e8 25%, #b3b3b3 50%, #e1e1e1 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+.wp-block-kate-toms-core-houses-filtered-results .skeleton-description {
+  padding: var(--wp--preset--spacing--30, 15px);
+}
+.wp-block-kate-toms-core-houses-filtered-results .skeleton-line {
+  height: 14px;
+  background: linear-gradient(-45deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+.wp-block-kate-toms-core-houses-filtered-results .skeleton-line--short {
+  width: 70%;
+}
+.wp-block-kate-toms-core-houses-filtered-results .skeleton-line--tiny {
+  width: 40%;
+  height: 12px;
+}
+.wp-block-kate-toms-core-houses-filtered-results .skeleton-footer {
+  padding: var(--wp--preset--spacing--30, 15px);
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+}
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.wp-block-kate-toms-core-houses-filtered-results .houses-filtered-results-sentinel {
+  height: 1px;
+  width: 100%;
+  visibility: hidden;
+}
+
+/*# sourceMappingURL=style-index.css.map*/
