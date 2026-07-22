@@ -454,8 +454,11 @@ function kate_toms_add_image_size_names( $sizes ) {
 add_filter( 'image_size_names_choose', 'kate_toms_add_image_size_names' );
 
 function kate_toms_the_content_filter( $content ) {
-	if ( wp_get_environment_type() === 'local' || wp_get_environment_type() === 'staging' ) {
+	if ( wp_get_environment_type() === 'local' ) {
 		$content = str_replace( 'https://kateandtomsblocks.test', 'https://kateandtoms.com', $content );
+	}
+	if ( wp_get_environment_type() === 'staging' ) {
+		$content = str_replace( 'https://staging.kateandtoms.com', 'https://kateandtoms.com', $content );
 	}
 	return $content;
 }
