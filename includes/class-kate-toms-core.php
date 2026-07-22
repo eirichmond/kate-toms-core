@@ -119,6 +119,12 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-sitemaps.php';
 
 		/**
+		 * Feed request handling (301s feed URLs to their parent, removes
+		 * feed links from page heads - crawl bloat prevention).
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/feed-redirects.php';
+
+		/**
 		 * The class responsible for defining internationalization functionality
 		 * of the plugin.
 		 */
