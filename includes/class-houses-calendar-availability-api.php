@@ -62,7 +62,7 @@ class House_Calendar_Manager {
 	 *
 	 * @var int
 	 */
-	private $cache_duration = 24 * HOUR_IN_SECONDS;
+	private $cache_duration = 20 * MINUTE_IN_SECONDS;
 
 	/**
 	 * Temporarily stores processed availability data during processing.
