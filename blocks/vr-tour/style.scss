@@ -1,0 +1,16 @@
+.wp-block-kate-toms-core-vr-tour {
+	// Breathing room when arriving via the #vr-tour anchor link.
+	scroll-margin-top: 2rem;
+
+	.kt-vr-tour__frame {
+		width: 100%;
+		aspect-ratio: 16 / 9;
+
+		iframe {
+			display: block;
+			width: 100%;
+			height: 100%;
+			border: 0;
+		}
+	}
+}
