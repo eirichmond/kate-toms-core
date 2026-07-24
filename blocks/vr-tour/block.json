@@ -1,0 +1,40 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "kate-toms-core/vr-tour",
+	"version": "0.1.0",
+	"title": "VR Tour",
+	"category": "widgets",
+	"icon": "embed-generic",
+	"description": "Embeds a responsive Matterport VR tour within the page.",
+	"keywords": [ "VR", "Tour", "Matterport", "Virtual" ],
+	"example": {
+		"attributes": {
+			"tourUrl": "https://my.matterport.com/show/?m=7DzAJrn9axy"
+		}
+	},
+	"supports": {
+		"html": false,
+		"anchor": true,
+		"align": [ "wide", "full" ]
+	},
+	"textdomain": "kate-toms-core",
+	"attributes": {
+		"tourUrl": {
+			"type": "string",
+			"default": ""
+		},
+		"tourTitle": {
+			"type": "string",
+			"default": "VR Tour"
+		},
+		"anchor": {
+			"type": "string",
+			"default": "vr-tour"
+		}
+	},
+	"editorScript": "file:./index.js",
+	"editorStyle": "file:./index.css",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}
