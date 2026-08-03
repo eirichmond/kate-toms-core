@@ -213,6 +213,7 @@ class Kate_Toms_Blueprint_Templates {
 		}
 
 		$content = $this->personalise( $source, $display_title, $house_slug, $key );
+		$content = $this->ensure_tour_nav_link( $content, $house_slug );
 
 		return $this->apply_defaults( $content );
 	}
@@ -431,14 +432,25 @@ class Kate_Toms_Blueprint_Templates {
 				'/houses/' . self::SLUG_TOKEN . '/',
 				'h-' . self::SLUG_TOKEN . '-',
 				self::TITLE_TOKEN,
+				// The katomswold banner patterns use their own placeholders,
+				// which reach the MASTERs whenever one is re-synced from them.
+				'{perma}',
+				'{housetitle}',
 			),
 			array(
 				'/houses/' . $house_slug . '/',
 				'h-' . $house_slug . '-',
 				$display_title,
+				$house_slug,
+				$display_title,
 			),
 			$content
 		);
+
+		// The banner's VR TOUR link targets the tour block's own anchor, which
+		// only exists once an editor sets a tour URL. Point it at the section
+		// heading instead, which is always there.
+		$content = str_replace( '/gallery/#vr-tour', '/gallery/#h-virtual-tour', $content );
 
 		// Sample Matterport links appear as plain hrefs too — on the Virtual
 		// Tour pattern's "View Tour" button and in the Key Facts MASTER. The
@@ -455,6 +467,115 @@ class Kate_Toms_Blueprint_Templates {
 		);
 
 		return $content;
+	}
+
+	/**
+	 * Ensures the house title banner carries a VR TOUR link.
+	 *
+	 * The katomswold banner patterns gained this link after Fern built the
+	 * MASTERs, so MASTER content does not have it yet. Rather than wait for a
+	 * re-sync, the link is added next to GALLERY in the banner nav, matching
+	 * how the theme patterns order it.
+	 *
+	 * This is a no-op once a MASTER does carry the link, so a future re-sync
+	 * will not produce two of them.
+	 *
+	 * @param string $content    Personalised page markup.
+	 * @param string $house_slug Parent house post slug.
+	 *
+	 * @return string Markup with a VR TOUR nav link.
+	 */
+	private function ensure_tour_nav_link( string $content, string $house_slug ): string {
+		if ( preg_match( '#>\s*VR TOUR\s*</a>#i', $content ) ) {
+			return $content;
+		}
+
+		$added  = false;
+		$blocks = $this->insert_tour_nav_link( parse_blocks( $content ), $house_slug, $added );
+
+		return $added ? serialize_blocks( $blocks ) : $content;
+	}
+
+	/**
+	 * Inserts a VR TOUR nav paragraph directly after the banner's GALLERY link.
+	 *
+	 * @param array[] $blocks     Parsed blocks.
+	 * @param string  $house_slug Parent house post slug.
+	 * @param bool    $added      Set to true once the link has been placed.
+	 *
+	 * @return array[] Mutated blocks.
+	 */
+	private function insert_tour_nav_link( array $blocks, string $house_slug, bool &$added ): array {
+		foreach ( $blocks as $index => $block ) {
+			if ( ! $this->is_gallery_nav_link( $block ) ) {
+				continue;
+			}
+
+			array_splice( $blocks, $index + 1, 0, array( $this->build_tour_nav_link( $block, $house_slug ) ) );
+			$added = true;
+
+			return $blocks;
+		}
+
+		foreach ( $blocks as $index => $block ) {
+			if ( empty( $block['innerBlocks'] ) ) {
+				continue;
+			}
+
+			$block['innerBlocks'] = $this->insert_tour_nav_link( $block['innerBlocks'], $house_slug, $added );
+			$blocks[ $index ]     = $block;
+
+			if ( $added ) {
+				return $blocks;
+			}
+		}
+
+		return $blocks;
+	}
+
+	/**
+	 * Determines whether a block is the banner nav's GALLERY link.
+	 *
+	 * Matches on the upper-case link text the banner nav uses, so ordinary
+	 * "View Gallery" buttons elsewhere on a page are left alone.
+	 *
+	 * @param array $block Parsed block.
+	 *
+	 * @return bool True for the banner's GALLERY nav paragraph.
+	 */
+	private function is_gallery_nav_link( array $block ): bool {
+		if ( 'core/paragraph' !== ( $block['blockName'] ?? '' ) ) {
+			return false;
+		}
+
+		return 1 === preg_match(
+			'#<a\s[^>]*href="[^"]*/gallery/?"[^>]*>\s*GALLERY\s*</a>#',
+			(string) ( $block['innerHTML'] ?? '' )
+		);
+	}
+
+	/**
+	 * Builds the VR TOUR nav paragraph from the GALLERY one.
+	 *
+	 * Cloning the neighbouring link keeps the new one's styling identical
+	 * without restating the banner's colour and font settings here.
+	 *
+	 * @param array  $gallery_block The banner's GALLERY nav paragraph.
+	 * @param string $house_slug    Parent house post slug.
+	 *
+	 * @return array The new nav paragraph block.
+	 */
+	private function build_tour_nav_link( array $gallery_block, string $house_slug ): array {
+		$href = sprintf( '/houses/%s/gallery/#h-virtual-tour', $house_slug );
+		$html = (string) ( $gallery_block['innerHTML'] ?? '' );
+
+		$html = preg_replace( '#href="[^"]*"#', sprintf( 'href="%s"', $href ), $html, 1 );
+		$html = preg_replace( '#>\s*GALLERY\s*</a>#', '>VR TOUR</a>', (string) $html, 1 );
+
+		$gallery_block['innerHTML']    = (string) $html;
+		$gallery_block['innerContent'] = array( (string) $html );
+
+		return $gallery_block;
 	}
 
 	/**
