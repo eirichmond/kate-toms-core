@@ -74,10 +74,11 @@ class Kate_Toms_Blueprint_Templates {
 	 * `label` is the middle segment of the page title and is empty for the
 	 * parent. `source` describes where the page's starting content comes from:
 	 * a `wp_block` MASTER looked up by title, or a template file shipped with
-	 * the plugin. `append` optionally lists katomswold theme patterns to add
-	 * after that content, in order.
+	 * the plugin. `insert` optionally lists katomswold theme patterns to add to
+	 * that content, each placed before a named block — or appended, if the page
+	 * has no such block.
 	 *
-	 * @var array<string, array{label: string, source: array{type: string, title?: string, file?: string}, append?: string[]}>
+	 * @var array<string, array{label: string, source: array{type: string, title?: string, file?: string}, insert?: array<array{pattern: string, before?: string}>}>
 	 */
 	private static array $pages = array(
 		'parent'       => array(
@@ -107,7 +108,12 @@ class Kate_Toms_Blueprint_Templates {
 				'type'  => 'wp_block',
 				'title' => 'Gallery MASTER',
 			),
-			'append' => array( 'katomswold/standard-widget-virtual-tour' ),
+			'insert' => array(
+				array(
+					'pattern' => 'katomswold/standard-widget-virtual-tour',
+					'before'  => 'kate-toms-core/related-houses',
+				),
+			),
 		),
 		'facts'        => array(
 			'label'  => 'Key Facts',
@@ -180,9 +186,9 @@ class Kate_Toms_Blueprint_Templates {
 				$missing[] = $config['source']['title'];
 			}
 
-			foreach ( $config['append'] ?? array() as $slug ) {
-				if ( null === $this->find_theme_pattern( $slug ) ) {
-					$missing[] = $slug;
+			foreach ( $config['insert'] ?? array() as $rule ) {
+				if ( null === $this->find_theme_pattern( $rule['pattern'] ) ) {
+					$missing[] = $rule['pattern'];
 				}
 			}
 		}
@@ -243,18 +249,59 @@ class Kate_Toms_Blueprint_Templates {
 			return '';
 		}
 
-		foreach ( $config['append'] ?? array() as $slug ) {
-			$pattern = $this->find_theme_pattern( $slug );
-
-			if ( null === $pattern ) {
-				$this->log_warning( "Theme pattern not found: {$slug}" );
-				continue;
-			}
-
-			$content = rtrim( $content ) . "\n\n" . trim( $pattern ) . "\n";
+		foreach ( $config['insert'] ?? array() as $rule ) {
+			$content = $this->insert_pattern( $content, $rule );
 		}
 
 		return $content;
+	}
+
+	/**
+	 * Inserts a theme pattern into a page's content.
+	 *
+	 * The pattern goes immediately before the first top-level block named by
+	 * the rule's `before` key — so the Gallery page's Virtual Tour section sits
+	 * above "Houses you may also like", which stays the closing section as it
+	 * is on every other page. With no `before`, or when that block is absent,
+	 * the pattern is appended instead.
+	 *
+	 * @param string $content Page content.
+	 * @param array  $rule    Insert rule: `pattern` slug, optional `before` block name.
+	 *
+	 * @return string Content with the pattern inserted.
+	 */
+	private function insert_pattern( string $content, array $rule ): string {
+		$pattern = $this->find_theme_pattern( $rule['pattern'] );
+
+		if ( null === $pattern ) {
+			$this->log_warning( "Theme pattern not found: {$rule['pattern']}" );
+			return $content;
+		}
+
+		$blocks   = parse_blocks( $content );
+		$addition = parse_blocks( $pattern );
+		$anchor   = $rule['before'] ?? '';
+		$position = count( $blocks );
+
+		if ( '' !== $anchor ) {
+			$found = false;
+
+			foreach ( $blocks as $index => $block ) {
+				if ( ( $block['blockName'] ?? '' ) === $anchor ) {
+					$position = $index;
+					$found    = true;
+					break;
+				}
+			}
+
+			if ( ! $found ) {
+				$this->log_warning( "Insert anchor '{$anchor}' not found; appending {$rule['pattern']}" );
+			}
+		}
+
+		array_splice( $blocks, $position, 0, $addition );
+
+		return serialize_blocks( $blocks );
 	}
 
 	/**
