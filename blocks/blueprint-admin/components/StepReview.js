@@ -3,7 +3,7 @@ import { Button, Spinner, Notice } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
 import { __, sprintf } from '@wordpress/i18n';
 
-const { pages: BLUEPRINT_PAGES = [], missingMasters: MISSING_MASTERS = [] } =
+const { pages: BLUEPRINT_PAGES = [], missingSources: MISSING_SOURCES = [] } =
 	window.ktBlueprintData || {};
 
 /**
@@ -67,16 +67,16 @@ export default function StepReview( { crmId, displayTitle, onBack, onCreated } )
 				{ __( 'The following pages will be created as drafts:', 'kate-toms-core' ) }
 			</p>
 
-			{ MISSING_MASTERS.length > 0 && (
+			{ MISSING_SOURCES.length > 0 && (
 				<Notice status="warning" isDismissible={ false }>
 					<p>
 						{ __(
-							'These MASTER patterns could not be found, so their pages will be created empty:',
+							'These pattern sources could not be found, so content that depends on them will be missing:',
 							'kate-toms-core'
 						) }
 					</p>
 					<ul>
-						{ MISSING_MASTERS.map( ( title ) => (
+						{ MISSING_SOURCES.map( ( title ) => (
 							<li key={ title }>
 								<code>{ title }</code>
 							</li>

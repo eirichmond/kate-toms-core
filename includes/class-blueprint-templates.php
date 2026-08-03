@@ -74,9 +74,10 @@ class Kate_Toms_Blueprint_Templates {
 	 * `label` is the middle segment of the page title and is empty for the
 	 * parent. `source` describes where the page's starting content comes from:
 	 * a `wp_block` MASTER looked up by title, or a template file shipped with
-	 * the plugin.
+	 * the plugin. `append` optionally lists katomswold theme patterns to add
+	 * after that content, in order.
 	 *
-	 * @var array<string, array{label: string, source: array{type: string, title?: string, file?: string}}>
+	 * @var array<string, array{label: string, source: array{type: string, title?: string, file?: string}, append?: string[]}>
 	 */
 	private static array $pages = array(
 		'parent'       => array(
@@ -106,6 +107,7 @@ class Kate_Toms_Blueprint_Templates {
 				'type'  => 'wp_block',
 				'title' => 'Gallery MASTER',
 			),
+			'append' => array( 'katomswold/standard-widget-virtual-tour' ),
 		),
 		'facts'        => array(
 			'label'  => 'Key Facts',
@@ -163,22 +165,25 @@ class Kate_Toms_Blueprint_Templates {
 	}
 
 	/**
-	 * Returns the MASTER titles that could not be found, for preflight warnings.
+	 * Returns the content sources that could not be found, for preflight warnings.
 	 *
-	 * @return string[] Missing MASTER pattern titles.
+	 * Covers both the MASTER synced patterns and the theme patterns appended to
+	 * a page, so the wizard can warn before anything is created.
+	 *
+	 * @return string[] Missing MASTER titles and theme pattern slugs.
 	 */
-	public function get_missing_masters(): array {
+	public function get_missing_sources(): array {
 		$missing = array();
 
 		foreach ( self::$pages as $config ) {
-			if ( 'wp_block' !== $config['source']['type'] ) {
-				continue;
+			if ( 'wp_block' === $config['source']['type'] && null === $this->find_master( $config['source']['title'] ) ) {
+				$missing[] = $config['source']['title'];
 			}
 
-			$title = $config['source']['title'];
-
-			if ( null === $this->find_master( $title ) ) {
-				$missing[] = $title;
+			foreach ( $config['append'] ?? array() as $slug ) {
+				if ( null === $this->find_theme_pattern( $slug ) ) {
+					$missing[] = $slug;
+				}
 			}
 		}
 
@@ -214,25 +219,59 @@ class Kate_Toms_Blueprint_Templates {
 	 * @return string Raw block markup, or an empty string when unavailable.
 	 */
 	private function load_source( string $key ): string {
-		$source = self::$pages[ $key ]['source'] ?? null;
+		$config = self::$pages[ $key ] ?? null;
 
-		if ( null === $source ) {
+		if ( null === $config ) {
 			$this->log_warning( "Unknown blueprint page key: {$key}" );
 			return '';
 		}
 
+		$source = $config['source'];
+
 		if ( 'file' === $source['type'] ) {
-			return $this->load_template_file( $source['file'] );
+			$content = $this->load_template_file( $source['file'] );
+		} else {
+			$content = $this->find_master( $source['title'] );
+
+			if ( null === $content ) {
+				$this->log_warning( "MASTER pattern not found: {$source['title']}" );
+				$content = '';
+			}
 		}
 
-		$content = $this->find_master( $source['title'] );
-
-		if ( null === $content ) {
-			$this->log_warning( "MASTER pattern not found: {$source['title']}" );
+		if ( '' === $content ) {
 			return '';
 		}
 
+		foreach ( $config['append'] ?? array() as $slug ) {
+			$pattern = $this->find_theme_pattern( $slug );
+
+			if ( null === $pattern ) {
+				$this->log_warning( "Theme pattern not found: {$slug}" );
+				continue;
+			}
+
+			$content = rtrim( $content ) . "\n\n" . trim( $pattern ) . "\n";
+		}
+
 		return $content;
+	}
+
+	/**
+	 * Returns a registered theme pattern's content by slug.
+	 *
+	 * @param string $slug Pattern slug, e.g. 'katomswold/standard-widget-virtual-tour'.
+	 *
+	 * @return string|null Pattern content, or null when it is not registered.
+	 */
+	private function find_theme_pattern( string $slug ): ?string {
+		$pattern = WP_Block_Patterns_Registry::get_instance()->get_registered( $slug );
+
+		if ( ! is_array( $pattern ) || ! isset( $pattern['content'] ) ) {
+			return null;
+		}
+
+		return (string) $pattern['content'];
 	}
 
 	/**
@@ -318,6 +357,11 @@ class Kate_Toms_Blueprint_Templates {
 			$content
 		);
 
+		// Sample Matterport links appear as plain hrefs too — on the Virtual
+		// Tour pattern's "View Tour" button and in the Key Facts MASTER. Point
+		// them at the tour anchor until the editor sets this house's URL.
+		$content = preg_replace( '#href="https?://(?:[a-z0-9-]+\.)*matterport\.com/[^"]*"#i', 'href="#h-virtual-tour"', $content );
+
 		return $content;
 	}
 
@@ -392,6 +436,14 @@ class Kate_Toms_Blueprint_Templates {
 
 			case self::FADER_BLOCK:
 				return $this->clear_fader_slides( $block );
+
+			case 'kate-toms-core/vr-tour':
+				// The pattern ships with a sample Matterport tour. Left in
+				// place it would render as a working tour of a different
+				// house; empty, the block renders nothing and the editor is
+				// prompted for this house's URL.
+				$block['attrs']['tourUrl'] = '';
+				return $block;
 		}
 
 		return $block;

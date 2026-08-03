@@ -125,7 +125,7 @@ class Kate_Toms_Blueprint {
 				'nonce'          => wp_create_nonce( 'wp_rest' ),
 				'adminUrl'       => admin_url( 'post.php' ),
 				'pages'          => $this->get_page_summary(),
-				'missingMasters' => $this->templates->get_missing_masters(),
+				'missingSources' => $this->templates->get_missing_sources(),
 			)
 		);
 	}
