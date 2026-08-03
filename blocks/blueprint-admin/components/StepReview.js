@@ -1,20 +1,23 @@
 import { useState } from '@wordpress/element';
 import { Button, Spinner, Notice } from '@wordpress/components';
 import apiFetch from '@wordpress/api-fetch';
-import { __ } from '@wordpress/i18n';
+import { __, sprintf } from '@wordpress/i18n';
 
-const { pages: BLUEPRINT_PAGES = {} } = window.ktBlueprintData || {};
+const { pages: BLUEPRINT_PAGES = [], missingMasters: MISSING_MASTERS = [] } =
+	window.ktBlueprintData || {};
 
 /**
- * Derives the display title for a child page from its key and parent title.
+ * Derives the post title for a page from its label and the parent title.
+ *
+ * Mirrors Kate_Toms_Blueprint_Templates::build_title() on the PHP side.
  *
  * @param {string} displayTitle Parent display title.
- * @param {string} key          Page key (e.g. 'availability').
- * @return {string} Child page title.
+ * @param {string} label        Page label (empty for the parent page).
+ * @return {string} Page title.
  */
-function buildChildTitle( displayTitle, key ) {
-	if ( key === 'more' ) return displayTitle;
-	return `${ displayTitle } - ${ key } - Kate and Tom's`;
+function buildTitle( displayTitle, label ) {
+	if ( ! label ) return displayTitle;
+	return `${ displayTitle } | ${ label } | kate & tom's`;
 }
 
 /**
@@ -30,8 +33,6 @@ export default function StepReview( { crmId, displayTitle, onBack, onCreated } )
 	const [ isCreating, setIsCreating ] = useState( false );
 	const [ error, setError ] = useState( null );
 	const [ duplicate, setDuplicate ] = useState( null );
-
-	const pageEntries = Object.entries( BLUEPRINT_PAGES );
 
 	async function handleCreate( force = false ) {
 		setIsCreating( true );
@@ -66,28 +67,42 @@ export default function StepReview( { crmId, displayTitle, onBack, onCreated } )
 				{ __( 'The following pages will be created as drafts:', 'kate-toms-core' ) }
 			</p>
 
+			{ MISSING_MASTERS.length > 0 && (
+				<Notice status="warning" isDismissible={ false }>
+					<p>
+						{ __(
+							'These MASTER patterns could not be found, so their pages will be created empty:',
+							'kate-toms-core'
+						) }
+					</p>
+					<ul>
+						{ MISSING_MASTERS.map( ( title ) => (
+							<li key={ title }>
+								<code>{ title }</code>
+							</li>
+						) ) }
+					</ul>
+				</Notice>
+			) }
+
 			<table className="widefat striped kt-blueprint-review-table">
 				<thead>
 					<tr>
-						<th>{ __( 'Page', 'kate-toms-core' ) }</th>
 						<th>{ __( 'Title', 'kate-toms-core' ) }</th>
 						<th>{ __( 'Slug', 'kate-toms-core' ) }</th>
-						<th>{ __( 'Patterns', 'kate-toms-core' ) }</th>
+						<th>{ __( 'Content from', 'kate-toms-core' ) }</th>
 					</tr>
 				</thead>
 				<tbody>
-					{ pageEntries.map( ( [ key, config ] ) => (
-						<tr key={ key }>
-							<td>{ key }</td>
+					{ BLUEPRINT_PAGES.map( ( page ) => (
+						<tr key={ page.key }>
+							<td>{ buildTitle( displayTitle, page.label ) }</td>
 							<td>
-								{ key === 'parent'
-									? displayTitle
-									: buildChildTitle( displayTitle, key ) }
+								<code>
+									{ page.slug || __( '(parent)', 'kate-toms-core' ) }
+								</code>
 							</td>
-							<td>
-								<code>{ key === 'parent' ? '(parent)' : key }</code>
-							</td>
-							<td>{ config.patterns.length }</td>
+							<td>{ page.source }</td>
 						</tr>
 					) ) }
 				</tbody>
@@ -101,9 +116,11 @@ export default function StepReview( { crmId, displayTitle, onBack, onCreated } )
 			{ duplicate && (
 				<Notice status="warning" isDismissible={ false }>
 					<p>
-						{ __(
-							`A house named "${ duplicate.existingTitle }" already exists (post #${ duplicate.existingId }).`,
-							'kate-toms-core'
+						{ sprintf(
+							/* translators: 1: existing house title, 2: existing post ID. */
+							__( 'A house named "%1$s" already exists (post #%2$d).', 'kate-toms-core' ),
+							duplicate.existingTitle,
+							duplicate.existingId
 						) }
 					</p>
 					<div className="kt-blueprint-duplicate-actions">
