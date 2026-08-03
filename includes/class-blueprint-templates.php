@@ -75,10 +75,9 @@ class Kate_Toms_Blueprint_Templates {
 	 * parent. `source` describes where the page's starting content comes from:
 	 * a `wp_block` MASTER looked up by title, or a template file shipped with
 	 * the plugin. `insert` optionally lists katomswold theme patterns to add to
-	 * that content, each placed before a named block — or appended, if the page
-	 * has no such block.
+	 * that content — see insert_pattern() for how each rule is placed.
 	 *
-	 * @var array<string, array{label: string, source: array{type: string, title?: string, file?: string}, insert?: array<array{pattern: string, before?: string}>}>
+	 * @var array<string, array{label: string, source: array{type: string, title?: string, file?: string}, insert?: array<array{pattern: string, replace?: string, before?: string}>}>
 	 */
 	private static array $pages = array(
 		'parent'       => array(
@@ -111,6 +110,7 @@ class Kate_Toms_Blueprint_Templates {
 			'insert' => array(
 				array(
 					'pattern' => 'katomswold/standard-widget-virtual-tour',
+					'replace' => 'h-virtual-tour',
 					'before'  => 'kate-toms-core/related-houses',
 				),
 			),
@@ -212,7 +212,7 @@ class Kate_Toms_Blueprint_Templates {
 			return '';
 		}
 
-		$content = $this->personalise( $source, $display_title, $house_slug );
+		$content = $this->personalise( $source, $display_title, $house_slug, $key );
 
 		return $this->apply_defaults( $content );
 	}
@@ -259,49 +259,84 @@ class Kate_Toms_Blueprint_Templates {
 	/**
 	 * Inserts a theme pattern into a page's content.
 	 *
-	 * The pattern goes immediately before the first top-level block named by
-	 * the rule's `before` key — so the Gallery page's Virtual Tour section sits
-	 * above "Houses you may also like", which stays the closing section as it
-	 * is on every other page. With no `before`, or when that block is absent,
-	 * the pattern is appended instead.
+	 * Placement is tried in three steps, so the result stays right whether or
+	 * not the MASTER still carries the section the pattern supersedes:
 	 *
-	 * @param string $content Page content.
-	 * @param array  $rule    Insert rule: `pattern` slug, optional `before` block name.
+	 *   `replace` — an HTML anchor identifying a section the MASTER already
+	 *               has. The top-level block containing it is swapped for the
+	 *               pattern. The Gallery MASTER ends with an older Virtual Tour
+	 *               section — same heading and copy, a flat image in place of
+	 *               the vr-tour block — which the pattern replaces outright.
+	 *   `before`  — otherwise the pattern goes above this block, keeping
+	 *               "Houses you may also like" as the closing section.
+	 *   neither   — otherwise the pattern is appended.
 	 *
-	 * @return string Content with the pattern inserted.
+	 * @param string $rule_content Page content.
+	 * @param array  $rule         Rule: `pattern` slug, optional `replace` anchor and `before` block name.
+	 *
+	 * @return string Content with the pattern placed.
 	 */
-	private function insert_pattern( string $content, array $rule ): string {
+	private function insert_pattern( string $rule_content, array $rule ): string {
 		$pattern = $this->find_theme_pattern( $rule['pattern'] );
 
 		if ( null === $pattern ) {
 			$this->log_warning( "Theme pattern not found: {$rule['pattern']}" );
-			return $content;
+			return $rule_content;
 		}
 
-		$blocks   = parse_blocks( $content );
+		$blocks   = parse_blocks( $rule_content );
 		$addition = parse_blocks( $pattern );
-		$anchor   = $rule['before'] ?? '';
+		$replace  = $rule['replace'] ?? '';
+
+		if ( '' !== $replace ) {
+			$index = $this->find_block_with_anchor( $blocks, $replace );
+
+			if ( null !== $index ) {
+				array_splice( $blocks, $index, 1, $addition );
+
+				return serialize_blocks( $blocks );
+			}
+		}
+
+		$before   = $rule['before'] ?? '';
 		$position = count( $blocks );
 
-		if ( '' !== $anchor ) {
-			$found = false;
-
+		if ( '' !== $before ) {
 			foreach ( $blocks as $index => $block ) {
-				if ( ( $block['blockName'] ?? '' ) === $anchor ) {
+				if ( ( $block['blockName'] ?? '' ) === $before ) {
 					$position = $index;
-					$found    = true;
 					break;
 				}
-			}
-
-			if ( ! $found ) {
-				$this->log_warning( "Insert anchor '{$anchor}' not found; appending {$rule['pattern']}" );
 			}
 		}
 
 		array_splice( $blocks, $position, 0, $addition );
 
 		return serialize_blocks( $blocks );
+	}
+
+	/**
+	 * Finds the top-level block whose markup carries a given HTML anchor.
+	 *
+	 * @param array[] $blocks Parsed top-level blocks.
+	 * @param string  $anchor Anchor id to look for.
+	 *
+	 * @return int|null Index of the matching block, or null when absent.
+	 */
+	private function find_block_with_anchor( array $blocks, string $anchor ): ?int {
+		$needle = sprintf( 'id="%s"', $anchor );
+
+		foreach ( $blocks as $index => $block ) {
+			if ( empty( $block['blockName'] ) ) {
+				continue;
+			}
+
+			if ( str_contains( serialize_block( $block ), $needle ) ) {
+				return $index;
+			}
+		}
+
+		return null;
 	}
 
 	/**
@@ -378,10 +413,11 @@ class Kate_Toms_Blueprint_Templates {
 	 * @param string $content       Raw MASTER markup.
 	 * @param string $display_title House display title.
 	 * @param string $house_slug    Parent house post slug.
+	 * @param string $key           Page key, used to resolve tour links.
 	 *
 	 * @return string Personalised markup.
 	 */
-	private function personalise( string $content, string $display_title, string $house_slug ): string {
+	private function personalise( string $content, string $display_title, string $house_slug, string $key ): string {
 		// Absolute local URLs in MASTER content become root-relative first, so
 		// the token replacements below catch them too.
 		$content = preg_replace( '#https?://[^/"\']+/houses/#', '/houses/', $content );
@@ -405,9 +441,18 @@ class Kate_Toms_Blueprint_Templates {
 		);
 
 		// Sample Matterport links appear as plain hrefs too — on the Virtual
-		// Tour pattern's "View Tour" button and in the Key Facts MASTER. Point
-		// them at the tour anchor until the editor sets this house's URL.
-		$content = preg_replace( '#href="https?://(?:[a-z0-9-]+\.)*matterport\.com/[^"]*"#i', 'href="#h-virtual-tour"', $content );
+		// Tour pattern's "View Tour" button and in the Key Facts MASTER. The
+		// tour itself lives on the Gallery page, so point them there; only the
+		// Gallery page's own button can use a bare fragment.
+		$tour_link = 'gallery' === $key
+			? '#h-virtual-tour'
+			: sprintf( '/houses/%s/gallery/#h-virtual-tour', $house_slug );
+
+		$content = preg_replace(
+			'#href="https?://(?:[a-z0-9-]+\.)*matterport\.com/[^"]*"#i',
+			sprintf( 'href="%s"', $tour_link ),
+			$content
+		);
 
 		return $content;
 	}

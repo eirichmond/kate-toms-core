@@ -18,8 +18,8 @@ declare(strict_types=1);
  * its post title stay in step. Meta descriptions follow the fixed sentences
  * agreed in the Blueprint brief.
  *
- * The parent page is deliberately left blank — the content team writes its
- * title and description by hand.
+ * The parent page's meta description is deliberately left blank — the content
+ * team writes it by hand once the house copy exists.
  */
 class Kate_Toms_Blueprint_SEO {
 
@@ -58,11 +58,9 @@ class Kate_Toms_Blueprint_SEO {
 	 * @return void
 	 */
 	public function apply( int $post_id, string $key, string $display_title, string $parent_url ): void {
-		if ( 'parent' === $key ) {
-			// Title and description are left for the content team to write.
-			return;
-		}
-
+		// Every page's meta title mirrors its post title, the parent included —
+		// so the parent starts as the house name rather than empty. Only its
+		// meta description is left blank for the content team to write.
 		update_post_meta( $post_id, '_yoast_wpseo_title', Kate_Toms_Blueprint_Templates::build_title( $display_title, $key ) );
 
 		if ( isset( self::DESCRIPTIONS[ $key ] ) ) {
