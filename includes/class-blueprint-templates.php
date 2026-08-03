@@ -470,67 +470,183 @@ class Kate_Toms_Blueprint_Templates {
 	}
 
 	/**
-	 * Ensures the house title banner carries a VR TOUR link.
+	 * Ensures the house title banner's VR TOUR item links to the tour.
 	 *
-	 * The katomswold banner patterns gained this link after Fern built the
-	 * MASTERs, so MASTER content does not have it yet. Rather than wait for a
-	 * re-sync, the link is added next to GALLERY in the banner nav, matching
-	 * how the theme patterns order it.
-	 *
-	 * This is a no-op once a MASTER does carry the link, so a future re-sync
-	 * will not produce two of them.
+	 * The MASTERs carry a VR TOUR item in the banner nav, but as plain text —
+	 * it predates the tour having anywhere to point at. It is turned into a
+	 * link here. Only if a page has no VR TOUR item at all is one added beside
+	 * GALLERY, matching how the katomswold banner patterns order it.
 	 *
 	 * @param string $content    Personalised page markup.
 	 * @param string $house_slug Parent house post slug.
 	 *
-	 * @return string Markup with a VR TOUR nav link.
+	 * @return string Markup with a linked VR TOUR nav item.
 	 */
 	private function ensure_tour_nav_link( string $content, string $house_slug ): string {
-		if ( preg_match( '#>\s*VR TOUR\s*</a>#i', $content ) ) {
-			return $content;
+		$href    = sprintf( '/houses/%s/gallery/#h-virtual-tour', $house_slug );
+		$blocks  = parse_blocks( $content );
+		$found   = false;
+		$changed = false;
+
+		$blocks = $this->link_tour_nav_item( $blocks, $href, $found, $changed );
+
+		if ( ! $found ) {
+			$blocks = $this->add_tour_nav_item( $blocks, $href, $changed );
 		}
 
-		$added  = false;
-		$blocks = $this->insert_tour_nav_link( parse_blocks( $content ), $house_slug, $added );
-
-		return $added ? serialize_blocks( $blocks ) : $content;
+		return $changed ? serialize_blocks( $blocks ) : $content;
 	}
 
 	/**
-	 * Inserts a VR TOUR nav paragraph directly after the banner's GALLERY link.
+	 * Turns an existing VR TOUR nav item into a link to the tour.
 	 *
-	 * @param array[] $blocks     Parsed blocks.
-	 * @param string  $house_slug Parent house post slug.
-	 * @param bool    $added      Set to true once the link has been placed.
+	 * `$found` records that the page has a VR TOUR item at all, separately from
+	 * `$changed`, which records that this pass rewrote one. An item that is
+	 * already linked correctly leaves the markup untouched, and conflating the
+	 * two would make the caller add a second item on a re-run.
+	 *
+	 * @param array[] $blocks  Parsed blocks.
+	 * @param string  $href    Tour URL.
+	 * @param bool    $found   Set to true when a VR TOUR item exists.
+	 * @param bool    $changed Set to true when an item's markup was rewritten.
 	 *
 	 * @return array[] Mutated blocks.
 	 */
-	private function insert_tour_nav_link( array $blocks, string $house_slug, bool &$added ): array {
+	private function link_tour_nav_item( array $blocks, string $href, bool &$found, bool &$changed ): array {
 		foreach ( $blocks as $index => $block ) {
-			if ( ! $this->is_gallery_nav_link( $block ) ) {
-				continue;
+			if ( $found ) {
+				break;
 			}
 
-			array_splice( $blocks, $index + 1, 0, array( $this->build_tour_nav_link( $block, $house_slug ) ) );
-			$added = true;
+			if ( 'core/paragraph' === ( $block['blockName'] ?? '' ) ) {
+				$html = (string) ( $block['innerHTML'] ?? '' );
 
-			return $blocks;
-		}
+				if ( 'VR TOUR' === trim( wp_strip_all_tags( $html ) ) ) {
+					$found = true;
 
-		foreach ( $blocks as $index => $block ) {
-			if ( empty( $block['innerBlocks'] ) ) {
-				continue;
+					$linked = preg_replace(
+						'#(<p\b[^>]*>).*(</p>)#s',
+						'${1}' . $this->escape_replacement( sprintf( '<a href="%s">VR TOUR</a>', $href ) ) . '${2}',
+						$html,
+						1
+					);
+
+					if ( null !== $linked && $linked !== $html ) {
+						$block['innerHTML']    = $linked;
+						$block['innerContent'] = array( $linked );
+						$blocks[ $index ]      = $block;
+						$changed               = true;
+					}
+
+					continue;
+				}
 			}
 
-			$block['innerBlocks'] = $this->insert_tour_nav_link( $block['innerBlocks'], $house_slug, $added );
-			$blocks[ $index ]     = $block;
-
-			if ( $added ) {
-				return $blocks;
+			if ( ! empty( $block['innerBlocks'] ) ) {
+				$block['innerBlocks'] = $this->link_tour_nav_item( $block['innerBlocks'], $href, $found, $changed );
+				$blocks[ $index ]     = $block;
 			}
 		}
 
 		return $blocks;
+	}
+
+	/**
+	 * Adds a VR TOUR nav item after the banner's GALLERY link.
+	 *
+	 * Used only when a page has no VR TOUR item to link. The new paragraph is
+	 * cloned from the GALLERY one so the styling matches, and the parent's
+	 * `innerContent` gains a matching null placeholder — serialize_block()
+	 * pairs each null with the next inner block, so without one the parent's
+	 * last child would be dropped from the output.
+	 *
+	 * @param array[] $blocks  Parsed blocks.
+	 * @param string  $href    Tour URL.
+	 * @param bool    $changed Set to true once the item has been added.
+	 *
+	 * @return array[] Mutated blocks.
+	 */
+	private function add_tour_nav_item( array $blocks, string $href, bool &$changed ): array {
+		foreach ( $blocks as $index => $block ) {
+			if ( $changed ) {
+				break;
+			}
+
+			$children = $block['innerBlocks'] ?? array();
+
+			foreach ( $children as $child_index => $child ) {
+				if ( ! $this->is_gallery_nav_link( $child ) ) {
+					continue;
+				}
+
+				$html = (string) ( $child['innerHTML'] ?? '' );
+				$html = preg_replace(
+					'#(<p\b[^>]*>).*(</p>)#s',
+					'${1}' . $this->escape_replacement( sprintf( '<a href="%s">VR TOUR</a>', $href ) ) . '${2}',
+					$html,
+					1
+				);
+
+				$child['innerHTML']    = (string) $html;
+				$child['innerContent'] = array( (string) $html );
+
+				array_splice( $block['innerBlocks'], $child_index + 1, 0, array( $child ) );
+				$block['innerContent'] = $this->insert_inner_placeholder( $block['innerContent'], $child_index );
+
+				$blocks[ $index ] = $block;
+				$changed          = true;
+
+				return $blocks;
+			}
+
+			if ( ! empty( $children ) ) {
+				$block['innerBlocks'] = $this->add_tour_nav_item( $children, $href, $changed );
+				$blocks[ $index ]     = $block;
+			}
+		}
+
+		return $blocks;
+	}
+
+	/**
+	 * Adds an inner-block placeholder to an `innerContent` list.
+	 *
+	 * @param array $inner_content Parent block's innerContent.
+	 * @param int   $after         Index of the inner block to insert after.
+	 *
+	 * @return array Updated innerContent.
+	 */
+	private function insert_inner_placeholder( array $inner_content, int $after ): array {
+		$seen = -1;
+
+		foreach ( $inner_content as $position => $chunk ) {
+			if ( null !== $chunk ) {
+				continue;
+			}
+
+			++$seen;
+
+			if ( $seen === $after ) {
+				array_splice( $inner_content, $position + 1, 0, array( null ) );
+
+				return $inner_content;
+			}
+		}
+
+		$inner_content[] = null;
+
+		return $inner_content;
+	}
+
+	/**
+	 * Escapes a preg_replace replacement string.
+	 *
+	 * @param string $replacement Literal text to substitute in.
+	 *
+	 * @return string Escaped replacement.
+	 */
+	private function escape_replacement( string $replacement ): string {
+		return str_replace( array( '\\', '$' ), array( '\\\\', '\\$' ), $replacement );
 	}
 
 	/**
@@ -552,30 +668,6 @@ class Kate_Toms_Blueprint_Templates {
 			'#<a\s[^>]*href="[^"]*/gallery/?"[^>]*>\s*GALLERY\s*</a>#',
 			(string) ( $block['innerHTML'] ?? '' )
 		);
-	}
-
-	/**
-	 * Builds the VR TOUR nav paragraph from the GALLERY one.
-	 *
-	 * Cloning the neighbouring link keeps the new one's styling identical
-	 * without restating the banner's colour and font settings here.
-	 *
-	 * @param array  $gallery_block The banner's GALLERY nav paragraph.
-	 * @param string $house_slug    Parent house post slug.
-	 *
-	 * @return array The new nav paragraph block.
-	 */
-	private function build_tour_nav_link( array $gallery_block, string $house_slug ): array {
-		$href = sprintf( '/houses/%s/gallery/#h-virtual-tour', $house_slug );
-		$html = (string) ( $gallery_block['innerHTML'] ?? '' );
-
-		$html = preg_replace( '#href="[^"]*"#', sprintf( 'href="%s"', $href ), $html, 1 );
-		$html = preg_replace( '#>\s*GALLERY\s*</a>#', '>VR TOUR</a>', (string) $html, 1 );
-
-		$gallery_block['innerHTML']    = (string) $html;
-		$gallery_block['innerContent'] = array( (string) $html );
-
-		return $gallery_block;
 	}
 
 	/**
