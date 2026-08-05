@@ -119,6 +119,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-sitemaps.php';
 
 		/**
+		 * FAQPage structured data built from the FAQ accordion block.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-faq-schema.php';
+
+		/**
 		 * Feed request handling (301s feed URLs to their parent, removes
 		 * feed links from page heads - crawl bloat prevention).
 		 */
@@ -215,6 +220,9 @@ class Kate_Toms_Core {
 		new Autocomplete_Search_API();
 		new Related_Houses_API();
 		new Kate_Toms_Blueprint();
+
+		// FAQPage structured data for pages using the FAQ accordion block.
+		new Kate_Toms_FAQ_Schema();
 
 		// Initialize custom block bindings
 		$custom_bindings = new Kate_Toms_Custom_Block_Bindings();
