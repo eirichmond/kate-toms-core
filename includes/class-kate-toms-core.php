@@ -119,6 +119,12 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-sitemaps.php';
 
 		/**
+		 * Product / LodgingBusiness / VideoObject structured data for the
+		 * top-level house pages.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-house-schema.php';
+
+		/**
 		 * Feed request handling (301s feed URLs to their parent, removes
 		 * feed links from page heads - crawl bloat prevention).
 		 */
@@ -225,6 +231,9 @@ class Kate_Toms_Core {
 
 		// Serves the booked-offer map to the block editor.
 		new Kate_Toms_Special_Offer_Availability_API();
+
+		// Structured data for the top-level house pages.
+		new Kate_Toms_House_Schema();
 	}
 
 	/**
