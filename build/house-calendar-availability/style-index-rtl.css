@@ -22,9 +22,10 @@
   color: #333;
 }
 .house-calendar-availability .kt-calendar-table {
-  width: 100%;
+  width: auto;
   border-collapse: collapse;
   border: 1px solid #dfdfdf;
+  table-layout: auto;
 }
 .house-calendar-availability .kt-calendar-table th {
   padding: 4px 0;
@@ -158,7 +159,7 @@
 .house-calendar-availability .kt-calendar-table .rate-cell {
   font-size: 0.75rem;
   vertical-align: middle;
-  min-width: 90px;
+  min-width: 105px;
 }
 .house-calendar-availability .kt-calendar-table .rate-cell.price {
   font-weight: 600;
