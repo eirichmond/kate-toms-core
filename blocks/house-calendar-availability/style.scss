@@ -27,9 +27,10 @@
 	}
 	
 	.kt-calendar-table {
-		width: 100%;
+		width: auto
 		border-collapse: collapse;
 		border: 1px solid #dfdfdf;
+		table-layout: auto;
 		th {
 			padding: 4px 0;
 			font-size: 0.7rem;
@@ -202,7 +203,7 @@
 		.rate-cell {
 			font-size: 0.75rem;
 			vertical-align: middle;
-			min-width: 90px;
+			min-width: 105px;
 			
 			// Rate type styling
 			&.price {
