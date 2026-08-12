@@ -3,8 +3,14 @@
  * Product / LodgingBusiness / VideoObject structured data for house pages.
  *
  * Describes each of the 408 top-level house pages as both a Product (the
- * listing) and a LodgingBusiness (the property itself), with the guest
- * testimonials shown on the page and, where one exists, the page's video.
+ * listing) and a LodgingBusiness (the property itself) and, where one exists,
+ * the page's video.
+ *
+ * No Review, reviewRating or aggregateRating is emitted. Reviews are held at
+ * brand level for kate & tom's rather than against individual houses, so
+ * attaching them to a house would imply that house had been reviewed when it
+ * has not. The absence of review fields is expected to be flagged by the Rich
+ * Results Test; accuracy is preferred over satisfying the validator.
  *
  * The nodes are appended to Yoast's existing schema graph rather than printed
  * as a second script: Yoast already emits exactly one JSON-LD graph per page
@@ -48,11 +54,15 @@ class Kate_Toms_House_Schema {
 	const ORGANIZATION_HASH = '#organization';
 
 	/**
-	 * The block holding the guest testimonials shown on house pages.
+	 * Shape of the assembled node set, mixed into the cache key.
+	 *
+	 * Bumping this retires every cached node set at once. The rest of the key
+	 * tracks the content, not the code, so a change to what we publish would
+	 * otherwise be masked by caches for up to CACHE_TTL after deployment.
 	 *
 	 * @var string
 	 */
-	const REVIEWS_BLOCK = 'create-block/kateandtoms-reviews';
+	const SCHEMA_VERSION = '2';
 
 	/**
 	 * Shortest paragraph, in characters, that can serve as the description.
@@ -286,7 +296,7 @@ class Kate_Toms_House_Schema {
 		 * @param WP_Post $post      The house being described.
 		 */
 		$use_cache = apply_filters( 'kate_toms_core_cache_house_schema', true, $post );
-		$cache_key = 'kt_house_schema_' . $post->ID . '_' . md5( $canonical . '|' . $organization_id . '|' . (string) $post->post_modified_gmt );
+		$cache_key = 'kt_house_schema_' . $post->ID . '_' . md5( self::SCHEMA_VERSION . '|' . $canonical . '|' . $organization_id . '|' . (string) $post->post_modified_gmt );
 
 		if ( $use_cache ) {
 			$cached = get_transient( $cache_key );
@@ -377,12 +387,6 @@ class Kate_Toms_House_Schema {
 
 			// A lone video is referenced directly; only multiples become an array.
 			$product['video'] = 1 === count( $references ) ? $references[0] : $references;
-		}
-
-		$reviews = $this->build_reviews( $blocks, $product_id );
-
-		if ( ! empty( $reviews ) ) {
-			$product['review'] = $reviews;
 		}
 
 		return array_merge( array( $lodging, $product ), $videos );
@@ -498,57 +502,6 @@ class Kate_Toms_House_Schema {
 			'addressRegion'  => $region,
 			'addressCountry' => 'GB',
 		);
-	}
-
-	/**
-	 * Build the Review nodes from the testimonials shown on the page.
-	 *
-	 * Text only - the block stores no ratings, so no reviewRating is emitted.
-	 * Items missing either the quote or the guest's name are skipped rather
-	 * than published with a gap.
-	 *
-	 * @param array[] $blocks     Parsed blocks.
-	 * @param string  $product_id The Product entity being reviewed.
-	 * @return array[] Review nodes.
-	 */
-	private function build_reviews( array $blocks, $product_id ) {
-		$reviews = array();
-
-		$this->walk_blocks(
-			$blocks,
-			function ( $block ) use ( &$reviews ) {
-				if ( self::REVIEWS_BLOCK !== ( $block['blockName'] ?? '' ) ) {
-					return;
-				}
-
-				foreach ( (array) ( $block['attrs']['reviews'] ?? array() ) as $item ) {
-					$reviews[] = $item;
-				}
-			}
-		);
-
-		$nodes = array();
-
-		foreach ( $reviews as $review ) {
-			$body   = $this->to_plain_text( $review['review'] ?? '' );
-			$author = $this->to_plain_text( $review['reviewer'] ?? '' );
-
-			if ( '' === $body || '' === $author ) {
-				continue;
-			}
-
-			$nodes[] = array(
-				'@type'        => 'Review',
-				'reviewBody'   => $body,
-				'author'       => array(
-					'@type' => 'Person',
-					'name'  => $author,
-				),
-				'itemReviewed' => array( '@id' => $product_id ),
-			);
-		}
-
-		return $nodes;
 	}
 
 	/**
