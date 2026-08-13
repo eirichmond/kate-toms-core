@@ -3,14 +3,12 @@
  * Product / LodgingBusiness / VideoObject structured data for house pages.
  *
  * Describes each of the 408 top-level house pages as both a Product (the
- * listing) and a LodgingBusiness (the property itself) and, where one exists,
- * the page's video.
+ * listing) and a LodgingBusiness (the property itself), with the guest
+ * testimonials shown on the page and, where one exists, the page's video.
  *
- * No Review, reviewRating or aggregateRating is emitted. Reviews are held at
- * brand level for kate & tom's rather than against individual houses, so
- * attaching them to a house would imply that house had been reviewed when it
- * has not. The absence of review fields is expected to be flagged by the Rich
- * Results Test; accuracy is preferred over satisfying the validator.
+ * Reviews are text only: no reviewRating, star rating or aggregateRating is
+ * emitted, since the testimonials carry no score and inventing one would
+ * misrepresent them.
  *
  * The nodes are appended to Yoast's existing schema graph rather than printed
  * as a second script: Yoast already emits exactly one JSON-LD graph per page
@@ -62,7 +60,14 @@ class Kate_Toms_House_Schema {
 	 *
 	 * @var string
 	 */
-	const SCHEMA_VERSION = '3';
+	const SCHEMA_VERSION = '4';
+
+	/**
+	 * The block holding the guest testimonials shown on house pages.
+	 *
+	 * @var string
+	 */
+	const REVIEWS_BLOCK = 'create-block/kateandtoms-reviews';
 
 	/**
 	 * Shortest paragraph, in characters, that can serve as the description.
@@ -393,6 +398,13 @@ class Kate_Toms_House_Schema {
 			$product['subjectOf'] = 1 === count( $references ) ? $references[0] : $references;
 		}
 
+		$reviews = $this->build_reviews( $blocks );
+
+		if ( ! empty( $reviews ) ) {
+			// A single testimonial goes out as one object, not an array of one.
+			$product['review'] = 1 === count( $reviews ) ? $reviews[0] : $reviews;
+		}
+
 		return array_merge( array( $lodging, $product ), $videos );
 	}
 
@@ -506,6 +518,66 @@ class Kate_Toms_House_Schema {
 			'addressRegion'  => $region,
 			'addressCountry' => 'GB',
 		);
+	}
+
+	/**
+	 * Build the Review nodes from the testimonials shown on the page.
+	 *
+	 * Text only. The block stores no ratings and none are invented, so no
+	 * reviewRating or aggregateRating is emitted. `itemReviewed` is left off
+	 * too: these nest inside the Product, which already establishes what was
+	 * reviewed.
+	 *
+	 * Every testimonial held by the block is rendered into the page markup, so
+	 * all of them qualify as visible. An item with no quote is skipped; the
+	 * author is published where the block carries one.
+	 *
+	 * @param array[] $blocks Parsed blocks.
+	 * @return array[] Review nodes.
+	 */
+	private function build_reviews( array $blocks ) {
+		$testimonials = array();
+
+		$this->walk_blocks(
+			$blocks,
+			function ( $block ) use ( &$testimonials ) {
+				if ( self::REVIEWS_BLOCK !== ( $block['blockName'] ?? '' ) ) {
+					return;
+				}
+
+				foreach ( (array) ( $block['attrs']['reviews'] ?? array() ) as $item ) {
+					$testimonials[] = $item;
+				}
+			}
+		);
+
+		$nodes = array();
+
+		foreach ( $testimonials as $testimonial ) {
+			$body = $this->to_plain_text( $testimonial['review'] ?? '' );
+
+			if ( '' === $body ) {
+				continue;
+			}
+
+			$node = array(
+				'@type'      => 'Review',
+				'reviewBody' => $body,
+			);
+
+			$author = $this->to_plain_text( $testimonial['reviewer'] ?? '' );
+
+			if ( '' !== $author ) {
+				$node['author'] = array(
+					'@type' => 'Person',
+					'name'  => $author,
+				);
+			}
+
+			$nodes[] = $node;
+		}
+
+		return $nodes;
 	}
 
 	/**
