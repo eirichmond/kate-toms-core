@@ -136,6 +136,22 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-sitemaps.php';
 
 		/**
+		 * Repairs the logo on Yoast's Organization schema node.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-organization-logo.php';
+
+		/**
+		 * Product / LodgingBusiness / VideoObject structured data for the
+		 * top-level house pages.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-house-schema.php';
+
+		/**
+		 * FAQPage structured data built from the FAQ accordion block.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-faq-schema.php';
+
+		/**
 		 * Feed request handling (301s feed URLs to their parent, removes
 		 * feed links from page heads - crawl bloat prevention).
 		 */
@@ -233,6 +249,9 @@ class Kate_Toms_Core {
 		new Related_Houses_API();
 		new Kate_Toms_Blueprint();
 
+		// FAQPage structured data for pages using the FAQ accordion block.
+		new Kate_Toms_FAQ_Schema();
+
 		// Initialize custom block bindings
 		$custom_bindings = new Kate_Toms_Custom_Block_Bindings();
 		$custom_bindings->register_bindings();
@@ -242,6 +261,9 @@ class Kate_Toms_Core {
 
 		// Serves the booked-offer map to the block editor.
 		new Kate_Toms_Special_Offer_Availability_API();
+
+		// Structured data for the top-level house pages.
+		new Kate_Toms_House_Schema();
 	}
 
 	/**
