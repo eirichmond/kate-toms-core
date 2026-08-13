@@ -62,7 +62,7 @@ class Kate_Toms_House_Schema {
 	 *
 	 * @var string
 	 */
-	const SCHEMA_VERSION = '2';
+	const SCHEMA_VERSION = '3';
 
 	/**
 	 * Shortest paragraph, in characters, that can serve as the description.
@@ -385,8 +385,12 @@ class Kate_Toms_House_Schema {
 				$references[] = array( '@id' => $video['@id'] );
 			}
 
+			// `video` is a CreativeWork property, so the Schema.org validator
+			// rejects it on a Product. `subjectOf` carries the same meaning and
+			// is defined on Thing, so it is valid here; the VideoObject stays a
+			// separate node in the graph either way.
 			// A lone video is referenced directly; only multiples become an array.
-			$product['video'] = 1 === count( $references ) ? $references[0] : $references;
+			$product['subjectOf'] = 1 === count( $references ) ? $references[0] : $references;
 		}
 
 		return array_merge( array( $lodging, $product ), $videos );
@@ -567,6 +571,12 @@ class Kate_Toms_House_Schema {
 				$node['thumbnailUrl'] = $thumbnail;
 			}
 
+			$upload_date = $this->get_video_upload_date( $video );
+
+			if ( '' !== $upload_date ) {
+				$node['uploadDate'] = $upload_date;
+			}
+
 			$nodes[] = $node;
 		}
 
@@ -630,33 +640,177 @@ class Kate_Toms_House_Schema {
 			return 'https://img.youtube.com/vi/' . $video['id'] . '/hqdefault.jpg';
 		}
 
-		$cache_key = 'kt_vimeo_thumb_' . md5( $video['content_url'] );
+		$remote = $this->get_remote_video_meta( $video );
+
+		return $remote['thumbnail'];
+	}
+
+	/**
+	 * Get a video's publication date in ISO 8601 form.
+	 *
+	 * Vimeo publishes the date through oEmbed, so those come for free. YouTube
+	 * does not - oEmbed carries the title, author and thumbnail but no date, so
+	 * the only source is the YouTube Data API, which needs a server-usable key.
+	 * Supply one through the KATE_TOMS_YOUTUBE_API_KEY constant or the
+	 * `kate_toms_core_youtube_api_key` filter; without it the date is omitted
+	 * rather than guessed from the page's own dates, which would be wrong.
+	 *
+	 * @param array $video Parsed video parts.
+	 * @return string ISO 8601 date, empty when unavailable.
+	 */
+	private function get_video_upload_date( array $video ) {
+		$remote = $this->get_remote_video_meta( $video );
+
+		return $remote['upload_date'];
+	}
+
+	/**
+	 * Look up whatever the provider will tell us about a video.
+	 *
+	 * One cached lookup per video serves both the thumbnail and the upload
+	 * date - Vimeo's oEmbed response carries both, so splitting them would
+	 * double the round trips for no gain.
+	 *
+	 * @param array $video Parsed video parts.
+	 * @return array{thumbnail:string,upload_date:string} Resolved values, empty strings when unavailable.
+	 */
+	private function get_remote_video_meta( array $video ) {
+		$empty     = array(
+			'thumbnail'   => '',
+			'upload_date' => '',
+		);
+		$cache_key = 'kt_video_meta_' . md5( $video['provider'] . '|' . $video['id'] );
 		$cached    = get_transient( $cache_key );
 
-		if ( is_string( $cached ) ) {
-			return $cached;
+		if ( is_array( $cached ) ) {
+			return array_merge( $empty, $cached );
 		}
 
+		$meta = 'vimeo' === $video['provider']
+			? $this->fetch_vimeo_meta( $video )
+			: $this->fetch_youtube_meta( $video );
+
+		$meta = array_merge( $empty, $meta );
+
+		// A failed lookup is remembered briefly so a provider outage cannot make
+		// every render wait on it; the node simply goes out without the field.
+		$resolved = ( '' !== $meta['thumbnail'] || '' !== $meta['upload_date'] );
+
+		set_transient( $cache_key, $meta, $resolved ? self::VIMEO_CACHE_TTL : self::VIMEO_FAILURE_TTL );
+
+		return $meta;
+	}
+
+	/**
+	 * Read a Vimeo video's thumbnail and upload date from their oEmbed endpoint.
+	 *
+	 * Vimeo publishes no predictable thumbnail URL, so this is the only route.
+	 *
+	 * @param array $video Parsed video parts.
+	 * @return array Resolved values.
+	 */
+	private function fetch_vimeo_meta( array $video ) {
 		$response = wp_remote_get(
 			add_query_arg( 'url', rawurlencode( $video['content_url'] ), 'https://vimeo.com/api/oembed.json' ),
 			array( 'timeout' => 3 )
 		);
 
-		$thumbnail = '';
-
-		if ( ! is_wp_error( $response ) && 200 === wp_remote_retrieve_response_code( $response ) ) {
-			$body = json_decode( wp_remote_retrieve_body( $response ), true );
-
-			if ( is_array( $body ) && ! empty( $body['thumbnail_url'] ) ) {
-				$thumbnail = esc_url_raw( $body['thumbnail_url'] );
-			}
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return array();
 		}
 
-		// A failed lookup is remembered briefly so a Vimeo outage cannot make
-		// every render wait on it; the node simply goes out without a thumbnail.
-		set_transient( $cache_key, $thumbnail, '' === $thumbnail ? self::VIMEO_FAILURE_TTL : self::VIMEO_CACHE_TTL );
+		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-		return $thumbnail;
+		if ( ! is_array( $body ) ) {
+			return array();
+		}
+
+		$meta = array();
+
+		if ( ! empty( $body['thumbnail_url'] ) ) {
+			$meta['thumbnail'] = esc_url_raw( $body['thumbnail_url'] );
+		}
+
+		// Vimeo reports "2018-06-27 09:59:56"; schema.org wants ISO 8601.
+		if ( ! empty( $body['upload_date'] ) ) {
+			$meta['upload_date'] = $this->to_iso_8601( $body['upload_date'] );
+		}
+
+		return $meta;
+	}
+
+	/**
+	 * Read a YouTube video's upload date from the YouTube Data API.
+	 *
+	 * Thumbnails are derived from the ID without a request, so this is only
+	 * reached for the date, and only when a key has been supplied.
+	 *
+	 * @param array $video Parsed video parts.
+	 * @return array Resolved values.
+	 */
+	private function fetch_youtube_meta( array $video ) {
+		$key = $this->get_youtube_api_key();
+
+		if ( '' === $key ) {
+			return array();
+		}
+
+		$response = wp_remote_get(
+			add_query_arg(
+				array(
+					'part' => 'snippet',
+					'id'   => rawurlencode( $video['id'] ),
+					'key'  => rawurlencode( $key ),
+				),
+				'https://www.googleapis.com/youtube/v3/videos'
+			),
+			array( 'timeout' => 3 )
+		);
+
+		if ( is_wp_error( $response ) || 200 !== wp_remote_retrieve_response_code( $response ) ) {
+			return array();
+		}
+
+		$body      = json_decode( wp_remote_retrieve_body( $response ), true );
+		$published = $body['items'][0]['snippet']['publishedAt'] ?? '';
+
+		if ( '' === $published ) {
+			return array();
+		}
+
+		return array( 'upload_date' => $this->to_iso_8601( $published ) );
+	}
+
+	/**
+	 * Get the YouTube Data API key, if the site has been given one.
+	 *
+	 * @return string The key, empty when unset.
+	 */
+	private function get_youtube_api_key() {
+		$key = defined( 'KATE_TOMS_YOUTUBE_API_KEY' ) ? (string) KATE_TOMS_YOUTUBE_API_KEY : '';
+
+		/**
+		 * Filters the YouTube Data API key used to resolve video upload dates.
+		 *
+		 * @param string $key The key, empty when unset.
+		 */
+		return trim( (string) apply_filters( 'kate_toms_core_youtube_api_key', $key ) );
+	}
+
+	/**
+	 * Normalise a provider's date string to ISO 8601.
+	 *
+	 * @param string $date The provider's date.
+	 * @return string ISO 8601 date, empty when unparseable.
+	 */
+	private function to_iso_8601( $date ) {
+		$timestamp = strtotime( (string) $date );
+
+		if ( ! $timestamp ) {
+			return '';
+		}
+
+		return gmdate( 'c', $timestamp );
 	}
 
 	/**

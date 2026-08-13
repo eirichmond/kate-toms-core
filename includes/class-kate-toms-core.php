@@ -136,6 +136,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-sitemaps.php';
 
 		/**
+		 * Repairs the logo on Yoast's Organization schema node.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-organization-logo.php';
+
+		/**
 		 * Product / LodgingBusiness / VideoObject structured data for the
 		 * top-level house pages.
 		 */

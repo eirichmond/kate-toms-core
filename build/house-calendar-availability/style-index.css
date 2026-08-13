@@ -159,7 +159,7 @@
 .house-calendar-availability .kt-calendar-table .rate-cell {
   font-size: 0.75rem;
   vertical-align: middle;
-  min-width: 105px;
+  min-width: 115px;
 }
 .house-calendar-availability .kt-calendar-table .rate-cell.price {
   font-weight: 600;
