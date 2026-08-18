@@ -1220,7 +1220,7 @@ class House_Calendar_Manager {
 		}
 
 		// Get the WordPress house post ID from the PropertyId (house_id)
-		$wp_house_id = $this->get_wp_house_id_from_property_id( $house_id );
+		$wp_house_id = $this->get_wp_house_id_from_ipro_property_id( $house_id );
 
 		if ( ! $wp_house_id ) {
 			wp_send_json_error( 'House not found' );
@@ -1261,39 +1261,41 @@ class House_Calendar_Manager {
 	}
 
 	/**
-	 * Get WordPress house post ID from PropertyId using the property mapping.
+	 * Get the WordPress house post ID for an iPro PropertyId.
 	 *
-	 * @param string $property_id The PropertyId from the API
-	 * @return int|false WordPress post ID or false if not found
+	 * Looks up the parent `houses` post whose `ipro_property_id` meta matches,
+	 * the single source of truth populated by the backfill CLI and the
+	 * Blueprint at house creation (see House_Calendar_Manager::get_property_id_from_wp_house_id(),
+	 * the same lookup in reverse).
+	 *
+	 * This replaces a lookup against iPro's `PropertyReference` reflookup feed,
+	 * which is external data outside WordPress's control: a PropertyId there
+	 * can point at a stale or wrong WordPress post (e.g. a retired listing that
+	 * once held that PropertyId), silently sending a guest's booking-date click
+	 * to the wrong house.
+	 *
+	 * @param string $property_id The iPro PropertyId.
+	 * @return int|false WordPress post ID, or false if no house has this PropertyId.
 	 */
-	private function get_wp_house_id_from_property_id( $property_id ) {
-		// Get property mapping from transient or fetch from API
-		$property_mapping = get_transient( 'kt_property_mapping' );
+	private function get_wp_house_id_from_ipro_property_id( $property_id ) {
+		$houses = get_posts(
+			array(
+				'post_type'      => 'houses',
+				'post_parent'    => 0,
+				'post_status'    => array( 'publish', 'private' ),
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_key'       => 'ipro_property_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- exact-match lookup on a single low-cardinality meta key, no faster alternative available.
+				'meta_value'     => (string) $property_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- see above.
+			)
+		);
 
-		if ( false === $property_mapping ) {
-			$property_mapping = $this->fetch_property_mapping();
-
-			if ( $property_mapping ) {
-				// Cache for 1 hour
-				set_transient( 'kt_property_mapping', $property_mapping, HOUR_IN_SECONDS );
-			}
-		}
-
-		if ( ! $property_mapping ) {
-			error_log( 'Failed to fetch property mapping for booking lookup' );
+		if ( empty( $houses ) ) {
+			error_log( "No WordPress house found with ipro_property_id: {$property_id}" );
 			return false;
 		}
 
-		// Find the WordPress house ID that corresponds to this PropertyId
-		foreach ( $property_mapping as $property ) {
-			if ( isset( $property['PropertyId'] ) && $property['PropertyId'] == $property_id ) {
-				$wp_house_id = $property['PropertyReference'] ?? null;
-				return $wp_house_id ? (int) $wp_house_id : false;
-			}
-		}
-
-		error_log( "No WordPress house ID found for PropertyId: {$property_id}" );
-		return false;
+		return (int) $houses[0];
 	}
 
 	/**
