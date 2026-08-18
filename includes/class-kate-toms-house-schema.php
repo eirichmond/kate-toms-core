@@ -3,12 +3,15 @@
  * Product / LodgingBusiness / VideoObject structured data for house pages.
  *
  * Describes each of the 408 top-level house pages as both a Product (the
- * listing) and a LodgingBusiness (the property itself), with the guest
+ * listing) and a LodgingBusiness (the property itself), with one of the guest
  * testimonials shown on the page and, where one exists, the page's video.
  *
- * Reviews are text only: no reviewRating, star rating or aggregateRating is
- * emitted, since the testimonials carry no score and inventing one would
- * misrepresent them.
+ * Only the first testimonial is published as the Product's `review`: Google
+ * accepts a single Review with no aggregateRating, but requires one as soon
+ * as a second Review appears, and the testimonials carry no numerical score
+ * to aggregate. The rest still render on the page, just outside the schema.
+ * Reviews are text only throughout: no reviewRating, star rating or
+ * aggregateRating is emitted, since inventing one would misrepresent them.
  *
  * The nodes are appended to Yoast's existing schema graph rather than printed
  * as a second script: Yoast already emits exactly one JSON-LD graph per page
@@ -60,7 +63,7 @@ class Kate_Toms_House_Schema {
 	 *
 	 * @var string
 	 */
-	const SCHEMA_VERSION = '4';
+	const SCHEMA_VERSION = '5';
 
 	/**
 	 * The block holding the guest testimonials shown on house pages.
@@ -398,11 +401,10 @@ class Kate_Toms_House_Schema {
 			$product['subjectOf'] = 1 === count( $references ) ? $references[0] : $references;
 		}
 
-		$reviews = $this->build_reviews( $blocks );
+		$review = $this->build_review( $blocks );
 
-		if ( ! empty( $reviews ) ) {
-			// A single testimonial goes out as one object, not an array of one.
-			$product['review'] = 1 === count( $reviews ) ? $reviews[0] : $reviews;
+		if ( ! empty( $review ) ) {
+			$product['review'] = $review;
 		}
 
 		return array_merge( array( $lodging, $product ), $videos );
@@ -521,63 +523,60 @@ class Kate_Toms_House_Schema {
 	}
 
 	/**
-	 * Build the Review nodes from the testimonials shown on the page.
+	 * Build a single Review node from the testimonials shown on the page.
 	 *
-	 * Text only. The block stores no ratings and none are invented, so no
-	 * reviewRating or aggregateRating is emitted. `itemReviewed` is left off
-	 * too: these nest inside the Product, which already establishes what was
-	 * reviewed.
+	 * Google accepts a Product with one Review and no aggregateRating, but
+	 * requires an aggregateRating as soon as a second Review is present. The
+	 * block's testimonials carry no numerical score, so there is nothing to
+	 * aggregate - publishing every testimonial would make the page ineligible
+	 * for rich results rather than more informative. Only the first
+	 * testimonial with a quote is published; the rest still render on the
+	 * page as normal, just outside the Product's schema.
 	 *
-	 * Every testimonial held by the block is rendered into the page markup, so
-	 * all of them qualify as visible. An item with no quote is skipped; the
-	 * author is published where the block carries one.
+	 * Text only, still: no reviewRating or aggregateRating is emitted, since
+	 * none would be honest. `itemReviewed` is left off too: this nests inside
+	 * the Product, which already establishes what was reviewed.
 	 *
 	 * @param array[] $blocks Parsed blocks.
-	 * @return array[] Review nodes.
+	 * @return array The Review node, empty when the block has no usable testimonial.
 	 */
-	private function build_reviews( array $blocks ) {
-		$testimonials = array();
+	private function build_review( array $blocks ) {
+		$node = array();
 
 		$this->walk_blocks(
 			$blocks,
-			function ( $block ) use ( &$testimonials ) {
-				if ( self::REVIEWS_BLOCK !== ( $block['blockName'] ?? '' ) ) {
+			function ( $block ) use ( &$node ) {
+				if ( ! empty( $node ) || self::REVIEWS_BLOCK !== ( $block['blockName'] ?? '' ) ) {
 					return;
 				}
 
-				foreach ( (array) ( $block['attrs']['reviews'] ?? array() ) as $item ) {
-					$testimonials[] = $item;
+				foreach ( (array) ( $block['attrs']['reviews'] ?? array() ) as $testimonial ) {
+					$body = $this->to_plain_text( $testimonial['review'] ?? '' );
+
+					if ( '' === $body ) {
+						continue;
+					}
+
+					$node = array(
+						'@type'      => 'Review',
+						'reviewBody' => $body,
+					);
+
+					$author = $this->to_plain_text( $testimonial['reviewer'] ?? '' );
+
+					if ( '' !== $author ) {
+						$node['author'] = array(
+							'@type' => 'Person',
+							'name'  => $author,
+						);
+					}
+
+					break;
 				}
 			}
 		);
 
-		$nodes = array();
-
-		foreach ( $testimonials as $testimonial ) {
-			$body = $this->to_plain_text( $testimonial['review'] ?? '' );
-
-			if ( '' === $body ) {
-				continue;
-			}
-
-			$node = array(
-				'@type'      => 'Review',
-				'reviewBody' => $body,
-			);
-
-			$author = $this->to_plain_text( $testimonial['reviewer'] ?? '' );
-
-			if ( '' !== $author ) {
-				$node['author'] = array(
-					'@type' => 'Person',
-					'name'  => $author,
-				);
-			}
-
-			$nodes[] = $node;
-		}
-
-		return $nodes;
+		return $node;
 	}
 
 	/**
