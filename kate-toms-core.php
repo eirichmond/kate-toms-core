@@ -463,3 +463,10 @@ function kate_toms_the_content_filter( $content ) {
 	return $content;
 }
 add_filter( 'the_content', 'kate_toms_the_content_filter', 10, 2 );
+
+/**
+ * 
+ * removes the editor block patterns directory from loading the avialable to install patterns
+ * 
+ */
+remove_action('enqueue_block_editor_assets', 'wp_enqueue_editor_block_directory_assets');
