@@ -130,12 +130,15 @@ class Kate_Toms_Blueprint_CRM_API {
 	 * Subsequent calls filter the local cache instantly. Only returns active
 	 * (non-suspended, non-withdrawn, non-hidden) properties.
 	 *
-	 * @param string $query Case-insensitive substring to match against property Name.
+	 * @param string $query         Case-insensitive substring to match against property Name.
+	 * @param bool   $force_refresh When true, bypass the 24-hour transient and fetch a fresh
+	 *                              list first — lets staff pick up a house the CRM added or
+	 *                              reactivated since the cache was last populated.
 	 *
 	 * @return array Array of [ 'crm_id' => int, 'crm_title' => string ] items.
 	 */
-	public function search_houses( string $query ): array {
-		$properties = $this->get_all_properties();
+	public function search_houses( string $query, bool $force_refresh = false ): array {
+		$properties = $this->get_properties( $force_refresh );
 
 		if ( empty( $query ) || empty( $properties ) ) {
 			return array();

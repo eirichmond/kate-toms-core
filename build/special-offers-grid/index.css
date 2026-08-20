@@ -1,18 +1,1 @@
-/*!***************************************************************************************************************************************************************************************************************************************************************!*\
-  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./blocks/special-offers-grid/editor.scss ***!
-  \***************************************************************************************************************************************************************************************************************************************************************/
-.kate-toms-special-offers-grid-editor {
-  padding: 12px;
-  border: 1px dashed #c3c4c7;
-  border-radius: 4px;
-}
-.kate-toms-special-offers-grid-editor__hint {
-  margin: 0;
-  color: #757575;
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-/*# sourceMappingURL=index.css.map*/
+.kate-toms-special-offers-grid-editor{border:1px dashed #c3c4c7;border-radius:4px;padding:12px}.kate-toms-special-offers-grid-editor__hint{color:#757575;font-size:13px;font-weight:600;letter-spacing:.5px;margin:0;text-transform:uppercase}

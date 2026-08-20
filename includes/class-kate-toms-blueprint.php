@@ -166,11 +166,16 @@ class Kate_Toms_Blueprint {
 				'callback'            => array( $this, 'handle_crm_search' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'args'                => array(
-					'query' => array(
+					'query'   => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'minLength'         => 2,
+					),
+					'refresh' => array(
+						'required' => false,
+						'type'     => 'boolean',
+						'default'  => false,
 					),
 				),
 			)
@@ -245,9 +250,10 @@ class Kate_Toms_Blueprint {
 	 * @return WP_REST_Response|WP_Error Matching houses or an error.
 	 */
 	public function handle_crm_search( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-		$query = (string) $request->get_param( 'query' );
+		$query   = (string) $request->get_param( 'query' );
+		$refresh = (bool) $request->get_param( 'refresh' );
 
-		$results = ( new Kate_Toms_Blueprint_CRM_API() )->search_houses( $query );
+		$results = ( new Kate_Toms_Blueprint_CRM_API() )->search_houses( $query, $refresh );
 
 		return new WP_REST_Response( $results, 200 );
 	}
@@ -344,7 +350,7 @@ class Kate_Toms_Blueprint {
 		wp_update_post(
 			array(
 				'ID'           => $parent_id,
-				'post_content' => $this->templates->get_content( 'parent', $display_title, $house_slug ),
+				'post_content' => $this->templates->get_content( 'parent', $display_title, $house_slug, $crm_id ),
 			)
 		);
 
@@ -365,7 +371,7 @@ class Kate_Toms_Blueprint {
 					'post_status'  => 'draft',
 					'post_parent'  => $parent_id,
 					'menu_order'   => $menu_order,
-					'post_content' => $this->templates->get_content( $key, $display_title, $house_slug ),
+					'post_content' => $this->templates->get_content( $key, $display_title, $house_slug, $crm_id ),
 				),
 				true
 			);

@@ -1261,39 +1261,44 @@ class House_Calendar_Manager {
 	}
 
 	/**
-	 * Get WordPress house post ID from PropertyId using the property mapping.
+	 * Get WordPress house post ID from an iPro PropertyId.
 	 *
-	 * @param string $property_id The PropertyId from the API
-	 * @return int|false WordPress post ID or false if not found
+	 * Queries the `houses` post type directly for the parent post whose
+	 * `ipro_property_id` meta matches. This is the reverse of
+	 * get_property_id_from_wp_house_id() and is the single source of truth,
+	 * matching it.
+	 *
+	 * Previously this went through iPro's `/apis/properties/reflookup`
+	 * endpoint and read the `PropertyReference` field — the LEGACY WordPress
+	 * post id, only ever written by the old clubsandwich theme. Blueprint-
+	 * created houses are never registered back into iPro that way, so their
+	 * PropertyReference is whatever default iPro assigns (observed: `1`,
+	 * which does not correspond to any post), causing every blueprint house's
+	 * availability-calendar "click a date" flow to fail with "House post not
+	 * found" before the booking flow ever loads.
+	 *
+	 * @param string $property_id The iPro PropertyId.
+	 * @return int|false WordPress post ID or false if not found.
 	 */
 	private function get_wp_house_id_from_property_id( $property_id ) {
-		// Get property mapping from transient or fetch from API
-		$property_mapping = get_transient( 'kt_property_mapping' );
+		$houses = get_posts(
+			array(
+				'post_type'      => 'houses',
+				'post_status'    => 'any',
+				'post_parent'    => 0,
+				'meta_key'       => 'ipro_property_id',
+				'meta_value'     => (string) $property_id,
+				'fields'         => 'ids',
+				'posts_per_page' => 1,
+			)
+		);
 
-		if ( false === $property_mapping ) {
-			$property_mapping = $this->fetch_property_mapping();
-
-			if ( $property_mapping ) {
-				// Cache for 1 hour
-				set_transient( 'kt_property_mapping', $property_mapping, HOUR_IN_SECONDS );
-			}
-		}
-
-		if ( ! $property_mapping ) {
-			error_log( 'Failed to fetch property mapping for booking lookup' );
+		if ( empty( $houses ) ) {
+			error_log( "No WordPress house found with ipro_property_id: {$property_id}" );
 			return false;
 		}
 
-		// Find the WordPress house ID that corresponds to this PropertyId
-		foreach ( $property_mapping as $property ) {
-			if ( isset( $property['PropertyId'] ) && $property['PropertyId'] == $property_id ) {
-				$wp_house_id = $property['PropertyReference'] ?? null;
-				return $wp_house_id ? (int) $wp_house_id : false;
-			}
-		}
-
-		error_log( "No WordPress house ID found for PropertyId: {$property_id}" );
-		return false;
+		return (int) $houses[0];
 	}
 
 	/**

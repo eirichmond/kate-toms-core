@@ -199,13 +199,20 @@ class Kate_Toms_Blueprint_Templates {
 	/**
 	 * Returns finished post_content for a Blueprint page.
 	 *
-	 * @param string $key           Page key.
-	 * @param string $display_title House display title.
-	 * @param string $house_slug    Parent house post slug.
+	 * @param string $key               Page key.
+	 * @param string $display_title     House display title.
+	 * @param string $house_slug        Parent house post slug.
+	 * @param int    $ipro_property_id  iPro CRM PropertyId, matching the
+	 *                                  `ipro_property_id` meta written on the
+	 *                                  parent house post. The availability
+	 *                                  calendar block calls the iPro API with
+	 *                                  this ID directly (see
+	 *                                  House_Calendar_Manager::get_calendar_data()),
+	 *                                  so its `houseId` attribute must carry it too.
 	 *
 	 * @return string Block markup, or an empty string if the source is missing.
 	 */
-	public function get_content( string $key, string $display_title, string $house_slug ): string {
+	public function get_content( string $key, string $display_title, string $house_slug, int $ipro_property_id ): string {
 		$source = $this->load_source( $key );
 
 		if ( '' === $source ) {
@@ -215,7 +222,7 @@ class Kate_Toms_Blueprint_Templates {
 		$content = $this->personalise( $source, $display_title, $house_slug, $key );
 		$content = $this->ensure_tour_nav_link( $content, $house_slug );
 
-		return $this->apply_defaults( $content );
+		return $this->apply_defaults( $content, $ipro_property_id );
 	}
 
 	/**
@@ -677,13 +684,15 @@ class Kate_Toms_Blueprint_Templates {
 	 * re-serialises. Working on the parsed tree rather than the raw markup
 	 * keeps nested blocks and inner HTML intact.
 	 *
-	 * @param string $content Personalised markup.
+	 * @param string $content          Personalised markup.
+	 * @param int    $ipro_property_id iPro CRM PropertyId, passed through to
+	 *                                 apply_block_defaults() for blocks that key off it.
 	 *
 	 * @return string Markup with defaults applied.
 	 */
-	private function apply_defaults( string $content ): string {
+	private function apply_defaults( string $content, int $ipro_property_id ): string {
 		$blocks = parse_blocks( $content );
-		$blocks = $this->walk_blocks( $blocks );
+		$blocks = $this->walk_blocks( $blocks, $ipro_property_id );
 
 		return serialize_blocks( $blocks );
 	}
@@ -691,16 +700,17 @@ class Kate_Toms_Blueprint_Templates {
 	/**
 	 * Recursively applies per-block defaults across a parsed block tree.
 	 *
-	 * @param array[] $blocks Parsed blocks.
+	 * @param array[] $blocks           Parsed blocks.
+	 * @param int     $ipro_property_id iPro CRM PropertyId.
 	 *
 	 * @return array[] Mutated blocks.
 	 */
-	private function walk_blocks( array $blocks ): array {
+	private function walk_blocks( array $blocks, int $ipro_property_id ): array {
 		foreach ( $blocks as $index => $block ) {
-			$block = $this->apply_block_defaults( $block );
+			$block = $this->apply_block_defaults( $block, $ipro_property_id );
 
 			if ( ! empty( $block['innerBlocks'] ) ) {
-				$block['innerBlocks'] = $this->walk_blocks( $block['innerBlocks'] );
+				$block['innerBlocks'] = $this->walk_blocks( $block['innerBlocks'], $ipro_property_id );
 			}
 
 			$blocks[ $index ] = $block;
@@ -712,11 +722,12 @@ class Kate_Toms_Blueprint_Templates {
 	/**
 	 * Applies the Blueprint defaults relevant to a single block.
 	 *
-	 * @param array $block Parsed block.
+	 * @param array $block            Parsed block.
+	 * @param int   $ipro_property_id iPro CRM PropertyId.
 	 *
 	 * @return array Mutated block.
 	 */
-	private function apply_block_defaults( array $block ): array {
+	private function apply_block_defaults( array $block, int $ipro_property_id ): array {
 		switch ( $block['blockName'] ?? '' ) {
 			case 'core/buttons':
 				return $this->add_block_class( $block, self::BUTTONS_MOBILE_CLASS );
@@ -748,6 +759,19 @@ class Kate_Toms_Blueprint_Templates {
 				// house; empty, the block renders nothing and the editor is
 				// prompted for this house's URL.
 				$block['attrs']['tourUrl'] = '';
+				return $block;
+
+			case 'kate-toms-core/house-calendar-availability':
+				// The MASTER ships with a literal "enter it here" placeholder.
+				// Despite the "houseId" name, this block's view.js posts it
+				// straight through to House_Calendar_Manager::get_calendar_data(),
+				// which puts it directly in the iPro API URL path — it is the
+				// iPro PropertyId (the same value written to the parent's
+				// ipro_property_id meta), not a WordPress post ID. Confirmed
+				// against live houses: e.g. Chestnut Tree House's parent post
+				// carries ipro_property_id 57125, matching its Availability
+				// page's houseId attribute exactly.
+				$block['attrs']['houseId'] = (string) $ipro_property_id;
 				return $block;
 		}
 
