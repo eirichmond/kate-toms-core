@@ -4,7 +4,8 @@
  *
  * Registers the Blueprint admin submenu under the Houses CPT, exposes REST
  * endpoints for CRM search and page creation, and assembles draft posts from
- * the MASTER templates when staff onboard a new house.
+ * the katomswold theme's `house-page-*` patterns when staff onboard a new
+ * house.
  *
  * @package    Kate_Toms_Core
  * @subpackage Kate_Toms_Core/includes
@@ -143,8 +144,8 @@ class Kate_Toms_Blueprint {
 				'key'    => $key,
 				'label'  => $config['label'],
 				'slug'   => 'parent' === $key ? '' : $key,
-				'source' => 'wp_block' === $config['source']['type']
-					? $config['source']['title']
+				'source' => 'theme_pattern' === $config['source']['type']
+					? $config['source']['slug']
 					: __( 'Plugin template', 'kate-toms-core' ),
 			);
 		}

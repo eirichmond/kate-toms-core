@@ -940,6 +940,14 @@ class Kate_Toms_Core_Admin {
 				'description' => 'Kate & Toms related patterns',
 			)
 		);
+
+		register_block_pattern_category(
+			'blueprint',
+			array(
+				'label'       => 'Blueprint',
+				'description' => 'MASTER source patterns used by the Blueprint house-creation wizard',
+			)
+		);
 	}
 
 	/**

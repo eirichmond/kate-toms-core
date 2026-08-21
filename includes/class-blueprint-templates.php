@@ -15,10 +15,13 @@ declare(strict_types=1);
 /**
  * Blueprint page templates.
  *
- * Fern's MASTER templates are synced patterns stored as `wp_block` posts, not
- * theme pattern files, so they are looked up by post title. The Book page has
- * no MASTER, so it ships with the plugin as a tokenised HTML template derived
- * from the live Marsden Manor book page.
+ * Page content comes from `katomswold/house-page-*` patterns registered by
+ * the theme, looked up by slug. These replaced an earlier generation of
+ * MASTER templates — synced patterns stored as `wp_block` posts and looked
+ * up by post title, originally created by Fern — once the theme patterns
+ * were recreated to match (Aug 2026). The Book page has no theme pattern, so
+ * it ships with the plugin as a tokenised HTML template derived from the
+ * live Marsden Manor book page.
  *
  * MASTER content carries two placeholder tokens, used consistently throughout:
  *
@@ -40,15 +43,6 @@ class Kate_Toms_Blueprint_Templates {
 	 * @var string
 	 */
 	private const TITLE_TOKEN = 'HOUSE NAME';
-
-	/**
-	 * Block style applied to every core/buttons block (stacked + centred on mobile).
-	 *
-	 * Registered by the katomswold theme.
-	 *
-	 * @var string
-	 */
-	private const BUTTONS_MOBILE_CLASS = 'is-style-stack-buttons-mobile';
 
 	/**
 	 * Utility class applied to the Key Facts bedroom table (25/15/30/30 widths).
@@ -73,25 +67,25 @@ class Kate_Toms_Blueprint_Templates {
 	 *
 	 * `label` is the middle segment of the page title and is empty for the
 	 * parent. `source` describes where the page's starting content comes from:
-	 * a `wp_block` MASTER looked up by title, or a template file shipped with
-	 * the plugin. `insert` optionally lists katomswold theme patterns to add to
-	 * that content — see insert_pattern() for how each rule is placed.
+	 * a `theme_pattern` looked up by slug, or a template file shipped with the
+	 * plugin. `insert` optionally lists further katomswold theme patterns to
+	 * add to that content — see insert_pattern() for how each rule is placed.
 	 *
-	 * @var array<string, array{label: string, source: array{type: string, title?: string, file?: string}, insert?: array<array{pattern: string, replace?: string, before?: string}>}>
+	 * @var array<string, array{label: string, source: array{type: string, slug?: string, file?: string}, insert?: array<array{pattern: string, replace?: string, before?: string}>}>
 	 */
 	private static array $pages = array(
 		'parent'       => array(
 			'label'  => '',
 			'source' => array(
-				'type'  => 'wp_block',
-				'title' => 'House Build Main Page MASTER',
+				'type' => 'theme_pattern',
+				'slug' => 'katomswold/house-page-parent',
 			),
 		),
 		'availability' => array(
 			'label'  => 'Availability',
 			'source' => array(
-				'type'  => 'wp_block',
-				'title' => 'Availability page MASTER',
+				'type' => 'theme_pattern',
+				'slug' => 'katomswold/house-page-availability',
 			),
 		),
 		'book'         => array(
@@ -104,29 +98,22 @@ class Kate_Toms_Blueprint_Templates {
 		'gallery'      => array(
 			'label'  => 'Gallery',
 			'source' => array(
-				'type'  => 'wp_block',
-				'title' => 'Gallery MASTER',
-			),
-			'insert' => array(
-				array(
-					'pattern' => 'katomswold/standard-widget-virtual-tour',
-					'replace' => 'h-virtual-tour',
-					'before'  => 'kate-toms-core/related-houses',
-				),
+				'type' => 'theme_pattern',
+				'slug' => 'katomswold/house-page-gallery',
 			),
 		),
 		'facts'        => array(
 			'label'  => 'Key Facts',
 			'source' => array(
-				'type'  => 'wp_block',
-				'title' => 'Key Facts MASTER',
+				'type' => 'theme_pattern',
+				'slug' => 'katomswold/house-page-key-facts',
 			),
 		),
 		'more'         => array(
 			'label'  => 'Things To Do',
 			'source' => array(
-				'type'  => 'wp_block',
-				'title' => 'Things to Do MASTER',
+				'type' => 'theme_pattern',
+				'slug' => 'katomswold/house-page-things-to-do',
 			),
 		),
 	);
@@ -173,17 +160,17 @@ class Kate_Toms_Blueprint_Templates {
 	/**
 	 * Returns the content sources that could not be found, for preflight warnings.
 	 *
-	 * Covers both the MASTER synced patterns and the theme patterns appended to
-	 * a page, so the wizard can warn before anything is created.
+	 * Covers both a page's own source pattern and any patterns appended to it,
+	 * so the wizard can warn before anything is created.
 	 *
-	 * @return string[] Missing MASTER titles and theme pattern slugs.
+	 * @return string[] Missing theme pattern slugs.
 	 */
 	public function get_missing_sources(): array {
 		$missing = array();
 
 		foreach ( self::$pages as $config ) {
-			if ( 'wp_block' === $config['source']['type'] && null === $this->find_master( $config['source']['title'] ) ) {
-				$missing[] = $config['source']['title'];
+			if ( 'theme_pattern' === $config['source']['type'] && null === $this->find_theme_pattern( $config['source']['slug'] ) ) {
+				$missing[] = $config['source']['slug'];
 			}
 
 			foreach ( $config['insert'] ?? array() as $rule ) {
@@ -245,10 +232,10 @@ class Kate_Toms_Blueprint_Templates {
 		if ( 'file' === $source['type'] ) {
 			$content = $this->load_template_file( $source['file'] );
 		} else {
-			$content = $this->find_master( $source['title'] );
+			$content = $this->find_theme_pattern( $source['slug'] );
 
 			if ( null === $content ) {
-				$this->log_warning( "MASTER pattern not found: {$source['title']}" );
+				$this->log_warning( "Theme pattern not found: {$source['slug']}" );
 				$content = '';
 			}
 		}
@@ -267,16 +254,18 @@ class Kate_Toms_Blueprint_Templates {
 	/**
 	 * Inserts a theme pattern into a page's content.
 	 *
-	 * Placement is tried in three steps, so the result stays right whether or
-	 * not the MASTER still carries the section the pattern supersedes:
+	 * Not currently used by any page in $pages (Aug 2026: the Gallery page's
+	 * Virtual Tour insert rule was removed once its own pattern took over
+	 * owning that section directly) — kept as general-purpose infrastructure
+	 * for a future page that needs to splice a theme pattern into a source
+	 * pattern's content. Placement is tried in three steps, so the result
+	 * stays right whether or not the source pattern still carries the
+	 * section a rule's pattern supersedes:
 	 *
-	 *   `replace` — an HTML anchor identifying a section the MASTER already
-	 *               has. The top-level block containing it is swapped for the
-	 *               pattern. The Gallery MASTER ends with an older Virtual Tour
-	 *               section — same heading and copy, a flat image in place of
-	 *               the vr-tour block — which the pattern replaces outright.
-	 *   `before`  — otherwise the pattern goes above this block, keeping
-	 *               "Houses you may also like" as the closing section.
+	 *   `replace` — an HTML anchor identifying a section the source pattern
+	 *               already has. The top-level block containing it is
+	 *               swapped for the rule's pattern outright.
+	 *   `before`  — otherwise the pattern goes above this block.
 	 *   neither   — otherwise the pattern is appended.
 	 *
 	 * @param string $rule_content Page content.
@@ -386,33 +375,6 @@ class Kate_Toms_Blueprint_Templates {
 	}
 
 	/**
-	 * Finds a MASTER synced pattern's content by post title.
-	 *
-	 * @param string $title Exact `wp_block` post title.
-	 *
-	 * @return string|null Pattern content, or null when no match exists.
-	 */
-	private function find_master( string $title ): ?string {
-		$query = new WP_Query(
-			array(
-				'post_type'              => 'wp_block',
-				'post_status'            => 'publish',
-				'title'                  => $title,
-				'posts_per_page'         => 1,
-				'no_found_rows'          => true,
-				'update_post_meta_cache' => false,
-				'update_post_term_cache' => false,
-			)
-		);
-
-		if ( empty( $query->posts ) ) {
-			return null;
-		}
-
-		return (string) $query->posts[0]->post_content;
-	}
-
-	/**
 	 * Replaces the MASTER placeholder tokens with real house values.
 	 *
 	 * Also normalises absolute local URLs and any hard-coded reference to the
@@ -479,10 +441,11 @@ class Kate_Toms_Blueprint_Templates {
 	/**
 	 * Ensures the house title banner's VR TOUR item links to the tour.
 	 *
-	 * The MASTERs carry a VR TOUR item in the banner nav, but as plain text —
-	 * it predates the tour having anywhere to point at. It is turned into a
-	 * link here. Only if a page has no VR TOUR item at all is one added beside
-	 * GALLERY, matching how the katomswold banner patterns order it.
+	 * If the page's source pattern already has a VR TOUR nav item (plain
+	 * text), it is turned into a link here. Nothing is added when a page has
+	 * no VR TOUR item at all — the katomswold `house-page-*` patterns own
+	 * that nav item's presence and ordering directly (Aug 2026), so Blueprint
+	 * no longer injects one behind their back.
 	 *
 	 * @param string $content    Personalised page markup.
 	 * @param string $house_slug Parent house post slug.
@@ -496,10 +459,6 @@ class Kate_Toms_Blueprint_Templates {
 		$changed = false;
 
 		$blocks = $this->link_tour_nav_item( $blocks, $href, $found, $changed );
-
-		if ( ! $found ) {
-			$blocks = $this->add_tour_nav_item( $blocks, $href, $changed );
-		}
 
 		return $changed ? serialize_blocks( $blocks ) : $content;
 	}
@@ -559,93 +518,6 @@ class Kate_Toms_Blueprint_Templates {
 	}
 
 	/**
-	 * Adds a VR TOUR nav item after the banner's GALLERY link.
-	 *
-	 * Used only when a page has no VR TOUR item to link. The new paragraph is
-	 * cloned from the GALLERY one so the styling matches, and the parent's
-	 * `innerContent` gains a matching null placeholder — serialize_block()
-	 * pairs each null with the next inner block, so without one the parent's
-	 * last child would be dropped from the output.
-	 *
-	 * @param array[] $blocks  Parsed blocks.
-	 * @param string  $href    Tour URL.
-	 * @param bool    $changed Set to true once the item has been added.
-	 *
-	 * @return array[] Mutated blocks.
-	 */
-	private function add_tour_nav_item( array $blocks, string $href, bool &$changed ): array {
-		foreach ( $blocks as $index => $block ) {
-			if ( $changed ) {
-				break;
-			}
-
-			$children = $block['innerBlocks'] ?? array();
-
-			foreach ( $children as $child_index => $child ) {
-				if ( ! $this->is_gallery_nav_link( $child ) ) {
-					continue;
-				}
-
-				$html = (string) ( $child['innerHTML'] ?? '' );
-				$html = preg_replace(
-					'#(<p\b[^>]*>).*(</p>)#s',
-					'${1}' . $this->escape_replacement( sprintf( '<a href="%s">VR TOUR</a>', $href ) ) . '${2}',
-					$html,
-					1
-				);
-
-				$child['innerHTML']    = (string) $html;
-				$child['innerContent'] = array( (string) $html );
-
-				array_splice( $block['innerBlocks'], $child_index + 1, 0, array( $child ) );
-				$block['innerContent'] = $this->insert_inner_placeholder( $block['innerContent'], $child_index );
-
-				$blocks[ $index ] = $block;
-				$changed          = true;
-
-				return $blocks;
-			}
-
-			if ( ! empty( $children ) ) {
-				$block['innerBlocks'] = $this->add_tour_nav_item( $children, $href, $changed );
-				$blocks[ $index ]     = $block;
-			}
-		}
-
-		return $blocks;
-	}
-
-	/**
-	 * Adds an inner-block placeholder to an `innerContent` list.
-	 *
-	 * @param array $inner_content Parent block's innerContent.
-	 * @param int   $after         Index of the inner block to insert after.
-	 *
-	 * @return array Updated innerContent.
-	 */
-	private function insert_inner_placeholder( array $inner_content, int $after ): array {
-		$seen = -1;
-
-		foreach ( $inner_content as $position => $chunk ) {
-			if ( null !== $chunk ) {
-				continue;
-			}
-
-			++$seen;
-
-			if ( $seen === $after ) {
-				array_splice( $inner_content, $position + 1, 0, array( null ) );
-
-				return $inner_content;
-			}
-		}
-
-		$inner_content[] = null;
-
-		return $inner_content;
-	}
-
-	/**
 	 * Escapes a preg_replace replacement string.
 	 *
 	 * @param string $replacement Literal text to substitute in.
@@ -654,27 +526,6 @@ class Kate_Toms_Blueprint_Templates {
 	 */
 	private function escape_replacement( string $replacement ): string {
 		return str_replace( array( '\\', '$' ), array( '\\\\', '\\$' ), $replacement );
-	}
-
-	/**
-	 * Determines whether a block is the banner nav's GALLERY link.
-	 *
-	 * Matches on the upper-case link text the banner nav uses, so ordinary
-	 * "View Gallery" buttons elsewhere on a page are left alone.
-	 *
-	 * @param array $block Parsed block.
-	 *
-	 * @return bool True for the banner's GALLERY nav paragraph.
-	 */
-	private function is_gallery_nav_link( array $block ): bool {
-		if ( 'core/paragraph' !== ( $block['blockName'] ?? '' ) ) {
-			return false;
-		}
-
-		return 1 === preg_match(
-			'#<a\s[^>]*href="[^"]*/gallery/?"[^>]*>\s*GALLERY\s*</a>#',
-			(string) ( $block['innerHTML'] ?? '' )
-		);
 	}
 
 	/**
@@ -729,9 +580,6 @@ class Kate_Toms_Blueprint_Templates {
 	 */
 	private function apply_block_defaults( array $block, int $ipro_property_id ): array {
 		switch ( $block['blockName'] ?? '' ) {
-			case 'core/buttons':
-				return $this->add_block_class( $block, self::BUTTONS_MOBILE_CLASS );
-
 			case 'core/table':
 				return $this->is_bedroom_table( $block )
 					? $this->add_block_class( $block, self::BEDROOM_TABLE_CLASS )
