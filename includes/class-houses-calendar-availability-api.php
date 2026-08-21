@@ -1220,7 +1220,7 @@ class House_Calendar_Manager {
 		}
 
 		// Get the WordPress house post ID from the PropertyId (house_id)
-		$wp_house_id = $this->get_wp_house_id_from_property_id( $house_id );
+		$wp_house_id = $this->get_wp_house_id_from_ipro_property_id( $house_id );
 
 		if ( ! $wp_house_id ) {
 			wp_send_json_error( 'House not found' );
@@ -1261,35 +1261,40 @@ class House_Calendar_Manager {
 	}
 
 	/**
-	 * Get WordPress house post ID from an iPro PropertyId.
+	 * Get the WordPress house post ID for an iPro PropertyId.
 	 *
-	 * Queries the `houses` post type directly for the parent post whose
-	 * `ipro_property_id` meta matches. This is the reverse of
-	 * get_property_id_from_wp_house_id() and is the single source of truth,
-	 * matching it.
+	 * Looks up the parent `houses` post whose `ipro_property_id` meta matches,
+	 * the single source of truth populated by the backfill CLI and the
+	 * Blueprint at house creation (see House_Calendar_Manager::get_property_id_from_wp_house_id(),
+	 * the same lookup in reverse).
 	 *
-	 * Previously this went through iPro's `/apis/properties/reflookup`
-	 * endpoint and read the `PropertyReference` field — the LEGACY WordPress
-	 * post id, only ever written by the old clubsandwich theme. Blueprint-
-	 * created houses are never registered back into iPro that way, so their
-	 * PropertyReference is whatever default iPro assigns (observed: `1`,
-	 * which does not correspond to any post), causing every blueprint house's
-	 * availability-calendar "click a date" flow to fail with "House post not
-	 * found" before the booking flow ever loads.
+	 * This replaces a lookup against iPro's `PropertyReference` reflookup feed,
+	 * which is external data outside WordPress's control: a PropertyId there
+	 * can point at a stale or wrong WordPress post (e.g. a retired listing that
+	 * once held that PropertyId), silently sending a guest's booking-date click
+	 * to the wrong house. Blueprint-created houses are never registered back
+	 * into iPro that way at all, so their PropertyReference is whatever
+	 * default iPro assigns (observed: `1`, which doesn't correspond to any
+	 * post) — this lookup sidesteps that entirely.
+	 *
+	 * `post_status` deliberately includes `draft`: the Blueprint creates a
+	 * parent house as a draft, and staff need the "click a date" flow to
+	 * resolve correctly while reviewing it, before it's ever published or
+	 * made private.
 	 *
 	 * @param string $property_id The iPro PropertyId.
-	 * @return int|false WordPress post ID or false if not found.
+	 * @return int|false WordPress post ID, or false if no house has this PropertyId.
 	 */
-	private function get_wp_house_id_from_property_id( $property_id ) {
+	private function get_wp_house_id_from_ipro_property_id( $property_id ) {
 		$houses = get_posts(
 			array(
 				'post_type'      => 'houses',
-				'post_status'    => 'any',
 				'post_parent'    => 0,
-				'meta_key'       => 'ipro_property_id',
-				'meta_value'     => (string) $property_id,
-				'fields'         => 'ids',
+				'post_status'    => array( 'publish', 'private', 'draft' ),
 				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_key'       => 'ipro_property_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- exact-match lookup on a single low-cardinality meta key, no faster alternative available.
+				'meta_value'     => (string) $property_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- see above.
 			)
 		);
 

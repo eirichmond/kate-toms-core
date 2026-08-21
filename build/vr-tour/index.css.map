@@ -1,0 +1,1 @@
+{"version":3,"file":"vr-tour/index.css","mappings":";;;AACC;EAEC;AADF,C","sources":["webpack://kate-toms-core/./blocks/vr-tour/editor.scss"],"sourcesContent":[".wp-block-kate-toms-core-vr-tour {\n\t.kt-vr-tour__frame iframe {\n\t\t// Keep the canvas selectable — don't let the tour capture clicks.\n\t\tpointer-events: none;\n\t}\n}\n"],"names":[],"sourceRoot":""}

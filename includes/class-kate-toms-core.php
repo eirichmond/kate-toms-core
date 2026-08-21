@@ -30,6 +30,23 @@
 class Kate_Toms_Core {
 
 	/**
+	 * In-page anchors inherited from the legacy theme that used to open a form modal.
+	 *
+	 * The old site rendered `<div id="getintouch">` / `<div id="enquire">` modals in the
+	 * footer, so content authored back then links to those hashes. Nothing on the block
+	 * site renders elements with those IDs, which leaves the links inert. Buttons using
+	 * them are treated as form triggers so migrated content keeps working without the
+	 * `showForm` attribute being set on every one of them.
+	 *
+	 * @since    1.0.0
+	 * @var      array<string, string>    Anchor (lowercase, including '#') => form type.
+	 */
+	const LEGACY_FORM_ANCHORS = array(
+		'#getintouch' => 'contact',
+		'#enquire'    => 'contact',
+	);
+
+	/**
 	 * The loader that's responsible for maintaining and registering all hooks that power
 	 * the plugin.
 	 *
@@ -117,6 +134,22 @@ class Kate_Toms_Core {
 		 * Yoast SEO sitemap tweaks (enables Yoast's built-in sitemap cache).
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-sitemaps.php';
+
+		/**
+		 * Repairs the logo on Yoast's Organization schema node.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-organization-logo.php';
+
+		/**
+		 * Product / LodgingBusiness / VideoObject structured data for the
+		 * top-level house pages.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-house-schema.php';
+
+		/**
+		 * FAQPage structured data built from the FAQ accordion block.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-faq-schema.php';
 
 		/**
 		 * Feed request handling (301s feed URLs to their parent, removes
@@ -232,6 +265,9 @@ class Kate_Toms_Core {
 		new Kate_Toms_Blueprint();
 		new Kate_Toms_Blueprint_Inheritance();
 
+		// FAQPage structured data for pages using the FAQ accordion block.
+		new Kate_Toms_FAQ_Schema();
+
 		// Initialize custom block bindings
 		$custom_bindings = new Kate_Toms_Custom_Block_Bindings();
 		$custom_bindings->register_bindings();
@@ -241,6 +277,9 @@ class Kate_Toms_Core {
 
 		// Serves the booked-offer map to the block editor.
 		new Kate_Toms_Special_Offer_Availability_API();
+
+		// Structured data for the top-level house pages.
+		new Kate_Toms_House_Schema();
 	}
 
 	/**
@@ -369,20 +408,70 @@ class Kate_Toms_Core {
 
 	/**
 	 * Add custom attributes to button block HTML
+	 *
+	 * @param  string $block_content The rendered block markup.
+	 * @param  array  $block         The parsed block.
+	 * @return string                The block markup, flagged for the form handler where relevant.
 	 */
 	public function modify_button_block_html( $block_content, $block ) {
-		if ( $block['blockName'] === 'core/button' && ! empty( $block['attrs']['showForm'] ) ) {
-			$dom = new DOMDocument();
-			$dom->loadHTML( $block_content, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
-
-			$button = $dom->getElementsByTagName( 'div' )->item( 0 );
-			if ( $button ) {
-				$button->setAttribute( 'data-show-form', 'true' );
-				$button->setAttribute( 'data-form-type', $block['attrs']['formType'] ?? 'contact' );
-			}
-
-			return $dom->saveHTML();
+		if ( 'core/button' !== ( $block['blockName'] ?? '' ) ) {
+			return $block_content;
 		}
-		return $block_content;
+
+		$form_type = $this->get_button_form_type( $block, $block_content );
+		if ( null === $form_type ) {
+			return $block_content;
+		}
+
+		$tags = new WP_HTML_Tag_Processor( $block_content );
+		if ( ! $tags->next_tag( array( 'class_name' => 'wp-block-button' ) ) ) {
+			return $block_content;
+		}
+
+		$tags->set_attribute( 'data-show-form', 'true' );
+		$tags->set_attribute( 'data-form-type', $form_type );
+
+		return $tags->get_updated_html();
+	}
+
+	/**
+	 * Work out which form, if any, a button block should open.
+	 *
+	 * @param  array  $block         The parsed block.
+	 * @param  string $block_content The rendered block markup.
+	 * @return string|null           The form type, or null when the button is not a form trigger.
+	 */
+	private function get_button_form_type( $block, $block_content ) {
+		if ( ! empty( $block['attrs']['showForm'] ) ) {
+			return $block['attrs']['formType'] ?? 'contact';
+		}
+
+		// Core stores the button URL in the markup rather than the block comment,
+		// so the legacy anchors have to be read back off the rendered link.
+		if ( false === strpos( $block_content, '#' ) ) {
+			return null;
+		}
+
+		$anchor = strtolower( trim( $this->get_button_href( $block_content ) ) );
+
+		return self::LEGACY_FORM_ANCHORS[ $anchor ] ?? null;
+	}
+
+	/**
+	 * Read the href off the first link in a rendered button block.
+	 *
+	 * @param  string $block_content The rendered block markup.
+	 * @return string                The href, or an empty string when the button is not a link.
+	 */
+	private function get_button_href( $block_content ) {
+		$tags = new WP_HTML_Tag_Processor( $block_content );
+
+		if ( ! $tags->next_tag( 'A' ) ) {
+			return '';
+		}
+
+		$href = $tags->get_attribute( 'href' );
+
+		return is_string( $href ) ? $href : '';
 	}
 }
