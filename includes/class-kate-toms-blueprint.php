@@ -3,8 +3,9 @@
  * House Blueprint onboarding feature.
  *
  * Registers the Blueprint admin submenu under the Houses CPT, exposes REST
- * endpoints for CRM search and page creation, and assembles draft posts with
- * pre-loaded block patterns when staff onboard a new house.
+ * endpoints for CRM search and page creation, and assembles draft posts from
+ * the katomswold theme's `house-page-*` patterns when staff onboard a new
+ * house.
  *
  * @package    Kate_Toms_Core
  * @subpackage Kate_Toms_Core/includes
@@ -15,10 +16,10 @@ declare(strict_types=1);
 /**
  * House Blueprint onboarding feature.
  *
- * Coordinates the wizard admin page, REST API, and post-creation logic.
- * Pattern assignments per page are configured in $blueprint_pages — a
- * developer-maintained static array; add a slug there to include a new
- * pattern without touching the wizard UI.
+ * Coordinates the wizard admin page, the REST API, and post creation. The
+ * content of each page comes from Kate_Toms_Blueprint_Templates, its SEO
+ * metadata from Kate_Toms_Blueprint_SEO, and the ongoing parent-to-child
+ * relationships from Kate_Toms_Blueprint_Inheritance.
  */
 class Kate_Toms_Blueprint {
 
@@ -30,77 +31,30 @@ class Kate_Toms_Blueprint {
 	private const REST_NAMESPACE = 'kate-toms/v1';
 
 	/**
-	 * Page configuration: keys are page identifiers, values contain the ordered
-	 * list of katomswold pattern slugs to insert into each page's post_content.
+	 * Page content builder.
 	 *
-	 * The 'parent' entry populates the Houses CPT post itself. All other keys
-	 * become child Houses posts with fixed slugs matching the key name.
-	 *
-	 * @var array<string, array{patterns: string[]}>
+	 * @var Kate_Toms_Blueprint_Templates
 	 */
-	private static array $blueprint_pages = array(
-		'parent'       => array(
-			'patterns' => array(
-				'katomswold/house-title-banner',
-				'katomswold/standard-widget-fourimage',
-				'katomswold/wide-widget',
-				'katomswold/houses-you-may-also-like',
-			),
-		),
-		'more'         => array(
-			'patterns' => array(
-				'katomswold/house-title-banner-sub-page',
-				'katomswold/standard-widget-galleryright',
-				'katomswold/button-widget',
-			),
-		),
-		'availability' => array(
-			'patterns' => array(
-				'katomswold/house-title-banner-sub-page',
-				'katomswold/button-widget',
-			),
-		),
-		'book'         => array(
-			'patterns' => array(
-				'katomswold/house-title-banner-sub-page',
-				'katomswold/button-widget',
-			),
-		),
-		'facts'        => array(
-			'patterns' => array(
-				'katomswold/house-title-banner-sub-page',
-				'katomswold/standard-widget-fourimage',
-				'katomswold/wide-widget',
-			),
-		),
-		'gallery'      => array(
-			'patterns' => array(
-				'katomswold/house-title-banner-sub-page',
-				'katomswold/standard-widget-galleryright',
-				'katomswold/button-widget',
-			),
-		),
-	);
+	private Kate_Toms_Blueprint_Templates $templates;
+
+	/**
+	 * SEO metadata writer.
+	 *
+	 * @var Kate_Toms_Blueprint_SEO
+	 */
+	private Kate_Toms_Blueprint_SEO $seo;
 
 	/**
 	 * Registers WordPress hooks used by this feature.
 	 */
 	public function __construct() {
+		$this->templates = new Kate_Toms_Blueprint_Templates();
+		$this->seo       = new Kate_Toms_Blueprint_SEO();
+
 		add_action( 'admin_menu', array( $this, 'register_admin_menu' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
 		add_action( 'rest_api_init', array( $this, 'register_routes' ) );
 		add_action( 'init', array( $this, 'register_meta' ) );
-	}
-
-	/**
-	 * Returns the blueprint page configuration array.
-	 *
-	 * Exposes the private static config for testing and tooling.
-	 *
-	 * @return array<string, array{patterns: string[]}> Blueprint page config.
-	 */
-	public static function get_blueprint_pages(): array {
-		return self::$blueprint_pages;
 	}
 
 	/**
@@ -168,12 +122,35 @@ class Kate_Toms_Blueprint {
 			'kt-blueprint-admin',
 			'ktBlueprintData',
 			array(
-				'restUrl'  => rest_url( self::REST_NAMESPACE ),
-				'nonce'    => wp_create_nonce( 'wp_rest' ),
-				'adminUrl' => admin_url( 'post.php' ),
-				'pages'    => self::get_blueprint_pages(),
+				'restUrl'        => rest_url( self::REST_NAMESPACE ),
+				'nonce'          => wp_create_nonce( 'wp_rest' ),
+				'adminUrl'       => admin_url( 'post.php' ),
+				'pages'          => $this->get_page_summary(),
+				'missingSources' => $this->templates->get_missing_sources(),
 			)
 		);
+	}
+
+	/**
+	 * Builds the page list the wizard renders on its review step.
+	 *
+	 * @return array<int, array{key: string, label: string, slug: string, source: string}> Page summary.
+	 */
+	private function get_page_summary(): array {
+		$summary = array();
+
+		foreach ( Kate_Toms_Blueprint_Templates::get_pages() as $key => $config ) {
+			$summary[] = array(
+				'key'    => $key,
+				'label'  => $config['label'],
+				'slug'   => 'parent' === $key ? '' : $key,
+				'source' => 'theme_pattern' === $config['source']['type']
+					? $config['source']['slug']
+					: __( 'Plugin template', 'kate-toms-core' ),
+			);
+		}
+
+		return $summary;
 	}
 
 	/**
@@ -190,11 +167,16 @@ class Kate_Toms_Blueprint {
 				'callback'            => array( $this, 'handle_crm_search' ),
 				'permission_callback' => array( $this, 'check_manage_options' ),
 				'args'                => array(
-					'query' => array(
+					'query'   => array(
 						'required'          => true,
 						'type'              => 'string',
 						'sanitize_callback' => 'sanitize_text_field',
 						'minLength'         => 2,
+					),
+					'refresh' => array(
+						'required' => false,
+						'type'     => 'boolean',
+						'default'  => false,
 					),
 				),
 			)
@@ -269,9 +251,10 @@ class Kate_Toms_Blueprint {
 	 * @return WP_REST_Response|WP_Error Matching houses or an error.
 	 */
 	public function handle_crm_search( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-		$query = (string) $request->get_param( 'query' );
+		$query   = (string) $request->get_param( 'query' );
+		$refresh = (bool) $request->get_param( 'refresh' );
 
-		$results = ( new Kate_Toms_Blueprint_CRM_API() )->search_houses( $query );
+		$results = ( new Kate_Toms_Blueprint_CRM_API() )->search_houses( $query, $refresh );
 
 		return new WP_REST_Response( $results, 200 );
 	}
@@ -334,35 +317,11 @@ class Kate_Toms_Blueprint {
 	}
 
 	/**
-	 * Assembles block pattern content for a list of pattern slugs.
-	 *
-	 * Looks up each slug in WP_Block_Patterns_Registry and concatenates the
-	 * content strings. Logs a warning and skips any slug not found.
-	 *
-	 * @param string[] $slugs Ordered array of pattern slugs to assemble.
-	 *
-	 * @return string Block markup ready for post_content.
-	 */
-	private function get_patterns_content( array $slugs ): string {
-		$registry = WP_Block_Patterns_Registry::get_instance();
-		$content  = '';
-
-		foreach ( $slugs as $slug ) {
-			$pattern = $registry->get_registered( $slug );
-
-			if ( false === $pattern ) {
-				$this->log_warning( "Pattern not found: {$slug}" );
-				continue;
-			}
-
-			$content .= $pattern['content'];
-		}
-
-		return $content;
-	}
-
-	/**
 	 * Creates the parent Houses post and all child posts for a blueprint run.
+	 *
+	 * The parent is inserted empty first so WordPress can settle its final slug
+	 * — that slug is woven through every page's navigation links and heading
+	 * anchors, so the content is only generated once it is known.
 	 *
 	 * @param int    $crm_id        CRM property ID to store as post meta.
 	 * @param string $display_title Display title for the parent post.
@@ -370,111 +329,72 @@ class Kate_Toms_Blueprint {
 	 * @return WP_REST_Response|WP_Error Response with created post data, or error.
 	 */
 	private function create_blueprint_posts( int $crm_id, string $display_title ): WP_REST_Response|WP_Error {
-		$parent_id = $this->insert_parent_post( $display_title, $crm_id );
+		$parent_id = wp_insert_post(
+			array(
+				'post_title'  => $display_title,
+				'post_name'   => sanitize_title( $display_title ),
+				'post_type'   => 'houses',
+				'post_status' => 'draft',
+			),
+			true
+		);
 
 		if ( is_wp_error( $parent_id ) ) {
 			return $parent_id;
 		}
 
-		$created = array(
-			$this->format_post_result( 'parent', $parent_id, $display_title ),
+		$house_slug = (string) get_post_field( 'post_name', $parent_id );
+		$parent_url = Kate_Toms_Blueprint_SEO::build_parent_url( $house_slug );
+
+		update_post_meta( $parent_id, 'ipro_property_id', $crm_id );
+
+		wp_update_post(
+			array(
+				'ID'           => $parent_id,
+				'post_content' => $this->templates->get_content( 'parent', $display_title, $house_slug, $crm_id ),
+			)
 		);
 
-		foreach ( self::$blueprint_pages as $key => $config ) {
-			if ( 'parent' === $key ) {
-				continue;
-			}
+		$this->seo->apply( $parent_id, 'parent', $display_title, $parent_url );
 
-			$child_title = $this->build_child_title( $display_title, $key );
-			$child_id    = $this->insert_child_post( $child_title, $key, $parent_id, $config['patterns'] );
+		$created    = array( $this->format_post_result( 'parent', $parent_id, $display_title ) );
+		$menu_order = 0;
+
+		foreach ( Kate_Toms_Blueprint_Templates::get_child_keys() as $key ) {
+			++$menu_order;
+
+			$title    = Kate_Toms_Blueprint_Templates::build_title( $display_title, $key );
+			$child_id = wp_insert_post(
+				array(
+					'post_title'   => $title,
+					'post_name'    => $key,
+					'post_type'    => 'houses',
+					'post_status'  => 'draft',
+					'post_parent'  => $parent_id,
+					'menu_order'   => $menu_order,
+					'post_content' => $this->templates->get_content( $key, $display_title, $house_slug, $crm_id ),
+				),
+				true
+			);
 
 			if ( is_wp_error( $child_id ) ) {
 				return $child_id;
 			}
 
-			$created[] = $this->format_post_result( $key, $child_id, $child_title );
+			$this->seo->apply( $child_id, $key, $display_title, $parent_url );
+
+			$created[] = $this->format_post_result( $key, $child_id, $title );
 		}
 
 		return new WP_REST_Response( $created, 201 );
 	}
 
 	/**
-	 * Inserts the parent Houses draft post and saves CRM meta.
-	 *
-	 * @param string $title  Post title (display title).
-	 * @param int    $crm_id iPro PropertyId to store as ipro_property_id meta.
-	 *
-	 * @return int|WP_Error New post ID on success, WP_Error on failure.
-	 */
-	private function insert_parent_post( string $title, int $crm_id ): int|WP_Error {
-		$post_id = wp_insert_post(
-			array(
-				'post_title'   => $title,
-				'post_type'    => 'houses',
-				'post_status'  => 'draft',
-				'post_content' => $this->get_patterns_content( self::$blueprint_pages['parent']['patterns'] ),
-			),
-			true
-		);
-
-		if ( is_wp_error( $post_id ) ) {
-			return $post_id;
-		}
-
-		update_post_meta( $post_id, 'ipro_property_id', $crm_id );
-
-		return $post_id;
-	}
-
-	/**
-	 * Inserts a child Houses draft post under the parent.
-	 *
-	 * @param string   $title     Post title.
-	 * @param string   $slug      Fixed post slug (e.g. 'availability').
-	 * @param int      $parent_id Parent Houses post ID.
-	 * @param string[] $patterns  Pattern slugs to assemble into post_content.
-	 *
-	 * @return int|WP_Error New post ID on success, WP_Error on failure.
-	 */
-	private function insert_child_post( string $title, string $slug, int $parent_id, array $patterns ): int|WP_Error {
-		return wp_insert_post(
-			array(
-				'post_title'   => $title,
-				'post_name'    => $slug,
-				'post_type'    => 'houses',
-				'post_status'  => 'draft',
-				'post_parent'  => $parent_id,
-				'post_content' => $this->get_patterns_content( $patterns ),
-			),
-			true
-		);
-	}
-
-	/**
-	 * Builds the title for a child post based on its page key.
-	 *
-	 * The 'more' page uses the display title alone. All others append
-	 * ' - {key} - Kate and Tom's' to the display title.
-	 *
-	 * @param string $display_title The parent display title.
-	 * @param string $key           Page key (e.g. 'availability', 'more').
-	 *
-	 * @return string Child post title.
-	 */
-	private function build_child_title( string $display_title, string $key ): string {
-		if ( 'more' === $key ) {
-			return $display_title;
-		}
-
-		return sprintf( "%s - %s - Kate and Tom's", $display_title, $key );
-	}
-
-	/**
 	 * Formats a created post into the REST response shape.
 	 *
-	 * @param string $page_key  Page identifier key.
-	 * @param int    $post_id   WordPress post ID.
-	 * @param string $title     Post title.
+	 * @param string $page_key Page identifier key.
+	 * @param int    $post_id  WordPress post ID.
+	 * @param string $title    Post title.
 	 *
 	 * @return array{ page_key: string, post_id: int, edit_url: string, title: string }
 	 */
@@ -485,19 +405,5 @@ class Kate_Toms_Blueprint {
 			'edit_url' => get_edit_post_link( $post_id, 'raw' ),
 			'title'    => $title,
 		);
-	}
-
-	/**
-	 * Writes a warning to the PHP error log when WP_DEBUG is active.
-	 *
-	 * @param string $message Warning message.
-	 *
-	 * @return void
-	 */
-	private function log_warning( string $message ): void {
-		if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
-			// phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
-			error_log( '[Kate & Toms Blueprint] ' . $message );
-		}
 	}
 }

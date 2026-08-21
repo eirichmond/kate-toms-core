@@ -16,38 +16,52 @@ const MIN_QUERY_LENGTH = 2;
 export default function StepSearch( { displayTitle: initialTitle, onConfirm } ) {
 	const [ query, setQuery ] = useState( '' );
 	const [ results, setResults ] = useState( [] );
+	const [ hasSearched, setHasSearched ] = useState( false );
 	const [ isSearching, setIsSearching ] = useState( false );
+	const [ isRefreshing, setIsRefreshing ] = useState( false );
 	const [ searchError, setSearchError ] = useState( null );
 	const [ selectedHouse, setSelectedHouse ] = useState( null );
 	const [ titleOverride, setTitleOverride ] = useState( initialTitle );
 
-	const runSearch = useCallback(
-		debounce( async ( searchQuery ) => {
-			if ( searchQuery.length < MIN_QUERY_LENGTH ) {
-				setResults( [] );
-				return;
+	async function performSearch( searchQuery, { refresh = false } = {} ) {
+		if ( searchQuery.length < MIN_QUERY_LENGTH ) {
+			setResults( [] );
+			setHasSearched( false );
+			return;
+		}
+		( refresh ? setIsRefreshing : setIsSearching )( true );
+		setSearchError( null );
+		try {
+			const params = new URLSearchParams( { query: searchQuery } );
+			if ( refresh ) {
+				params.set( 'refresh', '1' );
 			}
-			setIsSearching( true );
-			setSearchError( null );
-			try {
-				const data = await apiFetch( {
-					path: `/kate-toms/v1/blueprint/crm-search?query=${ encodeURIComponent( searchQuery ) }`,
-				} );
-				setResults( data );
-			} catch ( err ) {
-				setSearchError( err?.message || __( 'Search failed. Please try again.', 'kate-toms-core' ) );
-				setResults( [] );
-			} finally {
-				setIsSearching( false );
-			}
-		}, 350 ),
-		[]
-	);
+			const data = await apiFetch( {
+				path: `/kate-toms/v1/blueprint/crm-search?${ params.toString() }`,
+			} );
+			setResults( data );
+		} catch ( err ) {
+			setSearchError( err?.message || __( 'Search failed. Please try again.', 'kate-toms-core' ) );
+			setResults( [] );
+		} finally {
+			setHasSearched( true );
+			( refresh ? setIsRefreshing : setIsSearching )( false );
+		}
+	}
+
+	const runSearch = useCallback( debounce( performSearch, 350 ), [] );
 
 	function handleQueryChange( value ) {
 		setQuery( value );
 		setSelectedHouse( null );
 		runSearch( value );
+	}
+
+	function handleRefresh() {
+		// Bypasses the 24-hour CRM properties cache — picks up a house the CRM
+		// added or reactivated since the cache was last populated. Can take up
+		// to 30 seconds, the same as the very first search of the day.
+		performSearch( query, { refresh: true } );
 	}
 
 	function handleSelect( house ) {
@@ -104,6 +118,20 @@ export default function StepSearch( { displayTitle: initialTitle, onConfirm } ) 
 						</li>
 					) ) }
 				</ul>
+			) }
+
+			{ hasSearched && ! isSearching && results.length === 0 && ! searchError && (
+				<p className="kt-blueprint-no-results">
+					{ __( 'No results found.', 'kate-toms-core' ) }
+					{ ' ' }
+					{ isRefreshing ? (
+						<Spinner />
+					) : (
+						<Button variant="link" onClick={ handleRefresh }>
+							{ __( "Can't find it? Refresh from CRM →", 'kate-toms-core' ) }
+						</Button>
+					) }
+				</p>
 			) }
 
 			{ selectedHouse && (

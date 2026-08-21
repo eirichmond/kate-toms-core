@@ -1272,7 +1272,15 @@ class House_Calendar_Manager {
 	 * which is external data outside WordPress's control: a PropertyId there
 	 * can point at a stale or wrong WordPress post (e.g. a retired listing that
 	 * once held that PropertyId), silently sending a guest's booking-date click
-	 * to the wrong house.
+	 * to the wrong house. Blueprint-created houses are never registered back
+	 * into iPro that way at all, so their PropertyReference is whatever
+	 * default iPro assigns (observed: `1`, which doesn't correspond to any
+	 * post) — this lookup sidesteps that entirely.
+	 *
+	 * `post_status` deliberately includes `draft`: the Blueprint creates a
+	 * parent house as a draft, and staff need the "click a date" flow to
+	 * resolve correctly while reviewing it, before it's ever published or
+	 * made private.
 	 *
 	 * @param string $property_id The iPro PropertyId.
 	 * @return int|false WordPress post ID, or false if no house has this PropertyId.
@@ -1282,7 +1290,7 @@ class House_Calendar_Manager {
 			array(
 				'post_type'      => 'houses',
 				'post_parent'    => 0,
-				'post_status'    => array( 'publish', 'private' ),
+				'post_status'    => array( 'publish', 'private', 'draft' ),
 				'posts_per_page' => 1,
 				'fields'         => 'ids',
 				'meta_key'       => 'ipro_property_id', // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- exact-match lookup on a single low-cardinality meta key, no faster alternative available.
