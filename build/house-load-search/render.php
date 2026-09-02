@@ -15,6 +15,7 @@ $feature_term_ids  = $attributes['featureTermIds'] ?? array();
 $size_term_ids     = $attributes['sizeTermIds'] ?? array();
 $type_term_ids     = $attributes['typeTermIds'] ?? array();
 $occasion_term_ids = $attributes['occasionTermIds'] ?? array();
+$taxonomy_logic    = $attributes['taxonomyLogic'] ?? array();
 
 // Map location term IDs to title background colors.
 $location_color_map = array(
@@ -55,59 +56,22 @@ $query_args = array(
 	),
 );
 
-// Build taxonomy query for location and/or features.
-$tax_query = array();
-
-if ( ! empty( $location_term_ids ) ) {
-	// A section pairs a broad region with the granular locations injected by the
-	// migration. The granular locations are alternatives, so this yields a region
-	// clause and a granular clause, ANDed together below.
-	$tax_query = array_merge(
-		$tax_query,
-		Kate_Toms_Location_Tax_Query::build( $location_term_ids, kate_toms_core_get_region_term_ids() )
-	);
-}
-
-if ( ! empty( $feature_term_ids ) ) {
-	$tax_query[] = array(
-		'taxonomy' => 'feature',
-		'field'    => 'term_id',
-		'terms'    => $feature_term_ids,
-		'operator' => 'IN',
-	);
-}
-
-if ( ! empty( $size_term_ids ) ) {
-	$tax_query[] = array(
-		'taxonomy' => 'size',
-		'field'    => 'term_id',
-		'terms'    => $size_term_ids,
-		'operator' => 'IN',
-	);
-}
-
-if ( ! empty( $type_term_ids ) ) {
-	$tax_query[] = array(
-		'taxonomy' => 'type',
-		'field'    => 'term_id',
-		'terms'    => $type_term_ids,
-		'operator' => 'IN',
-	);
-}
-
-if ( ! empty( $occasion_term_ids ) ) {
-	$tax_query[] = array(
-		'taxonomy' => 'occasion',
-		'field'    => 'term_id',
-		'terms'    => $occasion_term_ids,
-		'operator' => 'IN',
-	);
-}
+// Build the taxonomy query. Assembled by the shared builder so this render and
+// the /houses-load endpoint behind infinite scroll cannot disagree about what
+// qualifies — page 1 comes from here, pages 2+ come from there.
+$tax_query = Kate_Toms_House_Tax_Query::build(
+	array(
+		'location' => $location_term_ids,
+		'feature'  => $feature_term_ids,
+		'size'     => $size_term_ids,
+		'type'     => $type_term_ids,
+		'occasion' => $occasion_term_ids,
+	),
+	$taxonomy_logic,
+	kate_toms_core_get_region_term_ids()
+);
 
 if ( ! empty( $tax_query ) ) {
-	if ( count( $tax_query ) > 1 ) {
-		$tax_query['relation'] = 'AND';
-	}
 	$query_args['tax_query'] = $tax_query;
 }
 
@@ -136,19 +100,22 @@ if ( $total_pages <= 1 ) {
 
 // Set up interactivity API context.
 $context = array(
-	'postsPerPage'   => $posts_per_page,
-	'currentPage'    => 1,
-	'totalPages'     => $total_pages,
-	'totalHouses'    => $total_houses,
-	'isLoading'      => false,
-	'hasMore'        => $total_pages > 1,
+	'postsPerPage'    => $posts_per_page,
+	'currentPage'     => 1,
+	'totalPages'      => $total_pages,
+	'totalHouses'     => $total_houses,
+	'isLoading'       => false,
+	'hasMore'         => $total_pages > 1,
 	'titleBgColor'    => $title_bg_color,
-	'locationTermIds'  => $location_term_ids,
-	'locationKey'      => $location_key,
-	'featureTermIds'   => $feature_term_ids,
-	'sizeTermIds'      => $size_term_ids,
-	'typeTermIds'      => $type_term_ids,
-	'occasionTermIds'  => $occasion_term_ids,
+	'locationTermIds' => $location_term_ids,
+	'locationKey'     => $location_key,
+	'featureTermIds'  => $feature_term_ids,
+	'sizeTermIds'     => $size_term_ids,
+	'typeTermIds'     => $type_term_ids,
+	'occasionTermIds' => $occasion_term_ids,
+	// Forwarded to /houses-load so the scrolled-in pages apply the same
+	// within-taxonomy relation as the server-rendered first page.
+	'taxonomyLogic'   => (object) $taxonomy_logic,
 );
 
 ?>

@@ -53,6 +53,10 @@
 			"items": {
 				"type": "number"
 			}
+		},
+		"taxonomyLogic": {
+			"type": "object",
+			"default": {}
 		}
 	},
 	"textdomain": "kate-toms-core",

@@ -93,6 +93,18 @@ store( 'kate-toms-house-load-search', {
 					);
 				}
 
+				// Carry the per-taxonomy AND/OR relation across, or the scrolled
+				// -in pages would fall back to OR and re-admit the very houses
+				// the first page was set up to exclude.
+				const logic = Object.entries( context.taxonomyLogic || {} )
+					.filter( ( [ , relation ] ) => relation === 'AND' )
+					.map( ( [ taxonomy ] ) => `${ taxonomy }:AND` )
+					.join( ',' );
+
+				if ( logic ) {
+					params.set( 'logic', logic );
+				}
+
 				const apiUrl = `/wp-json/kate-toms/v1/houses-load?${ params.toString() }`;
 				const response = await fetch( apiUrl );
 
