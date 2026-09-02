@@ -12,7 +12,7 @@ import { __ } from '@wordpress/i18n';
  * @see https://developer.wordpress.org/block-editor/reference-guides/packages/packages-block-editor/#useblockprops
  */
 import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
-import { PanelBody, SelectControl } from '@wordpress/components';
+import { PanelBody, SelectControl, TextControl } from '@wordpress/components';
 import { useEffect } from '@wordpress/element';
 
 /**
@@ -26,7 +26,7 @@ import './editor.scss';
 /**
  * Internal dependencies
  */
-import { getWidgetProps, REVIEW_URL } from './widgets';
+import { getWidgetProps, REVIEW_URL, WIDGETS } from './widgets';
 
 /**
  * The edit function describes the structure of your block in the context of the
@@ -40,9 +40,10 @@ import { getWidgetProps, REVIEW_URL } from './widgets';
  * @return {Element} Element to render.
  */
 export default function Edit( { attributes, setAttributes } ) {
-	const { widgetType, theme } = attributes;
+	const { widgetType, theme, alignment, height } = attributes;
 	const blockProps = useBlockProps();
-	const widgetProps = getWidgetProps( widgetType, theme );
+	const widgetProps = getWidgetProps( widgetType, theme, alignment, height );
+	const defaultHeight = WIDGETS[ widgetType ]?.height ?? '';
 
 	useEffect( () => {
 		if ( ! window.trustpilotScriptLoaded ) {
@@ -106,6 +107,41 @@ export default function Edit( { attributes, setAttributes } ) {
 						}
 						help={ __(
 							'Use Dark on dark backgrounds, such as the footer.',
+							'kateandtoms-trustpilot'
+						) }
+						__nextHasNoMarginBottom
+					/>
+					<SelectControl
+						label={ __( 'Alignment', 'kateandtoms-trustpilot' ) }
+						value={ alignment }
+						options={ [
+							{
+								label: __( 'Centre', 'kateandtoms-trustpilot' ),
+								value: 'center',
+							},
+							{
+								label: __( 'Left', 'kateandtoms-trustpilot' ),
+								value: 'left',
+							},
+							{
+								label: __( 'Right', 'kateandtoms-trustpilot' ),
+								value: 'right',
+							},
+						] }
+						onChange={ ( value ) =>
+							setAttributes( { alignment: value } )
+						}
+						__nextHasNoMarginBottom
+					/>
+					<TextControl
+						label={ __( 'Height', 'kateandtoms-trustpilot' ) }
+						value={ height }
+						onChange={ ( value ) =>
+							setAttributes( { height: value } )
+						}
+						placeholder={ defaultHeight }
+						help={ __(
+							'The widget is clipped to this height. Raise it if the review count wraps onto a second line in a narrow column.',
 							'kateandtoms-trustpilot'
 						) }
 						__nextHasNoMarginBottom

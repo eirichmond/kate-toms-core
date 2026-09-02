@@ -26,8 +26,8 @@ import { getWidgetProps, REVIEW_URL } from './widgets';
  * @return {Element} Element to render.
  */
 export default function Save( { attributes } ) {
-	const { widgetType, theme } = attributes;
-	const widgetProps = getWidgetProps( widgetType, theme );
+	const { widgetType, theme, alignment, height } = attributes;
+	const widgetProps = getWidgetProps( widgetType, theme, alignment, height );
 
 	if ( ! widgetProps ) {
 		return null;
