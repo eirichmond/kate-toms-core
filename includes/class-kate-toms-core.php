@@ -152,6 +152,21 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-faq-schema.php';
 
 		/**
+		 * Reads publishable figures out of the Trustpilot API payload.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-trustpilot-rating.php';
+
+		/**
+		 * Brand-level Trustpilot AggregateRating on the Organization node.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-trustpilot-schema.php';
+
+		/**
+		 * `wp kt-trustpilot refresh` — warm the rating cache on demand.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-trustpilot-cli.php';
+
+		/**
 		 * Feed request handling (301s feed URLs to their parent, removes
 		 * feed links from page heads - crawl bloat prevention).
 		 */
@@ -190,7 +205,7 @@ class Kate_Toms_Core {
 		 * The class responsible for the Houses Filter API functionality
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-houses-filter-api.php';
-		
+
 		/**
 		 * Precomputed house lists for the seasonal / availability landing pages.
 		 */
@@ -286,6 +301,9 @@ class Kate_Toms_Core {
 
 		// Structured data for the top-level house pages.
 		new Kate_Toms_House_Schema();
+
+		// Brand-level Trustpilot rating on the sitewide Organization node.
+		new Kate_Toms_Trustpilot_Schema();
 	}
 
 	/**
@@ -332,7 +350,6 @@ class Kate_Toms_Core {
 		$this->loader->add_action( 'add_meta_boxes', $plugin_admin, 'add_houses_meta_box' );
 		$this->loader->add_action( 'save_post_houses', $plugin_admin, 'save_houses_meta_box' );
 		$this->loader->add_filter( 'render_block', $plugin_admin, 'add_signature_collection_badge', 10, 2 );
-
 	}
 
 	/**
@@ -360,8 +377,7 @@ class Kate_Toms_Core {
 		$this->loader->add_action( 'wp_footer', $plugin_public, 'google_footer_tag_manager_script' );
 		$this->loader->add_action( 'wp_footer', $plugin_public, 'linkedin_script' );
 
-
-		//$this->loader->add_filter( 'wp_calculate_image_srcset', $plugin_public, 'kate_toms_replace_image_srcset_url', 10, 5 );
+		// $this->loader->add_filter( 'wp_calculate_image_srcset', $plugin_public, 'kate_toms_replace_image_srcset_url', 10, 5 );
 		$this->loader->add_filter( 'get_terms', $plugin_public, 'filter_bedroom_terms', 10, 3 );
 
 		// Mobile Nav Drilldown enhancement — register assets on init, then
@@ -369,7 +385,6 @@ class Kate_Toms_Core {
 		$plugin_mobile_nav = new Kate_Toms_Core_Mobile_Nav();
 		$this->loader->add_action( 'init', $plugin_mobile_nav, 'register_assets' );
 		$this->loader->add_filter( 'render_block_core/navigation', $plugin_mobile_nav, 'enqueue_on_navigation' );
-
 	}
 
 	/**
