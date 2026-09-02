@@ -20,6 +20,10 @@
     "widgetType": {
       "type": "string",
       "default": "micro-combo"
+    },
+    "theme": {
+      "type": "string",
+      "default": "light"
     }
   }
 }

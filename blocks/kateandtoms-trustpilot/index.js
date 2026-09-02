@@ -19,6 +19,7 @@ import './style.scss';
  */
 import Edit from './edit';
 import save from './save';
+import deprecated from './deprecated';
 import metadata from './block.json';
 
 /**
@@ -36,4 +37,11 @@ registerBlockType( metadata.name, {
 	 * @see ./save.js
 	 */
 	save,
+
+	/**
+	 * Preserves the markup of blocks saved before the theme was selectable.
+	 *
+	 * @see ./deprecated.js
+	 */
+	deprecated,
 } );
