@@ -224,6 +224,25 @@
 	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 	gap: 1rem;
 	margin-top: 2rem;
+
+	// Card titles are white on a coloured band. The colour reaches the link
+	// through the pattern's `elements.link.color.text`, which WordPress
+	// implements as a per-request counter class (`wp-elements-1`,
+	// `wp-elements-2`, ...) plus a matching rule printed in the page head.
+	//
+	// Filtered results are rendered by the /houses REST endpoint, where that
+	// counter starts again from 1 — so the first card of every section comes
+	// back tagged `wp-elements-1`, which on the page belongs to an unrelated
+	// block and paints the link charcoal. Every later card happens to land on
+	// a house-card rule and stays white, which is why only the first one looks
+	// wrong.
+	//
+	// Inheriting from the heading sidesteps the numbering entirely: the
+	// `has-*-color` class on the <h2> is a real preset class and is always
+	// correct, server-rendered or not.
+	.wp-block-post-title a {
+		color: inherit;
+	}
 }
 
 .house-card {
