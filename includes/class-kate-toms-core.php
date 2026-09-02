@@ -181,6 +181,12 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-kate-toms-location-tax-query.php';
 
 		/**
+		 * Assembles the whole section tax_query, including the per-taxonomy
+		 * AND / OR relation. Shared by the same two callers.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-kate-toms-house-tax-query.php';
+
+		/**
 		 * The class responsible for the Houses Filter API functionality
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/houses-filter/class-houses-filter-api.php';

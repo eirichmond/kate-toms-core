@@ -119,6 +119,15 @@ class Houses_Filter_API {
 						'default'           => '',
 						'sanitize_callback' => 'sanitize_text_field',
 					),
+					// Within-taxonomy relation, one per configurable taxonomy.
+					// Serialised as "feature:AND,size:OR"; anything absent or
+					// unrecognised falls back to OR, which is how every section
+					// behaved before the relation became configurable.
+					'logic'     => array(
+						'type'              => 'string',
+						'default'           => '',
+						'sanitize_callback' => 'sanitize_text_field',
+					),
 				),
 			)
 		);
@@ -580,6 +589,41 @@ class Houses_Filter_API {
 	}
 
 	/**
+	 * Parse the `logic` query parameter into a taxonomy => relation map.
+	 *
+	 * The parameter is sent by the house-load-search block's view script as
+	 * "feature:AND,size:OR". Only the taxonomies the builder knows about are
+	 * kept, and each relation is normalised there, so a malformed value falls
+	 * back to OR rather than emptying the section.
+	 *
+	 * @param string $logic_param Raw parameter value.
+	 * @return array Relation keyed by taxonomy.
+	 */
+	private static function parse_logic_param( $logic_param ) {
+		$logic = array();
+
+		if ( ! is_string( $logic_param ) || '' === trim( $logic_param ) ) {
+			return $logic;
+		}
+
+		foreach ( explode( ',', $logic_param ) as $pair ) {
+			if ( false === strpos( $pair, ':' ) ) {
+				continue;
+			}
+
+			list( $taxonomy, $relation ) = explode( ':', $pair, 2 );
+
+			$taxonomy = sanitize_key( trim( $taxonomy ) );
+
+			if ( in_array( $taxonomy, Kate_Toms_House_Tax_Query::CONFIGURABLE_TAXONOMIES, true ) ) {
+				$logic[ $taxonomy ] = Kate_Toms_House_Tax_Query::normalise_logic( $relation );
+			}
+		}
+
+		return $logic;
+	}
+
+	/**
 	 * Get paginated houses for infinite scroll loading.
 	 *
 	 * Returns houses ordered by sleeps_max descending with pagination support.
@@ -598,6 +642,7 @@ class Houses_Filter_API {
 		$sizes_param     = $request->get_param( 'sizes' ) ?? '';
 		$types_param     = $request->get_param( 'types' ) ?? '';
 		$occasions_param = $request->get_param( 'occasions' ) ?? '';
+		$logic_param     = $request->get_param( 'logic' ) ?? '';
 
 		// Helper function to parse comma-separated IDs.
 		$parse_ids = function ( $param ) {
@@ -652,58 +697,22 @@ class Houses_Filter_API {
 			),
 		);
 
-		// Build taxonomy query for location and/or features.
-		$tax_query = array();
-
-		if ( ! empty( $location_term_ids ) ) {
-			// Must mirror the house-load-search block render, or page 1 and the
-			// infinite-scroll pages would disagree about what qualifies.
-			$tax_query = array_merge(
-				$tax_query,
-				Kate_Toms_Location_Tax_Query::build( $location_term_ids, kate_toms_core_get_region_term_ids() )
-			);
-		}
-
-		if ( ! empty( $feature_term_ids ) ) {
-			$tax_query[] = array(
-				'taxonomy' => 'feature',
-				'field'    => 'term_id',
-				'terms'    => $feature_term_ids,
-				'operator' => 'IN',
-			);
-		}
-
-		if ( ! empty( $size_term_ids ) ) {
-			$tax_query[] = array(
-				'taxonomy' => 'size',
-				'field'    => 'term_id',
-				'terms'    => $size_term_ids,
-				'operator' => 'IN',
-			);
-		}
-
-		if ( ! empty( $type_term_ids ) ) {
-			$tax_query[] = array(
-				'taxonomy' => 'type',
-				'field'    => 'term_id',
-				'terms'    => $type_term_ids,
-				'operator' => 'IN',
-			);
-		}
-
-		if ( ! empty( $occasion_term_ids ) ) {
-			$tax_query[] = array(
-				'taxonomy' => 'occasion',
-				'field'    => 'term_id',
-				'terms'    => $occasion_term_ids,
-				'operator' => 'IN',
-			);
-		}
+		// Built by the shared builder, which the house-load-search block render
+		// also uses. Page 1 is server-rendered by the block and pages 2+ arrive
+		// here, so the two must agree about what qualifies.
+		$tax_query = Kate_Toms_House_Tax_Query::build(
+			array(
+				'location' => $location_term_ids,
+				'feature'  => $feature_term_ids,
+				'size'     => $size_term_ids,
+				'type'     => $type_term_ids,
+				'occasion' => $occasion_term_ids,
+			),
+			self::parse_logic_param( $logic_param ),
+			kate_toms_core_get_region_term_ids()
+		);
 
 		if ( ! empty( $tax_query ) ) {
-			if ( count( $tax_query ) > 1 ) {
-				$tax_query['relation'] = 'AND';
-			}
 			$args['tax_query'] = $tax_query;
 		}
 

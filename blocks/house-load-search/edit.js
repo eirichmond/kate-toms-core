@@ -6,6 +6,7 @@ import { useBlockProps, InspectorControls } from '@wordpress/block-editor';
 import {
 	PanelBody,
 	RangeControl,
+	SelectControl,
 	Spinner,
 	FormTokenField,
 } from '@wordpress/components';
@@ -26,6 +27,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		sizeTermIds = [],
 		typeTermIds = [],
 		occasionTermIds = [],
+		taxonomyLogic = {},
 	} = attributes;
 
 	const blockProps = useBlockProps();
@@ -107,6 +109,55 @@ export default function Edit( { attributes, setAttributes } ) {
 		return { suggestions, selectedNames, onChange };
 	};
 
+	// Always shown, so the relation in force is readable at a glance rather than
+	// inferred from the absence of a control. It only changes anything once a
+	// taxonomy has two or more terms selected, so below that it is disabled and
+	// says why.
+	const renderLogicControl = ( taxonomy, termIds, label ) => {
+		const isActive = termIds.length >= 2;
+
+		return (
+			<SelectControl
+				label={ label }
+				value={ taxonomyLogic[ taxonomy ] || 'OR' }
+				disabled={ ! isActive }
+				help={
+					isActive
+						? undefined
+						: __(
+								'Applies once two or more terms are selected.',
+								'kate-toms-core'
+						  )
+				}
+				options={ [
+					{
+						label: __(
+							'Or — match any selected term',
+							'kate-toms-core'
+						),
+						value: 'OR',
+					},
+					{
+						label: __(
+							'And — match every selected term',
+							'kate-toms-core'
+						),
+						value: 'AND',
+					},
+				] }
+				onChange={ ( value ) =>
+					setAttributes( {
+						taxonomyLogic: {
+							...taxonomyLogic,
+							[ taxonomy ]: value,
+						},
+					} )
+				}
+				__nextHasNoMarginBottom
+			/>
+		);
+	};
+
 	const locationProps = buildTokenFieldProps(
 		'location',
 		locationTermIds,
@@ -172,50 +223,81 @@ export default function Edit( { attributes, setAttributes } ) {
 					{ isLoading.feature ? (
 						<Spinner />
 					) : (
-						<FormTokenField
-							label={ __( 'Features', 'kate-toms-core' ) }
-							value={ featureProps.selectedNames }
-							suggestions={ featureProps.suggestions }
-							onChange={ featureProps.onChange }
-							__experimentalExpandOnFocus
-							__experimentalShowHowTo={ false }
-						/>
+						<>
+							<FormTokenField
+								label={ __( 'Features', 'kate-toms-core' ) }
+								value={ featureProps.selectedNames }
+								suggestions={ featureProps.suggestions }
+								onChange={ featureProps.onChange }
+								__experimentalExpandOnFocus
+								__experimentalShowHowTo={ false }
+							/>
+							{ renderLogicControl(
+								'feature',
+								featureTermIds,
+								__( 'Features match', 'kate-toms-core' )
+							) }
+						</>
 					) }
 					{ isLoading.size ? (
 						<Spinner />
 					) : (
-						<FormTokenField
-							label={ __( 'Sizes', 'kate-toms-core' ) }
-							value={ sizeProps.selectedNames }
-							suggestions={ sizeProps.suggestions }
-							onChange={ sizeProps.onChange }
-							__experimentalExpandOnFocus
-							__experimentalShowHowTo={ false }
-						/>
+						<>
+							<FormTokenField
+								label={ __( 'Sizes', 'kate-toms-core' ) }
+								value={ sizeProps.selectedNames }
+								suggestions={ sizeProps.suggestions }
+								onChange={ sizeProps.onChange }
+								__experimentalExpandOnFocus
+								__experimentalShowHowTo={ false }
+							/>
+							{ renderLogicControl(
+								'size',
+								sizeTermIds,
+								__( 'Sizes match', 'kate-toms-core' )
+							) }
+						</>
 					) }
 					{ isLoading.type ? (
 						<Spinner />
 					) : (
-						<FormTokenField
-							label={ __( 'Property Types', 'kate-toms-core' ) }
-							value={ typeProps.selectedNames }
-							suggestions={ typeProps.suggestions }
-							onChange={ typeProps.onChange }
-							__experimentalExpandOnFocus
-							__experimentalShowHowTo={ false }
-						/>
+						<>
+							<FormTokenField
+								label={ __(
+									'Property Types',
+									'kate-toms-core'
+								) }
+								value={ typeProps.selectedNames }
+								suggestions={ typeProps.suggestions }
+								onChange={ typeProps.onChange }
+								__experimentalExpandOnFocus
+								__experimentalShowHowTo={ false }
+							/>
+							{ renderLogicControl(
+								'type',
+								typeTermIds,
+								__( 'Property Types match', 'kate-toms-core' )
+							) }
+						</>
 					) }
 					{ isLoading.occasion ? (
 						<Spinner />
 					) : (
-						<FormTokenField
-							label={ __( 'Occasions', 'kate-toms-core' ) }
-							value={ occasionProps.selectedNames }
-							suggestions={ occasionProps.suggestions }
-							onChange={ occasionProps.onChange }
-							__experimentalExpandOnFocus
-							__experimentalShowHowTo={ false }
-						/>
+						<>
+							<FormTokenField
+								label={ __( 'Occasions', 'kate-toms-core' ) }
+								value={ occasionProps.selectedNames }
+								suggestions={ occasionProps.suggestions }
+								onChange={ occasionProps.onChange }
+								__experimentalExpandOnFocus
+								__experimentalShowHowTo={ false }
+							/>
+							{ renderLogicControl(
+								'occasion',
+								occasionTermIds,
+								__( 'Occasions match', 'kate-toms-core' )
+							) }
+						</>
 					) }
 				</PanelBody>
 			</InspectorControls>
