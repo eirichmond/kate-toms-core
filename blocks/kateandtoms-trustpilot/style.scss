@@ -1,11 +1,37 @@
 /**
  * The following styles get applied both on the front of your site
  * and in the editor.
- *
- * Replace them with your own styles or remove the file completely.
  */
 
 .wp-block-kate-toms-core-kateandtoms-trustpilot {
 	color: #fff;
-	margin-right: -60px !important;
+}
+
+/*
+ * The footer's right-aligned widget is pulled back past its column edge so it
+ * lines up with the social icons above it.
+ *
+ * Scoped two ways, both deliberate:
+ *
+ * - To the right-aligned variant. The offset was only ever meant for the
+ *   footer, but as a bare rule on the block wrapper it also dragged the
+ *   centred instances — the houses archive and the Trustpilot Micro Combo
+ *   pattern — 60px off their own centre. `data-style-alignment` is emitted
+ *   only for left and right, so this picks out the footer instance alone.
+ *
+ * - To desktop. At 782px the footer group flips to
+ *   `is-style-center-group-mobile` (flex-direction: column; align-items:
+ *   center) and the offset fought that, leaving the widget 60px right of
+ *   centre. The breakpoint matches the theme's so the offset goes away in
+ *   the same step the group re-centres.
+ *
+ * Browsers without `:has()` simply drop the offset and render the footer
+ * widget flush with its column, which is a cosmetic difference rather than a
+ * broken layout.
+ */
+@media (min-width: 783px) {
+
+	.wp-block-kate-toms-core-kateandtoms-trustpilot:has(.trustpilot-widget[data-style-alignment="right"]) {
+		margin-right: -60px !important;
+	}
 }
