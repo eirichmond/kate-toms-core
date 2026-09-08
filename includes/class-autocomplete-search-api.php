@@ -11,10 +11,33 @@
 class Autocomplete_Search_API {
 
 	/**
-	 * Page IDs for landing pages used as data sources.
+	 * Landing pages used as data sources, keyed by page slug.
+	 *
+	 * Each entry gives the category label shown in the dropdown and the page
+	 * ID this site was originally built against. The slug is authoritative:
+	 * IDs differ per site in the network, and a stale ID silently drops that
+	 * whole category from the results rather than erroring. The `id` is only
+	 * a fallback for a site whose page is not at the expected path.
+	 *
+	 * @var array<string, array{category: string, id: int}>
 	 */
-	const LOCATIONS_PAGE_ID = 27142;
-	const FEATURES_PAGE_ID  = 48958;
+	const SOURCE_PAGES = array(
+		'location' => array(
+			'category' => 'Locations',
+			'id'       => 27142,
+		),
+		'features' => array(
+			'category' => 'Features',
+			'id'       => 27326,
+		),
+	);
+
+	/**
+	 * Resolved source page IDs for this request, keyed by slug.
+	 *
+	 * @var array<string, int>
+	 */
+	private $resolved_page_ids = array();
 
 	/**
 	 * Constructor.
@@ -86,17 +109,19 @@ class Autocomplete_Search_API {
 			wp_reset_postdata();
 		}
 
-		// Get locations from landing page block content.
-		$search_items = array_merge(
-			$search_items,
-			$this->parse_landing_page_items( self::LOCATIONS_PAGE_ID, 'Locations' )
-		);
+		// Get locations and features from their landing pages' block content.
+		foreach ( self::SOURCE_PAGES as $slug => $source ) {
+			$page_id = $this->get_source_page_id( $slug );
 
-		// Get features from landing page block content.
-		$search_items = array_merge(
-			$search_items,
-			$this->parse_landing_page_items( self::FEATURES_PAGE_ID, 'Features' )
-		);
+			if ( ! $page_id ) {
+				continue;
+			}
+
+			$search_items = array_merge(
+				$search_items,
+				$this->parse_landing_page_items( $page_id, $source['category'] )
+			);
+		}
 
 		// Cap result descriptions for the autocomplete dropdown display.
 		foreach ( $search_items as &$item ) {
@@ -127,6 +152,34 @@ class Autocomplete_Search_API {
 		}
 
 		return rtrim( mb_substr( $desc, 0, $length - 1 ) ) . '…';
+	}
+
+	/**
+	 * Resolve a source landing page's ID on the current site.
+	 *
+	 * Looks the page up by its slug first so the endpoint keeps working on
+	 * every site in the network, falling back to the recorded ID only when
+	 * the slug is absent.
+	 *
+	 * @param string $slug The source page slug, a key of self::SOURCE_PAGES.
+	 * @return int The page ID, or 0 when the page cannot be found.
+	 */
+	private function get_source_page_id( $slug ) {
+		if ( isset( $this->resolved_page_ids[ $slug ] ) ) {
+			return $this->resolved_page_ids[ $slug ];
+		}
+
+		$page    = get_page_by_path( $slug );
+		$page_id = ( $page instanceof WP_Post ) ? (int) $page->ID : 0;
+
+		if ( ! $page_id ) {
+			$fallback = self::SOURCE_PAGES[ $slug ]['id'];
+			$page_id  = get_post_status( $fallback ) ? $fallback : 0;
+		}
+
+		$this->resolved_page_ids[ $slug ] = $page_id;
+
+		return $page_id;
 	}
 
 	/**
@@ -261,12 +314,12 @@ class Autocomplete_Search_API {
 	 * @param int $post_id The post ID being saved.
 	 */
 	public function invalidate_cache( $post_id ) {
-		if ( self::LOCATIONS_PAGE_ID === $post_id ) {
-			delete_transient( 'autocomplete_search_' . self::LOCATIONS_PAGE_ID );
-		}
+		$post_id = (int) $post_id;
 
-		if ( self::FEATURES_PAGE_ID === $post_id ) {
-			delete_transient( 'autocomplete_search_' . self::FEATURES_PAGE_ID );
+		foreach ( array_keys( self::SOURCE_PAGES ) as $slug ) {
+			if ( $post_id === $this->get_source_page_id( $slug ) ) {
+				delete_transient( 'autocomplete_search_' . $post_id );
+			}
 		}
 	}
 
