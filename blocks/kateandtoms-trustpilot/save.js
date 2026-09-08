@@ -7,9 +7,17 @@
 import { useBlockProps } from '@wordpress/block-editor';
 
 /**
+ * Internal dependencies
+ */
+import { getWidgetProps, REVIEW_URL } from './widgets';
+
+/**
  * The save function defines the way in which the different attributes should
  * be combined into the final markup, which is then serialized by the block
  * editor into `post_content`.
+ *
+ * Any change to this output must be paired with a new entry in deprecated.js,
+ * or every page already carrying the block will fail validation.
  *
  * @param  root0
  * @param  root0.attributes
@@ -18,58 +26,26 @@ import { useBlockProps } from '@wordpress/block-editor';
  * @return {Element} Element to render.
  */
 export default function Save( { attributes } ) {
-	const { widgetType } = attributes;
+	const { widgetType, theme, alignment, height } = attributes;
+	const widgetProps = getWidgetProps( widgetType, theme, alignment, height );
 
-	if ( widgetType === 'micro-combo' ) {
-		return (
-			<div { ...useBlockProps.save() }>
-				{ /* TrustBox widget - Micro Combo */ }
-				<div
-					className="trustpilot-widget"
-					data-locale="en-GB"
-					data-template-id="5419b6ffb0d04a076446a9af"
-					data-businessunit-id="5cd41de1c4dd7a0001be3a14"
-					data-style-height="20px"
-					data-style-width="100%"
-				>
-					<a
-						href="https://uk.trustpilot.com/review/www.kateandtoms.com"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						Trustpilot
-					</a>
-				</div>
-				{ /* End TrustBox widget */ }
-			</div>
-		);
+	if ( ! widgetProps ) {
+		return null;
 	}
 
-	if ( widgetType === 'micro-star' ) {
-		return (
-			<div { ...useBlockProps.save() }>
-				{ /* TrustBox widget - Micro Star */ }
-				<div
-					className="trustpilot-widget"
-					data-locale="en-GB"
-					data-template-id="5419b732fbfb950b10de65e5"
-					data-businessunit-id="5cd41de1c4dd7a0001be3a14"
-					data-style-height="24px"
-					data-style-width="100%"
-					data-theme="dark"
+	return (
+		<div { ...useBlockProps.save() }>
+			{ /* TrustBox widget */ }
+			<div { ...widgetProps }>
+				<a
+					href={ REVIEW_URL }
+					target="_blank"
+					rel="noopener noreferrer"
 				>
-					<a
-						href="https://uk.trustpilot.com/review/www.kateandtoms.com"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						Trustpilot
-					</a>
-				</div>
-				{ /* End TrustBox widget */ }
+					Trustpilot
+				</a>
 			</div>
-		);
-	}
-
-	return null;
+			{ /* End TrustBox widget */ }
+		</div>
+	);
 }

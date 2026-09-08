@@ -20,6 +20,18 @@
 		"widgetType": {
 			"type": "string",
 			"default": "micro-combo"
+		},
+		"theme": {
+			"type": "string",
+			"default": "light"
+		},
+		"alignment": {
+			"type": "string",
+			"default": "center"
+		},
+		"height": {
+			"type": "string",
+			"default": ""
 		}
 	}
 }
