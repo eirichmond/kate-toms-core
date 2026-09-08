@@ -1,11 +1,30 @@
 /**
  * The following styles get applied both on the front of your site
  * and in the editor.
- *
- * Replace them with your own styles or remove the file completely.
  */
 
 .wp-block-kate-toms-core-kateandtoms-trustpilot {
 	color: #fff;
-	margin-right: -60px !important;
+}
+
+/*
+ * The footer widget is pulled back past its column edge so it lines up with
+ * the social icons above it.
+ *
+ * Desktop only. At 782px the footer group flips to
+ * `is-style-center-group-mobile` (flex-direction: column; align-items:
+ * center) and the offset fought that, leaving the widget 60px right of
+ * centre. The breakpoint matches the theme's so the offset goes away in the
+ * same step the group re-centres.
+ *
+ * Do not try to narrow this to the footer instance via the widget's own
+ * `data-style-*` attributes: Trustpilot's bootstrap script consumes and
+ * removes them when it swaps in its iframe, so a `:has()` selector keyed on
+ * `data-style-alignment` matches on first paint and then stops.
+ */
+@media (min-width: 783px) {
+
+	.wp-block-kate-toms-core-kateandtoms-trustpilot {
+		margin-right: -60px !important;
+	}
 }
