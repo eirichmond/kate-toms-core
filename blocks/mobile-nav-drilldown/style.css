@@ -363,7 +363,16 @@ body.kt-mobile-search-open
 	text-align: left;
 }
 
-/* Results panel below the input, full-width of the search element. */
+/* Results panel below the input, full-width of the search element.
+ *
+ * The panel hangs below the fixed bar, so on iOS it extends straight
+ * under the on-screen keyboard: at the block's own 450px most of the
+ * list sits behind the keyboard and the visible sliver has nothing
+ * left to scroll, which reads as "the dropdown won't scroll" (#449).
+ * `--kt-mobile-search-results-max-h` is written by the view module
+ * from visualViewport, so the panel is only ever as tall as the space
+ * actually left between the bar and the keyboard, and scrolls inside
+ * it. The 60vh fallback covers browsers without visualViewport. */
 body.kt-mobile-search-open
 	.kt-mobile-search-overlay
 	.autocomplete-search__results {
@@ -373,6 +382,10 @@ body.kt-mobile-search-open
 	right: 0;
 	width: 94%;
 	max-width: none;
+	max-height: var(--kt-mobile-search-results-max-h, 60vh);
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
 }
 
 .kt-mobile-search-overlay__close {

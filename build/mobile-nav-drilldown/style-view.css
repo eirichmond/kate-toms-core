@@ -6,4 +6,4 @@
 	.kt-mobile-search-overlay
 	.autocomplete-search__input-container,body.kt-mobile-search-open .kt-mobile-search-overlay .autocomplete-search{box-sizing:border-box;text-align:left;width:97%}body.kt-mobile-search-open
 	.kt-mobile-search-overlay
-	.autocomplete-search__results{left:0;max-width:none;position:absolute;right:0;top:100%;width:94%}.kt-mobile-search-overlay__close{align-self:center;background:transparent;border:0;color:var(--wp--preset--color--white,#fff);cursor:pointer;flex-shrink:0;font-size:1.5rem;line-height:1;padding:.5rem}
+	.autocomplete-search__results{left:0;max-height:var(--kt-mobile-search-results-max-h,60vh);max-width:none;overflow-y:auto;position:absolute;right:0;top:100%;width:94%;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}.kt-mobile-search-overlay__close{align-self:center;background:transparent;border:0;color:var(--wp--preset--color--white,#fff);cursor:pointer;flex-shrink:0;font-size:1.5rem;line-height:1;padding:.5rem}
