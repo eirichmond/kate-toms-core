@@ -1147,8 +1147,22 @@ const SEARCH_INPUT_SELECTOR = '.autocomplete-search__input';
 const MOBILE_SEARCH_OPEN_CLASS = 'kt-mobile-search-open';
 const MOBILE_SEARCH_OVERLAY_CLASS = 'kt-mobile-search-overlay';
 
+/**
+ * Space left between the bottom of the results panel and the top of the
+ * keyboard, so the last row never sits flush against it.
+ */
+const SEARCH_RESULTS_GUTTER = 16;
+
+/**
+ * Shortest results panel worth showing, in px. Below this the panel is
+ * too small to browse and the user is better served scrolling it than
+ * seeing it collapse to nothing on a very short viewport.
+ */
+const SEARCH_RESULTS_MIN_HEIGHT = 120;
+
 let searchOriginalParent = null;
 let searchOriginalNextSibling = null;
+let searchViewportFrame = null;
 
 function ensureSearchOverlay() {
 	let overlay = document.querySelector(
@@ -1175,6 +1189,94 @@ function ensureSearchOverlay() {
 	return overlay;
 }
 
+/**
+ * Size and position the search bar against the *visual* viewport.
+ *
+ * iOS keeps `position: fixed` anchored to the layout viewport, which the
+ * on-screen keyboard does not shrink. Left alone the bar drifts off-screen
+ * and the results panel runs on underneath the keyboard, unreachable and
+ * with nothing left to scroll (#449). Pinning the bar to
+ * `visualViewport.offsetTop` and capping the panel at the height genuinely
+ * left below it keeps the whole list inside the visible area.
+ */
+function syncMobileSearchViewport() {
+	searchViewportFrame = null;
+
+	const overlay = document.querySelector(
+		`.${ MOBILE_SEARCH_OVERLAY_CLASS }`
+	);
+	if (
+		! overlay ||
+		! document.body.classList.contains( MOBILE_SEARCH_OPEN_CLASS )
+	) {
+		return;
+	}
+
+	const viewport = window.visualViewport;
+	const viewportTop = viewport ? viewport.offsetTop : 0;
+	const viewportHeight = viewport ? viewport.height : window.innerHeight;
+
+	overlay.style.transform = viewportTop
+		? `translateY(${ viewportTop }px)`
+		: '';
+
+	const searchBlock = overlay.querySelector( SEARCH_BLOCK_SELECTOR );
+	if ( ! searchBlock ) {
+		return;
+	}
+
+	// getBoundingClientRect() is in layout-viewport coordinates and already
+	// includes the translate above, so subtracting offsetTop gives the
+	// position within the visual viewport.
+	const anchorBottom =
+		searchBlock.getBoundingClientRect().bottom - viewportTop;
+	const available = Math.max(
+		viewportHeight - anchorBottom - SEARCH_RESULTS_GUTTER,
+		SEARCH_RESULTS_MIN_HEIGHT
+	);
+
+	overlay.style.setProperty(
+		'--kt-mobile-search-results-max-h',
+		`${ Math.round( available ) }px`
+	);
+}
+
+/**
+ * Queue a viewport sync on the next frame.
+ *
+ * visualViewport fires resize and scroll rapidly while the keyboard
+ * animates in; coalescing keeps the measurement to one per frame.
+ */
+function queueMobileSearchViewportSync() {
+	if ( null !== searchViewportFrame ) {
+		return;
+	}
+	searchViewportFrame = requestAnimationFrame( syncMobileSearchViewport );
+}
+
+/**
+ * Start or stop listening for visual-viewport changes.
+ *
+ * @param {boolean} listening Whether the overlay is open.
+ */
+function toggleMobileSearchViewportListeners( listening ) {
+	const method = listening ? 'addEventListener' : 'removeEventListener';
+
+	if ( window.visualViewport ) {
+		window.visualViewport[ method ](
+			'resize',
+			queueMobileSearchViewportSync
+		);
+		window.visualViewport[ method ](
+			'scroll',
+			queueMobileSearchViewportSync
+		);
+	}
+
+	window[ method ]( 'resize', queueMobileSearchViewportSync );
+	window[ method ]( 'orientationchange', queueMobileSearchViewportSync );
+}
+
 function openMobileSearch() {
 	if ( document.body.classList.contains( MOBILE_SEARCH_OPEN_CLASS ) ) {
 		return;
@@ -1191,16 +1293,39 @@ function openMobileSearch() {
 	overlay.appendChild( searchBlock );
 	document.body.classList.add( MOBILE_SEARCH_OPEN_CLASS );
 
+	toggleMobileSearchViewportListeners( true );
+	syncMobileSearchViewport();
+
 	const input = searchBlock.querySelector( SEARCH_INPUT_SELECTOR );
 	if ( input ) {
 		input.focus();
 	}
+
+	// The keyboard animates in after focus, so the first measurement is
+	// taken against the full-height viewport. The listeners catch the
+	// change on browsers that report it; this covers the rest.
+	queueMobileSearchViewportSync();
 }
 
 function closeMobileSearch() {
 	if ( ! document.body.classList.contains( MOBILE_SEARCH_OPEN_CLASS ) ) {
 		return;
 	}
+
+	toggleMobileSearchViewportListeners( false );
+	if ( null !== searchViewportFrame ) {
+		cancelAnimationFrame( searchViewportFrame );
+		searchViewportFrame = null;
+	}
+
+	const overlay = document.querySelector(
+		`.${ MOBILE_SEARCH_OVERLAY_CLASS }`
+	);
+	if ( overlay ) {
+		overlay.style.transform = '';
+		overlay.style.removeProperty( '--kt-mobile-search-results-max-h' );
+	}
+
 	const searchBlock = document.querySelector( SEARCH_BLOCK_SELECTOR );
 	if ( searchBlock && searchOriginalParent ) {
 		if ( searchOriginalNextSibling ) {
