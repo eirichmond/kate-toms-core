@@ -12,6 +12,7 @@
  * Week = Friday(1) +6day checkout Friday
  * Midweek = Monday(1) +3day checkout Friday
  * 2 night midweek = Monday, Tues or Weds(1) +1day checkout +1day from checkin
+ * 5 nights = any day(1) +4day checkout +5days from checkin (rate code 90)
  * 
  * 
  *
@@ -235,6 +236,11 @@ class House_Calendar_Manager {
 			'start_day'    => array( 1, 2, 3 ), // Monday, Tuesday, or Wednesday
 			'nights'       => 2,
 			'checkout_day' => 'variable', // +1 day from checkin
+		),
+		'5-night'         => array(
+			'start_day'    => array( 1, 2, 3, 4, 5, 6, 7 ), // Any day (1=Monday, 7=Sunday)
+			'nights'       => 5,
+			'checkout_day' => 'variable', // +5 days from checkin
 		),
 	);
 
@@ -1398,6 +1404,8 @@ class House_Calendar_Manager {
 		// Tuesday   → 2-night midweek
 		// Wednesday → 2-night midweek
 		// Thursday  → none
+		// Plus, on every day: 5 nights, but only where the week's 5-night
+		// rate (code 90) is loaded and all 5 nights are available (#491).
 		$arrival_day = (int) $checkin_date->format( 'N' ); // 1=Mon, 5=Fri, 7=Sun.
 
 		$eligible_periods = array();
@@ -1417,6 +1425,12 @@ class House_Calendar_Manager {
 				// Saturday (6), Sunday (7), Thursday (4) — no breaks start on these days.
 				break;
 		}
+
+		// Sat, Sun and Thu have no short breaks of their own, only the 5-night
+		// period. Remember that so they keep showing the "no breaks" message
+		// (rather than searching nearby dates) when 5 nights isn't on offer.
+		$has_short_breaks   = ! empty( $eligible_periods );
+		$eligible_periods[] = '5-night';
 
 		// Check each eligible period for availability and pricing.
 		foreach ( $eligible_periods as $period_key ) {
@@ -1452,12 +1466,13 @@ class House_Calendar_Manager {
 			return $periods;
 		}
 
-		// If no eligible periods exist for this arrival day (Sat, Sun, Thu),
-		// return a message rather than searching for nearby dates.
-		if ( empty( $eligible_periods ) ) {
+		// If no short breaks start on this arrival day (Sat, Sun, Thu) and no
+		// 5-night period is available either, return a message rather than
+		// searching for nearby dates.
+		if ( ! $has_short_breaks && empty( $periods ) ) {
 			return array(
 				'no_breaks' => true,
-				'message'   => 'No breaks available from your chosen arrival day. Please get in touch to enquire or return and select another day',
+				'message'   => 'No breaks available from your chosen day. Please get in touch to enquire.',
 			);
 		}
 
@@ -1679,6 +1694,7 @@ class House_Calendar_Manager {
 			'week'            => '70',
 			'midweek'         => '80',
 			'2-night-midweek' => '85',
+			'5-night'         => '90',
 		);
 
 		$stay_code = $stay_code_map[ $period_key ] ?? null;
@@ -1735,6 +1751,7 @@ class House_Calendar_Manager {
 			'week'            => 'Week',
 			'midweek'         => 'Midweek',
 			'2-night-midweek' => '2 Night Midweek',
+			'5-night'         => '5 Nights',
 		);
 
 		return isset( $names[ $period_key ] ) ? $names[ $period_key ] : ucwords( str_replace( '-', ' ', $period_key ) );
@@ -1761,7 +1778,8 @@ class House_Calendar_Manager {
 		}
 
 		// Generate dynamic description using actual checkin/checkout days.
-		// This covers 2-night-midweek which can start Mon, Tue or Wed.
+		// This covers 2-night-midweek which can start Mon, Tue or Wed, and
+		// 5-night which can start on any day.
 		$checkin_day  = $checkin_date->format( 'l' );
 		$checkout_day = $checkout_date->format( 'l' );
 
@@ -2430,14 +2448,20 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 
 	// Only check key changeover days (Fridays=5 and Mondays=1) to optimize performance
 	// This covers: weeks (Fri/Mon), weekends (Fri), midweeks (Mon)
+	// A 5-night stay can start on any day, so when it's asked for, check every day.
+	$check_every_day = in_array( '5-night', $periods, true );
+
 	$current_date = clone $start_date;
 	while ( $current_date <= $end_date ) {
-		$day_of_week = (int) $current_date->format( 'N' ); // 1=Monday, 5=Friday
+		$day_of_week   = (int) $current_date->format( 'N' ); // 1=Monday, 5=Friday
+		$is_changeover = ( 1 === $day_of_week || 5 === $day_of_week );
 
-		// Only check Mondays and Fridays (main changeover days)
-		if ( $day_of_week === 1 || $day_of_week === 5 ) {
-			// Get available periods for this date
-			$available_periods = $get_periods_method->invoke( $calendar_manager, $property_id, $current_date );
+		// Only check Mondays and Fridays (main changeover days), unless 5 nights is included
+		if ( $is_changeover || $check_every_day ) {
+			// Get available periods for this date. Non-changeover days ask strictly
+			// for what starts on that date: the loop visits every day itself, and
+			// the nearby fallback returns a { no_breaks } sentinel on Sat/Sun/Thu.
+			$available_periods = $get_periods_method->invoke( $calendar_manager, $property_id, $current_date, $is_changeover );
 
 			if ( ! empty( $available_periods ) ) {
 				// Check if any of the available periods match our required periods
@@ -2518,6 +2542,7 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 		'3-night-weekend' => '3 night weekend',
 		'midweek'         => 'Midweek',
 		'2-night-midweek' => '2 night midweek',
+		'5-night'         => '5 nights',
 	);
 
 	// Map API codes to rate codes
@@ -2527,6 +2552,7 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 		'3-night-weekend' => '60',
 		'midweek'         => '80',
 		'2-night-midweek' => '85',
+		'5-night'         => '90',
 	);
 
 	// Convert dates to DateTime objects
