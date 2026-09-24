@@ -81,7 +81,8 @@ export default function Edit( { attributes, setAttributes, context } ) {
 		'2 night weekend': 'Weekend (2 night)',
 		'3 night weekend': 'Weekend (3 night)',
 		Midweek: 'Midweeks',
-		'5 night': '5 nights (Christmas)',
+		'5 nights': '5 nights',
+		'5 night': '5 nights',
 	};
 
 	const formatPeriods = ( periods ) => {

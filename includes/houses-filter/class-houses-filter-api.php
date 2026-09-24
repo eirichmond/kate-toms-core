@@ -890,7 +890,7 @@ class Houses_Filter_API {
 		);
 
 		// All period keys for seasonal pricing display.
-		$all_period_keys = array( 'week', '2-night-weekend', '3-night-weekend', 'midweek' );
+		$all_period_keys = array( 'week', '2-night-weekend', '3-night-weekend', 'midweek', '5-night' );
 
 		// Build the response HTML.
 		ob_start();

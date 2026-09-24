@@ -44,7 +44,8 @@ $period_mapping = array(
 	'2 night weekend' => '2-night-weekend',
 	'3 night weekend' => '3-night-weekend',
 	'Midweek'         => 'midweek',
-	'5 night'         => 'week',
+	'5 nights'        => '5-night', // Legacy stored value.
+	'5 night'         => '5-night',
 );
 
 // Convert periods to API format.
@@ -234,7 +235,7 @@ $context = array(
 );
 
 // All period keys for seasonal pricing display.
-$all_period_keys = array( 'week', '2-night-weekend', '3-night-weekend', 'midweek' );
+$all_period_keys = array( 'week', '2-night-weekend', '3-night-weekend', 'midweek', '5-night' );
 
 ?>
 

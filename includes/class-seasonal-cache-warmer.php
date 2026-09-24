@@ -199,7 +199,8 @@ class Seasonal_Cache_CLI_Command extends WP_CLI_Command {
 			'2 night weekend' => '2-night-weekend',
 			'3 night weekend' => '3-night-weekend',
 			'Midweek'         => 'midweek',
-			'5 night'         => 'week',
+			'5 nights'        => '5-night', // Legacy stored value.
+			'5 night'         => '5-night',
 		);
 
 		$api_periods = array();

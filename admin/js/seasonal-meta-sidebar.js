@@ -59,8 +59,8 @@
 			},
 			{ label: __( 'Midweeks', 'kate-toms-core' ), value: 'Midweek' },
 			{
-				label: __( '5 nights (Christmas)', 'kate-toms-core' ),
-				value: '5 night',
+				label: __( '5 nights', 'kate-toms-core' ),
+				value: '5 nights',
 			},
 		];
 
