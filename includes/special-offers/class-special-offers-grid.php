@@ -50,45 +50,39 @@ class Kate_Toms_Special_Offers_Grid {
 	public const MIN_LEAD_DAYS = 3;
 
 	/**
-	 * Builds the ordered, filtered render list from raw child attributes.
+	 * Builds the filtered render list from raw child attributes.
+	 *
+	 * Cards keep the order the editor placed them in: editors group offers by
+	 * stay type (weekends, then weeks, then midweeks) and order within each
+	 * group by hand, so the front end must not re-sort them (#493). It used to
+	 * sort dated cards by expiry, which scattered each group across the grid.
 	 *
 	 * House cards are dropped once their offer is within MIN_LEAD_DAYS of its
 	 * expiry date (site timezone) — so an offer expiring today, in the past, or
-	 * in the next three days is not rendered. Remaining dated house cards are
-	 * sorted ascending by offer date (soonest expiry first). Dateless house
-	 * cards and manual placeholder cards are never date-filtered and trail the
-	 * dated houses in their original editor order.
+	 * in the next three days is not rendered. Dateless house cards and manual
+	 * placeholder cards are never date-filtered and stay where they were placed.
 	 *
 	 * @param array<int, array<string, mixed>> $children Raw attribute arrays, one per child block, in editor order.
 	 * @param \DateTimeImmutable               $now      Current moment in the site timezone (date component used for expiry).
 	 *
-	 * @return array<int, array<string, mixed>> Ordered, filtered card arrays ready for rendering.
+	 * @return array<int, array<string, mixed>> Filtered card arrays, in editor order, ready for rendering.
 	 */
 	public static function order_cards( array $children, \DateTimeImmutable $now ): array {
-		$cutoff   = self::expiry_cutoff( $now );
-		$dated    = array();
-		$trailing = array();
+		$cutoff = self::expiry_cutoff( $now );
+		$cards  = array();
 
 		foreach ( $children as $child ) {
 			$card = self::normalize_card( $child );
 
-			// Placeholders and dateless houses are never filtered; they trail dated houses in editor order.
-			if ( self::TYPE_PLACEHOLDER === $card['type'] || null === $card['offerDateNormalized'] ) {
-				$trailing[] = $card;
+			// Offers at or inside the lead-time cutoff are dropped; placeholders and dateless houses never are.
+			if ( self::TYPE_HOUSE === $card['type'] && null !== $card['offerDateNormalized'] && $card['offerDateNormalized'] <= $cutoff ) {
 				continue;
 			}
 
-			// Offers at or inside the lead-time cutoff are dropped.
-			if ( $card['offerDateNormalized'] <= $cutoff ) {
-				continue;
-			}
-
-			$dated[] = $card;
+			$cards[] = $card;
 		}
 
-		usort( $dated, array( self::class, 'compare_by_offer_date' ) );
-
-		return array_merge( $dated, $trailing );
+		return $cards;
 	}
 
 	/**
@@ -127,18 +121,6 @@ class Kate_Toms_Special_Offers_Grid {
 		$remainder = $card_count % $per_row;
 
 		return 0 === $remainder ? 0 : $per_row - $remainder;
-	}
-
-	/**
-	 * Stable comparator sorting cards ascending by their normalised offer date.
-	 *
-	 * @param array<string, mixed> $a First card.
-	 * @param array<string, mixed> $b Second card.
-	 *
-	 * @return int Negative, zero, or positive per the spaceship operator.
-	 */
-	private static function compare_by_offer_date( array $a, array $b ): int {
-		return strcmp( (string) $a['offerDateNormalized'], (string) $b['offerDateNormalized'] );
 	}
 
 	/**
