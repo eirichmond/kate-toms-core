@@ -3,9 +3,9 @@
  * Special Offers Grid render template.
  *
  * Collects the special-offer-house child attributes in editor order, then uses
- * the pure ordering helper to drop expired offers and sort the rest by offer
- * date (soonest expiry first). Each house card is rendered from the theme's
- * special-offer pattern with this card's own offer metadata.
+ * the pure ordering helper to drop expired offers, keeping the rest in editor
+ * order. Each house card is rendered from the theme's special-offer pattern
+ * with this card's own offer metadata.
  *
  * The rows-of-four grid and placeholder advert markup are added in later steps.
  *

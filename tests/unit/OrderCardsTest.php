@@ -13,7 +13,7 @@ declare(strict_types=1);
 use PHPUnit\Framework\TestCase;
 
 /**
- * Covers the ordering, expiry filtering, and trailing-bucket rules.
+ * Covers editor ordering and expiry filtering.
  */
 final class OrderCardsTest extends TestCase {
 
@@ -41,11 +41,11 @@ final class OrderCardsTest extends TestCase {
 	}
 
 	/**
-	 * Dated house cards are ordered soonest-expiry-first regardless of input order.
+	 * Dated house cards keep editor order rather than being sorted by expiry (#493).
 	 *
 	 * @return void
 	 */
-	public function test_sorts_dated_houses_ascending(): void {
+	public function test_keeps_dated_houses_in_editor_order(): void {
 		$children = array(
 			array(
 				'selectedPostId' => 1,
@@ -63,7 +63,7 @@ final class OrderCardsTest extends TestCase {
 
 		$result = Kate_Toms_Special_Offers_Grid::order_cards( $children, $this->now() );
 
-		$this->assertSame( array( 2, 3, 1 ), $this->ids( $result ) );
+		$this->assertSame( array( 1, 2, 3 ), $this->ids( $result ) );
 	}
 
 	/**
@@ -179,11 +179,11 @@ final class OrderCardsTest extends TestCase {
 	}
 
 	/**
-	 * Dateless houses, invalid dates, and placeholders trail dated cards in stable input order.
+	 * Dateless houses, invalid dates, and placeholders stay where the editor placed them.
 	 *
 	 * @return void
 	 */
-	public function test_dateless_and_placeholders_trail_in_stable_order(): void {
+	public function test_dateless_and_placeholders_stay_in_place(): void {
 		$children = array(
 			array(
 				'selectedPostId' => 10,
@@ -206,11 +206,10 @@ final class OrderCardsTest extends TestCase {
 
 		$result = Kate_Toms_Special_Offers_Grid::order_cards( $children, $this->now() );
 
-		// Dated houses first (soonest first: 40 then 10), then trailing in input order.
-		$this->assertSame( array( 40, 10, 0, 20, 30 ), $this->ids( $result ) );
+		$this->assertSame( array( 10, 0, 20, 30, 40 ), $this->ids( $result ) );
 		$this->assertSame( Kate_Toms_Special_Offers_Grid::TYPE_HOUSE, $result[0]['type'] );
-		$this->assertSame( Kate_Toms_Special_Offers_Grid::TYPE_PLACEHOLDER, $result[2]['type'] );
-		$this->assertSame( 'coast', $result[2]['placeholderLocation'] );
+		$this->assertSame( Kate_Toms_Special_Offers_Grid::TYPE_PLACEHOLDER, $result[1]['type'] );
+		$this->assertSame( 'coast', $result[1]['placeholderLocation'] );
 	}
 
 	/**
@@ -247,7 +246,7 @@ final class OrderCardsTest extends TestCase {
 	}
 
 	/**
-	 * Equal offer dates preserve the original relative order (stable sort).
+	 * Equal offer dates preserve the original relative order.
 	 *
 	 * @return void
 	 */
@@ -270,5 +269,41 @@ final class OrderCardsTest extends TestCase {
 		$result = Kate_Toms_Special_Offers_Grid::order_cards( $children, $this->now() );
 
 		$this->assertSame( array( 1, 2, 3 ), $this->ids( $result ) );
+	}
+
+	/**
+	 * Fern's case: a grid grouped by stay type keeps its groups. A week offer
+	 * placed between two others stays there even though it expires sooner, and
+	 * an expired card drops out without disturbing the rest.
+	 *
+	 * @return void
+	 */
+	public function test_week_offers_stay_where_the_editor_put_them(): void {
+		$children = array(
+			array(
+				'selectedPostId' => 1, // Weekend.
+				'offerDate'      => '2026-08-14',
+			),
+			array(
+				'selectedPostId' => 2, // Week: Deri Manor.
+				'offerDate'      => '2026-08-21',
+			),
+			array(
+				'selectedPostId' => 3, // Week: Rushay.
+				'offerDate'      => '2026-07-17',
+			),
+			array(
+				'selectedPostId' => 4, // Week: expired.
+				'offerDate'      => '2026-07-04',
+			),
+			array(
+				'selectedPostId' => 5, // Week: Foxholme.
+				'offerDate'      => '2026-09-04',
+			),
+		);
+
+		$result = Kate_Toms_Special_Offers_Grid::order_cards( $children, $this->now() );
+
+		$this->assertSame( array( 1, 2, 3, 5 ), $this->ids( $result ) );
 	}
 }

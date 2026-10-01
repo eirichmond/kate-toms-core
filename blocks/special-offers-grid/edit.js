@@ -23,8 +23,8 @@ const TEMPLATE = [ [ 'kate-toms-core/kateandtoms-special-offer-house' ] ];
  * Editor UI for the Special Offers Grid container.
  *
  * Renders an InnerBlocks region locked to special-offer-house children, seeded
- * with one child and offering a button appender to add more. Editor order is
- * the authoring order; the front end re-orders by offer date at render time.
+ * with one child and offering a button appender to add more. The front end
+ * shows the cards in this same order, so editors control it directly.
  *
  * @return {JSX.Element} Editor element.
  */
