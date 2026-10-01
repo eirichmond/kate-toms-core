@@ -23,6 +23,7 @@ $kate_toms_helpers = array(
 	dirname( __DIR__, 2 ) . '/includes/houses-filter/class-kate-toms-location-tax-query.php',
 	dirname( __DIR__, 2 ) . '/includes/houses-filter/class-kate-toms-house-tax-query.php',
 	dirname( __DIR__, 2 ) . '/includes/class-kate-toms-trustpilot-rating.php',
+	dirname( __DIR__, 2 ) . '/includes/seasonal/class-kate-toms-seasonal-stays.php',
 );
 
 foreach ( $kate_toms_helpers as $kate_toms_helper ) {

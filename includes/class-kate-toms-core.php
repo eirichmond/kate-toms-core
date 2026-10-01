@@ -212,6 +212,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/seasonal/class-kate-toms-seasonal-results-cache.php';
 
 		/**
+		 * The bookable stays a house has inside a seasonal date range.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/seasonal/class-kate-toms-seasonal-stays.php';
+
+		/**
 		 * The class responsible for the House Availability API functionality
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-houses-calendar-availability-api.php';

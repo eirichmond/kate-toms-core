@@ -2393,8 +2393,8 @@ function kate_toms_filter_houses_by_seasonal_availability( $houses, $beginning_d
  * @return bool True if house has availability for at least one period
  */
 function kate_toms_check_house_seasonal_availability( $property_id, $beginning_date, $ending_date, $periods, $allow_api = true ) {
-	// Check cache first for this specific availability check
-	$cache_key     = 'kt_seasonal_avail_' . $property_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
+	// Check cache first. Versioned: verdicts cached before #494 used the old, leaky rules.
+	$cache_key     = 'kt_seasonal_avail_v2_' . $property_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
 	$cached_result = get_transient( $cache_key );
 
 	if ( false !== $cached_result ) {
@@ -2405,9 +2405,8 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 
 	/*
 	 * Without the API, only a house whose calendar is already warm can be
-	 * judged. This is checked up front because get_booking_periods_for_date()
-	 * below silently falls back to fetching a cold calendar — which is exactly
-	 * the per-house HTTP call a page request must not make.
+	 * judged: fetching a cold calendar is exactly the per-house HTTP call a
+	 * page request must not make.
 	 */
 	if ( ! $allow_api ) {
 		$warm_calendar = get_transient( "kt_house_calendar_{$property_id}" );
@@ -2433,56 +2432,12 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 		return false;
 	}
 
-	// Convert dates to DateTime objects
-	try {
-		$start_date = new DateTime( $beginning_date );
-		$end_date   = new DateTime( $ending_date );
-	} catch ( Exception $e ) {
-		return false;
-	}
+	// A house qualifies when at least one requested stay arrives in the range,
+	// is free for every night, and has a published price (#494).
+	$has_stay = ! empty( Kate_Toms_Seasonal_Stays::find( $calendar_data, $beginning_date, $ending_date, $periods ) );
 
-	// Use reflection to access the private method once
-	$reflection         = new ReflectionClass( $calendar_manager );
-	$get_periods_method = $reflection->getMethod( 'get_booking_periods_for_date' );
-	$get_periods_method->setAccessible( true );
-
-	// Only check key changeover days (Fridays=5 and Mondays=1) to optimize performance
-	// This covers: weeks (Fri/Mon), weekends (Fri), midweeks (Mon)
-	// A 5-night stay can start on any day, so when it's asked for, check every day.
-	$check_every_day = in_array( '5-night', $periods, true );
-
-	$current_date = clone $start_date;
-	while ( $current_date <= $end_date ) {
-		$day_of_week   = (int) $current_date->format( 'N' ); // 1=Monday, 5=Friday
-		$is_changeover = ( 1 === $day_of_week || 5 === $day_of_week );
-
-		// Only check Mondays and Fridays (main changeover days), unless 5 nights is included
-		if ( $is_changeover || $check_every_day ) {
-			// Get available periods for this date. Non-changeover days ask strictly
-			// for what starts on that date: the loop visits every day itself, and
-			// the nearby fallback returns a { no_breaks } sentinel on Sat/Sun/Thu.
-			$available_periods = $get_periods_method->invoke( $calendar_manager, $property_id, $current_date, $is_changeover );
-
-			if ( ! empty( $available_periods ) ) {
-				// Check if any of the available periods match our required periods
-				foreach ( $available_periods as $available_period ) {
-					if ( in_array( $available_period['id'], $periods, true ) ) {
-						// Found at least one matching period - this house qualifies
-						// Cache positive result for 10 minutes
-						set_transient( $cache_key, 1, KATE_TOMS_SEASONAL_VERDICT_TTL );
-						return true;
-					}
-				}
-			}
-		}
-
-		// Move to next day
-		$current_date->add( new DateInterval( 'P1D' ) );
-	}
-
-	// No matching periods found in the entire date range
-	set_transient( $cache_key, 0, KATE_TOMS_SEASONAL_VERDICT_TTL );
-	return false;
+	set_transient( $cache_key, $has_stay ? 1 : 0, KATE_TOMS_SEASONAL_VERDICT_TTL );
+	return $has_stay;
 }
 
 /**
@@ -2497,8 +2452,8 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
  * @return array Associative array with period labels as keys and arrays of rates as values
  */
 function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date, $periods ) {
-	// Check transient cache first for this specific request
-	$cache_key     = 'kt_seasonal_prices_' . $house_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
+	// Check transient cache first. Versioned: prices cached before #494 were read from the wrong weeks.
+	$cache_key     = 'kt_seasonal_prices_v2_' . $house_id . '_' . md5( $beginning_date . $ending_date . implode( ',', $periods ) );
 	$cached_prices = get_transient( $cache_key );
 
 	if ( false !== $cached_prices ) {
@@ -2545,86 +2500,29 @@ function kate_toms_get_seasonal_prices( $house_id, $beginning_date, $ending_date
 		'5-night'         => '5 nights',
 	);
 
-	// Map API codes to rate codes
-	$stay_code_map = array(
-		'week'            => '70',
-		'2-night-weekend' => '50',
-		'3-night-weekend' => '60',
-		'midweek'         => '80',
-		'2-night-midweek' => '85',
-		'5-night'         => '90',
-	);
-
-	// Convert dates to DateTime objects
-	try {
-		$start_date = new DateTime( $beginning_date );
-		$end_date   = new DateTime( $ending_date );
-	} catch ( Exception $e ) {
-		return array();
-	}
-
-	// Collect all rates for each period across the date range
+	/*
+	 * Price only the stays that actually arrive in the range and are free
+	 * (#494). Reading rates by their week-commencing Friday instead picked up
+	 * the whole following week when the range ended on a Friday.
+	 */
 	$available_dates = array();
 
-	foreach ( $periods as $period_key ) {
-		$stay_code    = $stay_code_map[ $period_key ] ?? null;
-		$period_label = $period_labels[ $period_key ] ?? ucfirst( str_replace( '-', ' ', $period_key ) );
+	foreach ( Kate_Toms_Seasonal_Stays::find( $calendar_data, $beginning_date, $ending_date, $periods ) as $stay ) {
+		$period_label = $period_labels[ $stay['period'] ] ?? ucfirst( str_replace( '-', ' ', $stay['period'] ) );
+		$rate_value   = (string) $stay['value'];
 
-		if ( ! $stay_code ) {
-			continue;
+		// Add offer indicator if present.
+		if ( $stay['offer'] > 0 ) {
+			$rate_value .= str_repeat( '*', $stay['offer'] );
 		}
 
-		$available_dates[ $period_label ] = array();
-
-		// Search through all rate periods in the calendar data
-		foreach ( $calendar_data['rates'] as $month_rates ) {
-			if ( ! isset( $month_rates['weeks'] ) ) {
-				continue;
-			}
-
-			foreach ( $month_rates['weeks'] as $week_commencing => $week_rates ) {
-				// Check if this week falls within our date range
-				$week_date = new DateTime( $week_commencing );
-				if ( $week_date < $start_date || $week_date > $end_date ) {
-					continue;
-				}
-
-				// Check if this stay code has a rate for this week
-				if ( isset( $week_rates[ $stay_code ] ) ) {
-					$rate_data = $week_rates[ $stay_code ];
-
-					// Convert rate data to display format
-					if ( isset( $rate_data['value'] ) && $rate_data['value'] > 0 && 'price' === $rate_data['type'] ) {
-						$rate_value = (string) $rate_data['value'];
-
-						// Add offer indicator if present
-						if ( isset( $rate_data['offer'] ) && $rate_data['offer'] > 0 ) {
-							$rate_value .= str_repeat( '*', $rate_data['offer'] );
-						}
-
-						// Preserve "from" indicator (e.g. from a "150+" rate) for consumers like the landing-page blocks.
-						if ( ! empty( $rate_data['from'] ) ) {
-							$rate_value .= '+';
-						}
-
-						$available_dates[ $period_label ][] = $rate_value;
-					} elseif ( 'from' === $rate_data['type'] ) {
-						$available_dates[ $period_label ][] = '+'; // "from" indicator
-					} elseif ( 'hidden' === $rate_data['type'] ) {
-						$available_dates[ $period_label ][] = '-2'; // Hidden period
-					}
-				}
-			}
+		// Preserve "from" indicator (e.g. from a "150+" rate) for consumers like the landing-page blocks.
+		if ( $stay['from'] ) {
+			$rate_value .= '+';
 		}
+
+		$available_dates[ $period_label ][] = $rate_value;
 	}
-
-	// Remove periods with no rates
-	$available_dates = array_filter(
-		$available_dates,
-		function ( $rates ) {
-			return ! empty( $rates );
-		}
-	);
 
 	// Cache the result for 10 minutes
 	set_transient( $cache_key, $available_dates, 10 * MINUTE_IN_SECONDS );
