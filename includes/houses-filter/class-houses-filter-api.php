@@ -172,50 +172,6 @@ class Houses_Filter_API {
 	}
 
 	/**
-	 * Get post IDs that match a specific date's availability.
-	 *
-	 * @param string $year  The year to check availability for.
-	 * @param int    $month The month to check availability for.
-	 * @param int    $day   The day to check availability for.
-	 * @return array Array of post IDs that are available on the specified date.
-	 */
-	public function get_matching_post_ids( $year, $month, $day ) {
-		global $wpdb;
-
-		// Fetch distinct post IDs where availability-days is not empty (either '' or 'a:0:{}') and contains the specific day.
-		$query = $wpdb->prepare(
-			"SELECT DISTINCT pm1.post_id, pm1.meta_value FROM {$wpdb->postmeta} pm1
-			INNER JOIN {$wpdb->postmeta} pm2 ON pm1.post_id = pm2.post_id
-			INNER JOIN {$wpdb->posts} p ON pm1.post_id = p.ID
-			WHERE pm1.meta_key LIKE %s 
-			AND pm2.meta_key LIKE %s AND pm2.meta_value = %d
-			AND p.post_type = %s AND p.post_status = %s",
-			'%_availability-days',
-			'%_month',
-			$month,
-			'houses',
-			'publish'
-		);
-
-		$results           = $wpdb->get_results( $query, ARRAY_A );
-		$matching_post_ids = array();
-
-		foreach ( $results as $row ) {
-			$post_id           = (int) $row['post_id'];
-			$availability_days = maybe_unserialize( $row['meta_value'] );
-
-			// Ensure availability-days is not empty and contains the specific day.
-			if ( is_array( $availability_days ) && ! empty( $availability_days ) && in_array( $day, $availability_days ) ) {
-				$matching_post_ids[] = $post_id;
-			}
-		}
-
-		$matching_post_ids = array_unique( $matching_post_ids );
-
-		return $matching_post_ids;
-	}
-
-	/**
 	 * Get filtered houses based on user-selected filters and default locations.
 	 * 
 	 * This endpoint is triggered by:
@@ -361,30 +317,13 @@ class Houses_Filter_API {
 			}
 		}
 
-		if ( ! empty( $params['date'] ) ) {
-			// Extract year, month, and day from the date.
-			$date_parts = explode( '-', $params['date'] );
-			$year       = $date_parts[0];
-			$month      = (int) $date_parts[1]; // Ensure integer format.
-			$day        = (int) $date_parts[2]; // Ensure integer format.
-
-			$matching_post_ids = $this->get_matching_post_ids( $year, $month, $day );
-
-			if ( ! empty( $matching_post_ids ) ) {
-				$args['post__in'] = $matching_post_ids;
-			}
-		}
-
-		// Merge size and date post ID constraints. If both filters are active,
-		// post__in must be their intersection; otherwise whichever is set wins.
+		// Date availability is decided per house in the pricing loop below, from
+		// the warm kt_house_calendar_* cache. There is deliberately no SQL
+		// pre-filter on the legacy clubsandwich availability_calendar_* meta: it
+		// was stale, ignored the year, did not pair month with days rows, and
+		// excluded every house without legacy rows (BugHerd #423).
 		if ( null !== $size_post_ids ) {
-			$size_ids = ! empty( $size_post_ids ) ? array_map( 'intval', $size_post_ids ) : array( 0 );
-			if ( isset( $args['post__in'] ) ) {
-				$intersection        = array_intersect( $args['post__in'], $size_ids );
-				$args['post__in']    = ! empty( $intersection ) ? array_values( $intersection ) : array( 0 );
-			} else {
-				$args['post__in'] = $size_ids;
-			}
+			$args['post__in'] = ! empty( $size_post_ids ) ? array_map( 'intval', $size_post_ids ) : array( 0 );
 		}
 
 		if ( ! empty( $meta_query ) ) {
