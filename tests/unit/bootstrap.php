@@ -24,7 +24,14 @@ $kate_toms_helpers = array(
 	dirname( __DIR__, 2 ) . '/includes/houses-filter/class-kate-toms-house-tax-query.php',
 	dirname( __DIR__, 2 ) . '/includes/class-kate-toms-trustpilot-rating.php',
 	dirname( __DIR__, 2 ) . '/includes/seasonal/class-kate-toms-seasonal-stays.php',
+	dirname( __DIR__, 2 ) . '/includes/cleanup/class-kt-cleanup-key-rules.php',
+	dirname( __DIR__, 2 ) . '/includes/cleanup/class-kt-media-cleanup-rules.php',
 );
+
+// The cleanup key files bail without ABSPATH.
+if ( ! defined( 'ABSPATH' ) ) {
+	define( 'ABSPATH', dirname( __DIR__, 2 ) . '/' );
+}
 
 foreach ( $kate_toms_helpers as $kate_toms_helper ) {
 	if ( file_exists( $kate_toms_helper ) ) {
