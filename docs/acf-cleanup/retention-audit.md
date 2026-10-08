@@ -116,13 +116,13 @@ Never touched: WordPress core / Yoast / Jetpack / Smush / YouTube-feed / cookie-
 1. **Migration-source keys (§3)** are kept on live posts and removed from revisions.
 2. **Revision scope:** the retained guard protects live posts and terms only. Revision copies of retained keys are deleted (`KT_Cleanup_Key_Rules::decide()`).
 3. **Revision posts** (53,399 rows, `wp_posts` 1.3 GB) are a separate task, outside #423.
-4. **`availability_calendar` month/days** stay protected until a separate PR drops the stale `/houses` date pre-filter (`class-houses-filter-api.php` `get_matching_post_ids()`). After that they can be added to `legacy-keys.php`.
+4. **`availability_calendar` month/days:** retired. Their last reader, the `/houses` date pre-filter, was removed in #73, so the whole repeater is now legacy group B in `legacy-keys.php`.
 
-## 7. Local dry run (2026-10-07, existing local DB)
+## 7. Local dry run (2026-10-08, existing local DB, after #73)
 
 | table | would delete (live) | would delete (revision) | orphans (not deleted) | retained kept | meta_value MB |
 |---|---:|---:|---:|---:|---:|
-| wp_postmeta | 522,575 | 12,260,810 | 3,538 | 25,588 | 539.2 |
+| wp_postmeta | 548,726 | 12,260,810 | 4,014 | 0 | 540.3 |
 | wp_termmeta | 2,806 | 0 | 72 | 0 | 0.0 |
 
 These numbers come from the current local DB and are a baseline only. The go/no-go check is a rehearsal on a fresh production copy, whose numbers must match the production dry run exactly.

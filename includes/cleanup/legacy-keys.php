@@ -37,6 +37,8 @@ return array(
 			'home_page_text',
 			'supplier_photos',
 			'external_name',
+			// Group B count row (its last reader, the /houses date pre-filter, went in #73).
+			'availability_calendar',
 		),
 		'patterns' => array(
 			// Group A: Widget Factory flexible-content repeaters.
@@ -45,8 +47,9 @@ return array(
 			'/^top_widgets(_.*)?$/',
 			'/^bottom_widgets(_.*)?$/',
 			'/^kf_widgets(_.*)?$/',
-			// Group B: legacy availability rates (month / availability-days are retained).
-			'/^availability_calendar_\d+_(rates|rate_types)(_.*)?$/',
+			// Group B: the whole legacy availability repeater. Live availability comes
+			// from the kt_house_calendar_* cache since #73.
+			'/^availability_calendar_\d+_.+$/',
 			// Group C: legacy price tables.
 			'/^price_details(_.*)?$/',
 		),

@@ -37,8 +37,6 @@ return array(
 		'rolling_upcoming_period',
 		'beginning',
 		'ending',
-		// Repeater count row for the date filter below.
-		'availability_calendar',
 		// VR tour retrofit backup (apply/remove_house_vr_tour).
 		'_kt_vr_tour_backup',
 		// Options.
@@ -48,8 +46,6 @@ return array(
 
 	// Dynamic keys. Anchored, delimiter `/`.
 	'patterns'                  => array(
-		// Houses filter date pre-filter: class-houses-filter-api.php get_matching_post_ids().
-		'/^availability_calendar_\d+_(month|availability-days)$/',
 		// Adverts repeater: admin/class-kate-toms-core-admin.php.
 		'/^options_adverts_\d+_(advert_image|location)$/',
 	),
