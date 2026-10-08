@@ -75,6 +75,7 @@ if ( defined( 'WP_CLI' ) && WP_CLI ) {
 	require_once plugin_dir_path( __FILE__ ) . 'includes/class-special-offers-cache-warmer.php';
 	require_once plugin_dir_path( __FILE__ ) . 'includes/cleanup/class-kt-cli-namespace.php';
 	require_once plugin_dir_path( __FILE__ ) . 'includes/cleanup/class-kt-cleanup-key-rules.php';
+	require_once plugin_dir_path( __FILE__ ) . 'includes/cleanup/class-kt-media-cleanup-rules.php';
 	require_once plugin_dir_path( __FILE__ ) . 'includes/cleanup/class-kt-cleanup-cli-command.php';
 }
 

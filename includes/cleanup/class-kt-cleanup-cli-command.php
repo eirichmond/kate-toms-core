@@ -10,9 +10,11 @@
  * Usage:
  *   wp kt cleanup legacy-meta --log=~/kt423/dry.log    # dry run (default)
  *   wp kt cleanup legacy-meta --yes --log=~/kt423/run.log --export=~/kt423/legacy-meta.sql
+ *   wp kt cleanup media --from=~/kt423/audit.csv --log=~/kt423/media.log     # dry run
+ *   wp kt cleanup media --from=~/kt423/audit.csv --log=~/kt423/media.log --yes --archive=~/kt423/media-archive
  *
- * Rollback: `wp db query < legacy-meta.sql` re-inserts every deleted row with
- * its original meta_id.
+ * Rollback: `wp db query < <export>.sql` re-inserts every deleted row with its
+ * original ID. For media, also copy <archive>/uploads/ back into wp-content/uploads/.
  *
  * @package Kate_Toms_Core
  */
@@ -194,6 +196,393 @@ class KT_Cleanup_CLI_Command extends WP_CLI_Command {
 		$this->log( 'Done.' );
 		$this->close();
 		WP_CLI::success( $apply ? 'Legacy meta cleanup finished.' : 'Dry run finished. Nothing was changed.' );
+	}
+
+	/**
+	 * Permanently delete unused media listed in a `wp media-audit scan` CSV.
+	 *
+	 * Only rows whose CSV status is `unused` are candidates. Each batch is
+	 * re-scanned live (Media_Audit_Scanner, scoped to the batch's IDs) right
+	 * before deletion; anything no longer unused, gone, changed, commented or
+	 * sharing a file with another attachment is skipped and reported. Before deleting, every file (original, scaled
+	 * original, generated sizes, edit backups) is copied into --archive with
+	 * its uploads path, and the attachment's posts / postmeta /
+	 * term_relationships rows are written there as re-insertable SQL.
+	 * Deletion uses wp_delete_attachment( $id, true ).
+	 *
+	 * ## OPTIONS
+	 *
+	 * --from=<csv>
+	 * : CSV from `wp media-audit scan --report`.
+	 *
+	 * --log=<file>
+	 * : Log file (required, appended to).
+	 *
+	 * [--dry-run]
+	 * : Report only. This is the default; deletion requires --yes.
+	 *
+	 * [--yes]
+	 * : Actually delete. Requires --archive.
+	 *
+	 * [--archive=<dir>]
+	 * : Archive directory outside the web root. Files go to <dir>/uploads/<path>, rows to <dir>/kt-media-cleanup-<time>.sql.
+	 *
+	 * [--batch=<n>]
+	 * : Attachments per batch (one live re-scan per batch).
+	 * ---
+	 * default: 200
+	 * ---
+	 *
+	 * [--sleep=<ms>]
+	 * : Pause between batches and between re-scan queries, in milliseconds.
+	 * ---
+	 * default: 200
+	 * ---
+	 *
+	 * [--from-id=<id>]
+	 * : Skip candidates below this attachment ID (resume).
+	 * ---
+	 * default: 1
+	 * ---
+	 *
+	 * [--limit=<n>]
+	 * : Process at most this many candidates (0 = all). Useful for a small first run.
+	 * ---
+	 * default: 0
+	 * ---
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp kt cleanup media --from=~/kt423/audit.csv --log=~/kt423/media-dry.log
+	 *     wp kt cleanup media --from=~/kt423/audit.csv --log=~/kt423/media.log --yes --archive=~/kt423/media-archive --limit=50
+	 *
+	 * @subcommand media
+	 *
+	 * @param array $args       Positional args.
+	 * @param array $assoc_args Associative args.
+	 * @return void
+	 */
+	public function media( $args, $assoc_args ) {
+		if ( ! class_exists( 'Media_Audit_Scanner' ) ) {
+			WP_CLI::error( 'The media-audit mu-plugin (v0.2.0+, Media_Audit_Scanner) is required for the live re-check.' );
+		}
+		if ( is_multisite() && ! is_main_site() ) {
+			WP_CLI::error( 'Single-site only: run it on the main site.' );
+		}
+
+		$apply = (bool) \WP_CLI\Utils\get_flag_value( $assoc_args, 'yes', false );
+		if ( $apply && \WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false ) ) {
+			WP_CLI::error( '--dry-run and --yes are mutually exclusive.' );
+		}
+		if ( $apply && empty( $assoc_args['archive'] ) ) {
+			WP_CLI::error( '--yes requires --archive=<dir>. No archive, no delete.' );
+		}
+		$opts = array(
+			'apply'   => $apply,
+			'batch'   => max( 1, (int) $assoc_args['batch'] ),
+			'sleep'   => max( 0, (int) $assoc_args['sleep'] ),
+			'from_id' => max( 1, (int) $assoc_args['from-id'] ),
+			'limit'   => max( 0, (int) $assoc_args['limit'] ),
+		);
+
+		$csv  = (string) preg_replace( '#^~(?=/)#', (string) getenv( 'HOME' ), $assoc_args['from'] );
+		$file = new SplFileObject( $csv, 'r' );
+		$file->setFlags( SplFileObject::READ_CSV | SplFileObject::SKIP_EMPTY | SplFileObject::READ_AHEAD );
+		try {
+			$parsed = KT_Media_Cleanup_Rules::parse_csv( $file );
+		} catch ( InvalidArgumentException $e ) {
+			WP_CLI::error( $e->getMessage() );
+		}
+
+		$candidates = array_filter(
+			$parsed['candidates'],
+			static function ( $row ) use ( $opts ) {
+				return $row['id'] >= $opts['from_id'];
+			}
+		);
+		if ( $opts['limit'] ) {
+			$candidates = array_slice( $candidates, 0, $opts['limit'], true );
+		}
+
+		$this->acquire_lock( 'media' );
+		$this->open_log( $assoc_args['log'] );
+
+		$base    = untrailingslashit( wp_get_upload_dir()['basedir'] );
+		$archive = null;
+		if ( $apply ) {
+			$archive = $this->prepare_archive( $assoc_args['archive'], $base );
+			$this->open_export( $archive . '/kt-media-cleanup-' . gmdate( 'Ymd-His' ) . '.sql', 'media' );
+		}
+
+		$intro = sprintf(
+			'Start media: mode=%s csv=%s unused-in-csv=%d other-status=%d duplicates=%d selected=%d %s',
+			$apply ? 'DELETE' : 'dry-run',
+			$csv,
+			count( $parsed['candidates'] ),
+			$parsed['ignored'],
+			$parsed['duplicates'],
+			count( $candidates ),
+			wp_json_encode( $opts )
+		);
+		WP_CLI::log( $intro );
+		$this->log( $intro );
+
+		$totals  = array(
+			'deleted' => 0,
+			'files'   => 0,
+			'bytes'   => 0,
+		);
+		$skipped = array();
+		$items   = array();
+		$scanner = null;
+		$batches = array_chunk( $candidates, $opts['batch'], true );
+
+		if ( ! $apply && $candidates ) {
+			// A dry run re-checks everything with one scan.
+			$scanner = $this->live_scan( array_keys( $candidates ), $opts['sleep'] );
+		}
+
+		foreach ( $batches as $n => $batch ) {
+			$ids = array_keys( $batch );
+			if ( $apply ) {
+				$scanner = $this->live_scan( $ids, $opts['sleep'] );
+			}
+			$live = $this->live_state( $ids, $scanner );
+
+			$doomed = array();
+			foreach ( $batch as $id => $row ) {
+				$decision = KT_Media_Cleanup_Rules::recheck( $row, $live[ $id ] ?? null );
+				if ( KT_Media_Cleanup_Rules::DELETE !== $decision ) {
+					$skipped[ $decision ] = ( $skipped[ $decision ] ?? 0 ) + 1;
+					$this->log( "skip {$id}: {$decision}" );
+					continue;
+				}
+				$files = $scanner->files( $id );
+				$bytes = 0;
+				foreach ( $files as $rel ) {
+					if ( ! KT_Media_Cleanup_Rules::is_safe_relative_path( $rel ) ) {
+						$this->close();
+						WP_CLI::error( "Unsafe file path for attachment {$id}: {$rel}" );
+					}
+					if ( is_file( "{$base}/{$rel}" ) ) {
+						$bytes += (int) filesize( "{$base}/{$rel}" );
+					}
+				}
+				$doomed[ $id ] = array(
+					'files' => $files,
+					'bytes' => $bytes,
+				);
+				$items[]       = array(
+					'id'    => $id,
+					'file'  => $row['file'],
+					'files' => count( $files ),
+					'bytes' => $bytes,
+				);
+			}
+
+			if ( $apply && $doomed ) {
+				foreach ( $doomed as $id => $d ) {
+					$copied = $this->archive_files( $id, $d['files'], $base, $archive );
+					$this->log( sprintf( 'archived %d: %d of %d files', $id, $copied, count( $d['files'] ) ) );
+				}
+				$this->export_attachment_rows( array_keys( $doomed ) );
+
+				foreach ( $doomed as $id => $d ) {
+					$result = wp_delete_attachment( $id, true );
+					if ( ! $result || get_post( $id ) ) {
+						$this->log( "ERROR delete {$id} failed" );
+						$this->close();
+						WP_CLI::error( "wp_delete_attachment( {$id} ) failed. Resume with --from-id={$id}." );
+					}
+					++$totals['deleted'];
+					$totals['files'] += count( $d['files'] );
+					$totals['bytes'] += $d['bytes'];
+					$this->log( sprintf( 'deleted %d (%d files, %d bytes)', $id, count( $d['files'] ), $d['bytes'] ) );
+				}
+			} else {
+				foreach ( $doomed as $d ) {
+					$totals['files'] += count( $d['files'] );
+					$totals['bytes'] += $d['bytes'];
+				}
+			}
+
+			$last = max( $ids );
+			$this->log( sprintf( 'batch %d/%d done, last id %d (resume with --from-id=%d)', $n + 1, count( $batches ), $last, $last + 1 ) );
+			if ( $apply ) {
+				WP_CLI::log( sprintf( '  batch %d/%d: %d deleted so far', $n + 1, count( $batches ), $totals['deleted'] ) );
+			}
+			if ( $n + 1 < count( $batches ) ) {
+				$this->pause( $opts['sleep'] );
+			}
+		}
+
+		if ( $items ) {
+			\WP_CLI\Utils\format_items( 'table', $items, array( 'id', 'file', 'files', 'bytes' ) );
+		}
+		foreach ( $skipped as $reason => $count ) {
+			WP_CLI::log( sprintf( 'Skipped %d: %s', $count, $reason ) );
+		}
+		$summary = sprintf(
+			'%s %d attachments, %d files, %d bytes (%s). Skipped %d.',
+			$apply ? 'Deleted' : 'Would delete',
+			$apply ? $totals['deleted'] : count( $items ),
+			$totals['files'],
+			$totals['bytes'],
+			size_format( $totals['bytes'], 1 ),
+			array_sum( $skipped )
+		);
+		WP_CLI::log( $summary );
+		$this->log( $summary );
+		$this->log( 'Done.' );
+		$this->close();
+		WP_CLI::success( $apply ? 'Media cleanup finished.' : 'Dry run finished. Nothing was changed.' );
+	}
+
+	/**
+	 * Fresh reference scan scoped to some attachment IDs.
+	 *
+	 * @param int[] $ids   Attachment IDs.
+	 * @param int   $sleep Pause between scan queries, ms.
+	 * @return Media_Audit_Scanner
+	 */
+	private function live_scan( array $ids, $sleep ) {
+		$scanner = new Media_Audit_Scanner(
+			array(
+				'only_ids' => $ids,
+				'sleep'    => $sleep,
+				'logger'   => function ( $message ) {
+					$this->log( 'scan: ' . $message );
+				},
+			)
+		);
+		if ( ! $scanner->has_retained() ) {
+			$this->close();
+			WP_CLI::error( 'retained-keys.php could not be loaded by the scanner.' );
+		}
+		$scanner->run();
+		return $scanner;
+	}
+
+	/**
+	 * Current state of some attachments, for KT_Media_Cleanup_Rules::recheck().
+	 *
+	 * @param int[]               $ids     Attachment IDs.
+	 * @param Media_Audit_Scanner $scanner Scan covering these IDs.
+	 * @return array<int, array>
+	 */
+	private function live_state( array $ids, Media_Audit_Scanner $scanner ) {
+		global $wpdb;
+
+		$in    = implode( ',', array_map( 'intval', $ids ) );
+		$state = array();
+		$rows  = $wpdb->get_results( "SELECT p.ID, p.post_type, p.comment_count, f.meta_value AS file FROM {$wpdb->posts} p LEFT JOIN {$wpdb->postmeta} f ON f.post_id = p.ID AND f.meta_key = '_wp_attached_file' WHERE p.ID IN ({$in})" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
+		foreach ( $rows as $row ) {
+			$id           = (int) $row->ID;
+			$state[ $id ] = array(
+				'post_type'     => $row->post_type,
+				'comment_count' => (int) $row->comment_count,
+				'file'          => (string) $row->file,
+				'status'        => $scanner->status( $id ),
+				'reasons'       => $scanner->reasons( $id ),
+				'shared_with'   => $scanner->shared_with( $id ),
+			);
+		}
+		return $state;
+	}
+
+	/**
+	 * Create / validate the archive directory: outside the web root and uploads.
+	 *
+	 * @param string $path Requested directory.
+	 * @param string $base Uploads base directory.
+	 * @return string Real path.
+	 */
+	private function prepare_archive( $path, $base ) {
+		$path = (string) preg_replace( '#^~(?=/)#', (string) getenv( 'HOME' ), $path );
+		if ( ! is_dir( $path ) && ! wp_mkdir_p( $path ) ) {
+			WP_CLI::error( "Cannot create archive directory {$path}." );
+		}
+		$real = realpath( $path );
+		foreach ( array( realpath( ABSPATH ), realpath( $base ) ) as $root ) {
+			if ( $root && KT_Media_Cleanup_Rules::is_inside( $real, $root ) ) {
+				WP_CLI::error( "The archive must be outside {$root}." );
+			}
+		}
+		if ( ! wp_is_writable( $real ) ) {
+			WP_CLI::error( "Archive directory {$real} is not writable." );
+		}
+		WP_CLI::log( "Archiving to {$real}" );
+		return $real;
+	}
+
+	/**
+	 * Copy an attachment's files into the archive, verified by checksum.
+	 *
+	 * @param int      $id      Attachment ID.
+	 * @param string[] $files   Paths relative to uploads.
+	 * @param string   $base    Uploads base directory.
+	 * @param string   $archive Archive directory.
+	 * @return int Files copied (missing source files are logged, not fatal).
+	 */
+	private function archive_files( $id, array $files, $base, $archive ) {
+		$copied = 0;
+		foreach ( $files as $rel ) {
+			$src = "{$base}/{$rel}";
+			if ( ! is_file( $src ) ) {
+				$this->log( "archive {$id}: missing on disk, nothing to copy: {$rel}" );
+				continue;
+			}
+			$dest = "{$archive}/uploads/{$rel}";
+			if ( ! is_dir( dirname( $dest ) ) && ! wp_mkdir_p( dirname( $dest ) ) ) {
+				$this->close();
+				WP_CLI::error( 'Cannot create ' . dirname( $dest ) . '. Nothing in this batch was deleted.' );
+			}
+			if ( ! ( is_file( $dest ) && sha1_file( $dest ) === sha1_file( $src ) ) ) {
+				if ( ! copy( $src, $dest ) || sha1_file( $dest ) !== sha1_file( $src ) ) {
+					$this->close();
+					WP_CLI::error( "Archive copy failed for {$rel}. Nothing in this batch was deleted." );
+				}
+			}
+			++$copied;
+		}
+		return $copied;
+	}
+
+	/**
+	 * Write the attachments' posts, postmeta and term_relationships rows to the export.
+	 *
+	 * @param int[] $ids Attachment IDs.
+	 * @return void
+	 */
+	private function export_attachment_rows( array $ids ) {
+		global $wpdb;
+
+		$in = implode( ',', array_map( 'intval', $ids ) );
+		// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.DirectDatabaseQuery
+		$sets = array(
+			$wpdb->posts              => $wpdb->get_results( "SELECT * FROM {$wpdb->posts} WHERE ID IN ({$in})", ARRAY_A ),
+			$wpdb->postmeta           => $wpdb->get_results( "SELECT * FROM {$wpdb->postmeta} WHERE post_id IN ({$in})", ARRAY_A ),
+			$wpdb->term_relationships => $wpdb->get_results( "SELECT * FROM {$wpdb->term_relationships} WHERE object_id IN ({$in})", ARRAY_A ),
+		);
+		// phpcs:enable
+
+		$sql = '';
+		foreach ( $sets as $table => $rows ) {
+			if ( ! $rows ) {
+				continue;
+			}
+			$columns = '`' . implode( '`, `', array_keys( $rows[0] ) ) . '`';
+			$values  = array();
+			foreach ( $rows as $row ) {
+				$values[] = '(' . implode( ', ', array_map( fn( $v ) => null === $v ? 'NULL' : $this->quote( $v ), $row ) ) . ')';
+			}
+			$sql .= "INSERT INTO `{$table}` ({$columns}) VALUES\n" . implode( ",\n", $values ) . ";\n";
+		}
+
+		if ( false === fwrite( $this->export, $sql ) || ! fflush( $this->export ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
+			$this->close();
+			WP_CLI::error( 'Could not write to the export file. Nothing in this batch was deleted.' );
+		}
 	}
 
 	/**
@@ -577,10 +966,11 @@ GROUP BY m.meta_key, scope";
 	/**
 	 * Open the export file: must be new and outside the web root.
 	 *
-	 * @param string $path Export path.
-	 * @return void
+	 * @param string $path  Export path.
+	 * @param string $label Command name for the file header.
+	 * @return string The export path.
 	 */
-	private function open_export( $path ) {
+	private function open_export( $path, $label = 'legacy-meta' ) {
 		global $wpdb;
 
 		$path = (string) preg_replace( '#^~(?=/)#', (string) getenv( 'HOME' ), $path );
@@ -596,8 +986,9 @@ GROUP BY m.meta_key, scope";
 		if ( ! $this->export ) {
 			WP_CLI::error( "Cannot create {$path}. It must not already exist; use a new file per run." );
 		}
-		fwrite( $this->export, '-- kt cleanup legacy-meta export ' . gmdate( 'c' ) . ' ' . home_url() . "\n-- Rollback: wp db query < this-file\nSET NAMES " . $wpdb->charset . ";\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
+		fwrite( $this->export, "-- kt cleanup {$label} export " . gmdate( 'c' ) . ' ' . home_url() . "\n-- Rollback: wp db query < this-file\nSET NAMES " . $wpdb->charset . ";\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fwrite
 		WP_CLI::log( "Exporting deleted rows to {$path}" );
+		return $path;
 	}
 
 	/**
