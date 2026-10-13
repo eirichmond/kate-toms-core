@@ -430,6 +430,45 @@ function kate_toms_register_image_sizes() {
 add_action( 'plugins_loaded', 'kate_toms_register_image_sizes' );
 
 /**
+ * Point the Jetpack carousel at an uncropped image instead of our cropped 'large' size.
+ *
+ * Jetpack shows data-large-file whenever it is at least as wide as the screen, which is
+ * every phone. Our 'large' size is a 1180x450 hard crop for banners, so on mobile the
+ * carousel showed a widescreen strip with the top and bottom of the photo cut off,
+ * while desktop got the full original (#487). 1536x1536 is core's uncropped size; when an
+ * old upload has no such file WordPress returns the original, which is also uncropped.
+ *
+ * @param string $image         Full img tag.
+ * @param string $context       Filter context.
+ * @param int    $attachment_id Attachment ID, 0 if unknown.
+ * @return string
+ */
+function kate_toms_carousel_uncropped_large_file( $image, $context, $attachment_id ) {
+	if ( ! str_contains( $image, 'data-large-file=' ) ) {
+		return $image;
+	}
+
+	$processor = new WP_HTML_Tag_Processor( $image );
+	if ( ! $processor->next_tag( 'img' ) ) {
+		return $image;
+	}
+
+	if ( ! $attachment_id ) {
+		$attachment_id = (int) $processor->get_attribute( 'data-attachment-id' );
+	}
+
+	$large_file = $attachment_id ? wp_get_attachment_image_url( $attachment_id, '1536x1536' ) : false;
+	if ( ! $large_file ) {
+		return $image;
+	}
+
+	$processor->set_attribute( 'data-large-file', $large_file );
+
+	return $processor->get_updated_html();
+}
+add_filter( 'wp_content_img_tag', 'kate_toms_carousel_uncropped_large_file', 20, 3 );
+
+/**
  * Make custom image sizes selectable in the block editor.
  *
  * @param array $sizes Array of image size labels.
