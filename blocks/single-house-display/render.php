@@ -8,12 +8,6 @@
  * @return string Rendered block HTML
  */
 
-// Debug: Always return something to test if render.php is being called
-// return '<div class="wp-block-kate-toms-core-single-house-display"><p>DEBUG: Render function called</p></div>';
-
-// Log to debug that render function is being called
-error_log('Single House Display render.php called with attributes: ' . print_r($attributes, true));
-
 // Early return if no house is selected
 if (empty($attributes['selectedHouse'])) {
 	return '<div class="wp-block-kate-toms-core-single-house-display"><p>' . __('No house selected.', 'kate-toms-core') . '</p></div>';
@@ -22,22 +16,16 @@ if (empty($attributes['selectedHouse'])) {
 $house_id = absint($attributes['selectedHouse']);
 $display_style = sanitize_text_field($attributes['displayStyle'] ?? 'coast');
 
-error_log('Processing house ID: ' . $house_id . ' with style: ' . $display_style);
-
 // Get the house post
 $house_post = get_post($house_id);
 if (!$house_post || $house_post->post_type !== 'houses') {
-	error_log('House not found or wrong post type. Post type: ' . ($house_post ? $house_post->post_type : 'null'));
 	return '<div class="wp-block-kate-toms-core-single-house-display"><p>' . __('House not found.', 'kate-toms-core') . '</p></div>';
 }
 
 // Check if it's a parent house (not a child page)
 if ($house_post->post_parent != 0) {
-	error_log('House is not a parent house. Parent ID: ' . $house_post->post_parent);
 	return '<div class="wp-block-kate-toms-core-single-house-display"><p>' . __('Please select a parent house.', 'kate-toms-core') . '</p></div>';
 }
-
-error_log('House validation passed. Title: ' . $house_post->post_title);
 
 // Get house meta data
 $brief_description = get_post_meta($house_id, 'brief_description', true);
@@ -45,26 +33,16 @@ $sleeps_min = get_post_meta($house_id, 'sleeps_min', true);
 $sleeps_max = get_post_meta($house_id, 'sleeps_max', true);
 $location_text = get_post_meta($house_id, 'location_text', true);
 
-error_log('Meta data - Brief: ' . $brief_description . ', Sleeps: ' . $sleeps_min . '-' . $sleeps_max . ', Location: ' . $location_text);
-
 // Get featured image
 $featured_image = get_the_post_thumbnail($house_id, 'full');
 $house_url = get_permalink($house_id);
 
-error_log('Featured image length: ' . strlen($featured_image) . ', URL: ' . $house_url);
-
-// Set background color based on display style
-$background_colors = [
-	'coast' => 'coloreight',
-	'cotswolds' => 'colorfive',
-	'country' => 'titlecolorthree',
-	'town' => 'coloreight',
-];
-
-$background_color = $background_colors[$display_style] ?? 'coloreight';
+// Title colour for the display style, from includes/region-sections.php.
+$region_section   = kate_toms_core_get_region_section_by_key( $display_style );
+$background_color = $region_section['card_title'] ?? 'coloreight';
 
 // Build the HTML using the pattern structure
-$html = '<div class="wp-block-kate-toms-core-single-house-display" style="border: 5px solid red; padding: 20px; background: yellow; min-height: 400px;">';
+$html = '<div class="wp-block-kate-toms-core-single-house-display">';
 $html .= '<div class="wp-block-group has-white-background-color has-background" style="min-height:365px">';
 
 // Featured image with link

@@ -8,8 +8,8 @@
  * The region term IDs were previously hard-coded and duplicated across the
  * theme templates (archive-houses.html / taxonomy.html), the
  * houses-filtered-results block render, and the Houses Filter REST API. This
- * helper centralises the parts the taxonomy term-sections block needs: the
- * region location term ID, its heading, and its section background colour.
+ * helper centralises the region location term ID, its heading, its section
+ * background colour and the title bar colour of its house cards.
  *
  * @package Kate_Toms_Core
  */
@@ -28,6 +28,7 @@ if ( ! function_exists( 'kate_toms_core_get_region_sections' ) ) {
 	 *     @type string $key        Internal key (cotswolds|coast|country|town).
 	 *     @type string $heading    Section heading text.
 	 *     @type string $background  Group background colour slug (theme palette).
+	 *     @type string $card_title Card title bar colour slug (theme palette).
 	 * }
 	 */
 	function kate_toms_core_get_region_sections() {
@@ -37,18 +38,21 @@ if ( ! function_exists( 'kate_toms_core_get_region_sections' ) ) {
 				'key'        => 'cotswolds',
 				'heading'    => "kate & tom's in the Cotswolds",
 				'background' => 'sectioncotswolds',
+				'card_title' => 'colorfive', // Yellow.
 			),
 			array(
 				'term_id'    => 810,
 				'key'        => 'coast',
 				'heading'    => "kate & tom's by the Coast",
 				'background' => 'sectioncoast',
+				'card_title' => 'coloreight', // Blue.
 			),
 			array(
 				'term_id'    => 790,
 				'key'        => 'country',
 				'heading'    => "kate & tom's in the Country",
 				'background' => 'sectioncountry',
+				'card_title' => 'titlecolorthree', // Green.
 			),
 			array(
 				'term_id'    => 603,
@@ -57,6 +61,7 @@ if ( ! function_exists( 'kate_toms_core_get_region_sections' ) ) {
 				// Town deliberately reuses the coast section colour, matching the
 				// existing archive-houses.html / taxonomy.html markup.
 				'background' => 'sectioncoast',
+				'card_title' => 'coloreight', // Blue.
 			),
 		);
 
@@ -83,5 +88,57 @@ if ( ! function_exists( 'kate_toms_core_get_region_term_ids' ) ) {
 			'intval',
 			wp_list_pluck( kate_toms_core_get_region_sections(), 'term_id' )
 		);
+	}
+}
+
+if ( ! function_exists( 'kate_toms_core_get_region_section_for_terms' ) ) {
+	/**
+	 * Find the region section for a list of `location` term IDs.
+	 *
+	 * Sections often pair a region with a granular location (e.g. Lancashire +
+	 * By the Coast), in either order, so every ID is checked rather than only the
+	 * first. A child of a region term counts as that region. The first ID that
+	 * resolves to a region wins.
+	 *
+	 * @param int[] $term_ids Location term IDs, in the order they were selected.
+	 * @return array|null The matching region section, or null when none matches.
+	 */
+	function kate_toms_core_get_region_section_for_terms( $term_ids ) {
+		$sections = array();
+		foreach ( kate_toms_core_get_region_sections() as $section ) {
+			$sections[ (int) $section['term_id'] ] = $section;
+		}
+
+		foreach ( array_map( 'intval', (array) $term_ids ) as $term_id ) {
+			if ( isset( $sections[ $term_id ] ) ) {
+				return $sections[ $term_id ];
+			}
+
+			foreach ( get_ancestors( $term_id, 'location', 'taxonomy' ) as $ancestor_id ) {
+				if ( isset( $sections[ $ancestor_id ] ) ) {
+					return $sections[ $ancestor_id ];
+				}
+			}
+		}
+
+		return null;
+	}
+}
+
+if ( ! function_exists( 'kate_toms_core_get_region_section_by_key' ) ) {
+	/**
+	 * Find a region section by its key (cotswolds|coast|country|town).
+	 *
+	 * @param string $key Region key.
+	 * @return array|null The matching region section, or null when none matches.
+	 */
+	function kate_toms_core_get_region_section_by_key( $key ) {
+		foreach ( kate_toms_core_get_region_sections() as $section ) {
+			if ( $section['key'] === $key ) {
+				return $section;
+			}
+		}
+
+		return null;
 	}
 }
