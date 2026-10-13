@@ -597,26 +597,12 @@ class Houses_Filter_API {
 		$type_term_ids     = $parse_ids( $types_param );
 		$occasion_term_ids = $parse_ids( $occasions_param );
 
-		// Map location term IDs to title background colors.
-		$location_color_map = array(
-			604 => 'colorfive',       // Cotswolds.
-			810 => 'coloreight',      // Coast.
-			790 => 'titlecolorthree', // Country.
-			603 => 'coloreight',      // Town.
-		);
-
-		// Map location term IDs to advert location keys.
-		$location_key_map = array(
-			604 => 'cotswolds',
-			810 => 'coast',
-			790 => 'country',
-			603 => 'town',
-		);
-
-		// Determine title color and location key from first selected location, or use defaults.
-		$first_location_id = ! empty( $location_term_ids ) ? $location_term_ids[0] : 0;
-		$title_bg_color    = isset( $location_color_map[ $first_location_id ] ) ? $location_color_map[ $first_location_id ] : 'colorfive';
-		$location_key      = isset( $location_key_map[ $first_location_id ] ) ? $location_key_map[ $first_location_id ] : 'cotswolds';
+		// Card title colour and advert key come from the section's region (see
+		// includes/region-sections.php). Any selected ID can be the region, not just
+		// the first. With no region, titles fall back to blue and adverts to Cotswolds.
+		$region_section = kate_toms_core_get_region_section_for_terms( $location_term_ids );
+		$title_bg_color = $region_section['card_title'] ?? 'coloreight';
+		$location_key   = $region_section['key'] ?? 'cotswolds';
 
 		// Build query arguments.
 		$args = array(

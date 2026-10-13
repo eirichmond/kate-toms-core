@@ -229,15 +229,9 @@ class Kate_Toms_Core_Admin {
 							$featured_image = get_the_post_thumbnail($house_id, 'full');
 							$house_url = get_permalink($house_id);
 
-							// Set background color based on display style
-							$background_colors = [
-								'coast' => 'coloreight',
-								'cotswolds' => 'colorfive',
-								'country' => 'titlecolorthree',
-								'town' => 'coloreight',
-							];
-
-							$background_color = $background_colors[$display_style] ?? 'coloreight';
+							// Title colour for the display style, from includes/region-sections.php.
+							$region_section   = kate_toms_core_get_region_section_by_key( $display_style );
+							$background_color = $region_section['card_title'] ?? 'coloreight';
 
 							// Build the HTML using the pattern structure
 							$html = '<div class="wp-block-kate-toms-core-single-house-display">';
