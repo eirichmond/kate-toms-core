@@ -469,6 +469,28 @@ function kate_toms_carousel_uncropped_large_file( $image, $context, $attachment_
 add_filter( 'wp_content_img_tag', 'kate_toms_carousel_uncropped_large_file', 20, 3 );
 
 /**
+ * Stop the Jetpack carousel holding every image it has shown in memory.
+ *
+ * Jetpack keeps each visited slide's full-size image decoded until the carousel closes.
+ * With the uncropped files above, swiping through a long gallery crashed iOS Safari (#487).
+ * Jetpack only enqueues its carousel on pages with a gallery, so check at footer time.
+ */
+function kate_toms_enqueue_carousel_release_images() {
+	if ( ! wp_script_is( 'jetpack-carousel', 'enqueued' ) ) {
+		return;
+	}
+
+	wp_enqueue_script(
+		'kate-toms-carousel-release-images',
+		plugins_url( 'public/js/carousel-release-images.js', __FILE__ ),
+		array( 'jetpack-carousel' ),
+		KATE_TOMS_CORE_VERSION,
+		true
+	);
+}
+add_action( 'wp_footer', 'kate_toms_enqueue_carousel_release_images', 5 );
+
+/**
  * Make custom image sizes selectable in the block editor.
  *
  * @param array $sizes Array of image size labels.
