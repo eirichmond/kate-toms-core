@@ -141,6 +141,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-organization-logo.php';
 
 		/**
+		 * Address, alternate names and contact details on the Organization node.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/yoast-organization-details.php';
+
+		/**
 		 * Product / LodgingBusiness / VideoObject structured data for the
 		 * top-level house pages.
 		 */
