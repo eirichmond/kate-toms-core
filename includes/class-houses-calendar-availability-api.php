@@ -272,6 +272,20 @@ class House_Calendar_Manager {
 	}
 
 	/**
+	 * Check the booking API is answering authenticated requests.
+	 *
+	 * Cache warmers call this before they start, so an outage doesn't
+	 * overwrite good cached results with empty ones.
+	 *
+	 * @return true|WP_Error True if the API responded, WP_Error otherwise.
+	 */
+	public function check_api_available() {
+		$result = $this->api_get( 'https://booking.kateandtoms.com/apis/properties/reflookup' );
+
+		return is_wp_error( $result ) ? $result : true;
+	}
+
+	/**
 	 * Kate & Tom's stay duration definitions.
 	 *
 	 * @var array
@@ -2426,8 +2440,12 @@ function kate_toms_check_house_seasonal_availability( $property_id, $beginning_d
 		$calendar_data = $calendar_manager->get_calendar_data( $property_id, $access_token, false );
 	}
 
-	if ( ! $calendar_data || ! isset( $calendar_data['availability'] ) ) {
-		set_transient( $cache_key, 0, KATE_TOMS_SEASONAL_VERDICT_TTL );
+	/*
+	 * No calendar means the fetch failed (API down, timeout, auth error), not
+	 * that the house is booked. Don't cache that: a cached "no" would hide the
+	 * house from every seasonal and late-availability page for the whole TTL.
+	 */
+	if ( ! is_array( $calendar_data ) || isset( $calendar_data['error'] ) || ! isset( $calendar_data['availability'] ) ) {
 		return false;
 	}
 

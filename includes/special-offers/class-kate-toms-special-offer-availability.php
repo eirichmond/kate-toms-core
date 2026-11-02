@@ -128,6 +128,20 @@ if ( ! class_exists( 'Kate_Toms_Special_Offer_Availability' ) ) {
 				return null;
 			}
 
+			// get_booking_periods_for_date() returns no periods both when the date
+			// is booked and when the calendar could not be fetched. Make sure the
+			// calendar is there first, so an API failure reads as "undecidable"
+			// rather than "booked" (which would hide the offer).
+			$calendar = get_transient( "kt_house_calendar_{$property_id}" );
+
+			if ( ! is_array( $calendar ) || ! isset( $calendar['availability'] ) ) {
+				$calendar = $manager->get_calendar_data( $property_id, '' );
+			}
+
+			if ( ! is_array( $calendar ) || isset( $calendar['error'] ) || ! isset( $calendar['availability'] ) ) {
+				return null;
+			}
+
 			// Strict, exact-date check: pass false so a booked date is not masked
 			// by the calendar UI's "nearest available date" forward search, which
 			// would otherwise report a nearby free date and hide the booking.
