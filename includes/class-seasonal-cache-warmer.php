@@ -65,6 +65,14 @@ class Seasonal_Cache_CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( 'Kate_Toms_Seasonal_Results_Cache class not found.' );
 		}
 
+		// Don't recompute while the booking API is down: every house would read as
+		// unavailable and good cached lists would be replaced with empty ones.
+		$api = ( new House_Calendar_Manager() )->check_api_available();
+
+		if ( is_wp_error( $api ) ) {
+			WP_CLI::error( 'Booking API unavailable, existing seasonal cache left in place: ' . $api->get_error_message() );
+		}
+
 		$single = isset( $assoc_args['post_id'] ) ? (int) $assoc_args['post_id'] : 0;
 
 		$posts = get_posts(

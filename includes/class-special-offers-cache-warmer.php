@@ -54,6 +54,13 @@ class Special_Offers_Cache_CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( 'Kate_Toms_Special_Offer_Availability class not found.' );
 		}
 
+		// Don't rebuild the map while the booking API is down: keep yesterday's.
+		$api = ( new House_Calendar_Manager() )->check_api_available();
+
+		if ( is_wp_error( $api ) ) {
+			WP_CLI::error( 'Booking API unavailable, existing offers cache left in place: ' . $api->get_error_message() );
+		}
+
 		$offers = Kate_Toms_Special_Offer_Availability::collect_offers();
 
 		if ( empty( $offers ) ) {
