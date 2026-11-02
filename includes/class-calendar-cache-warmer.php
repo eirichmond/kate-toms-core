@@ -170,7 +170,7 @@ class Calendar_Cache_CLI_Command extends WP_CLI_Command {
 		}
 
 		// Fetch properties updated in the last N minutes.
-		$updated_properties = $this->fetch_last_updated( $access_token, $minutes );
+		$updated_properties = $this->fetch_last_updated( $calendar_manager, $minutes );
 
 		if ( false === $updated_properties ) {
 			WP_CLI::error( 'Failed to fetch last updated properties from iPro API.' );
@@ -222,48 +222,24 @@ class Calendar_Cache_CLI_Command extends WP_CLI_Command {
 	/**
 	 * Fetch properties that have been updated in the last N minutes.
 	 *
-	 * @param string $access_token API access token.
-	 * @param int    $minutes      Number of minutes to look back.
+	 * Goes through House_Calendar_Manager::api_get() so an expired token is
+	 * replaced and the request retried once.
+	 *
+	 * @param House_Calendar_Manager $calendar_manager Calendar manager instance.
+	 * @param int                    $minutes          Number of minutes to look back.
 	 * @return array|false Array of updated properties or false on failure.
 	 */
-	private function fetch_last_updated( $access_token, $minutes ) {
-		$url = sprintf(
-			'%s/lastupdated?lastUpdated=%d&access_token=%s',
-			$this->properties_api_url,
-			$minutes,
-			urlencode( $access_token )
-		);
+	private function fetch_last_updated( $calendar_manager, $minutes ) {
+		$url = sprintf( '%s/lastupdated?lastUpdated=%d', $this->properties_api_url, $minutes );
 
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout' => 30,
-				'headers' => array(
-					'User-Agent' => 'Kate-Toms-Calendar/1.0',
-				),
-			)
-		);
+		$data = $calendar_manager->api_get( $url );
 
-		if ( is_wp_error( $response ) ) {
-			WP_CLI::warning( 'lastupdated request failed: ' . $response->get_error_message() );
+		if ( is_wp_error( $data ) ) {
+			WP_CLI::warning( 'lastupdated request failed: ' . $data->get_error_message() );
 			return false;
 		}
 
-		$code = wp_remote_retrieve_response_code( $response );
-		if ( 200 !== $code ) {
-			WP_CLI::warning( "lastupdated returned HTTP {$code}." );
-			return false;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
-			WP_CLI::warning( 'Failed to decode lastupdated response.' );
-			return false;
-		}
-
-		return is_array( $data ) ? $data : array();
+		return $data;
 	}
 
 	/**
