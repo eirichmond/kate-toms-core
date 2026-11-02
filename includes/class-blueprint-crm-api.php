@@ -88,8 +88,8 @@ class Kate_Toms_Blueprint_CRM_API {
 	/**
 	 * Makes an authenticated GET request to a CRM API endpoint.
 	 *
-	 * Passes the access token as an `access_token` query parameter, matching
-	 * the convention used by the Kate & Tom's booking API.
+	 * Sends the access token as a Bearer header and retries once on 401,
+	 * as required by the iPro API security update (Nov 2026).
 	 *
 	 * @param string $endpoint Relative endpoint path, e.g. '/properties'.
 	 * @param array  $args     Optional additional query parameters.
@@ -107,20 +107,48 @@ class Kate_Toms_Blueprint_CRM_API {
 			);
 		}
 
-		$url = add_query_arg(
-			array_merge( array( 'access_token' => $token ), $args ),
-			$this->api_base_url . $endpoint
-		);
+		$url = add_query_arg( $args, $this->api_base_url . $endpoint );
 
-		$response = wp_remote_get(
+		$response = $this->authorised_get( $url, $token, $timeout );
+
+		// Token rejected (expired, or invalidated by iPro): get a new one and retry once.
+		if ( ! is_wp_error( $response ) && 401 === (int) wp_remote_retrieve_response_code( $response ) ) {
+			delete_transient( $this->token_transient_key );
+			$token = $this->refresh_access_token();
+
+			if ( false === $token ) {
+				return new WP_Error(
+					'kt_crm_auth_failed',
+					__( 'Failed to obtain CRM API access token.', 'kate-toms-core' )
+				);
+			}
+
+			$response = $this->authorised_get( $url, $token, $timeout );
+		}
+
+		return $this->handle_response( $response, $endpoint );
+	}
+
+	/**
+	 * Sends a GET request with the access token as a Bearer header.
+	 *
+	 * @param string $url     Full request URL.
+	 * @param string $token   Access token.
+	 * @param int    $timeout Request timeout in seconds.
+	 *
+	 * @return array|WP_Error Raw wp_remote_get() response.
+	 */
+	private function authorised_get( string $url, string $token, int $timeout ): array|WP_Error {
+		return wp_remote_get(
 			$url,
 			array(
-				'headers' => array( 'Accept' => 'application/json' ),
+				'headers' => array(
+					'Accept'        => 'application/json',
+					'Authorization' => 'Bearer ' . $token,
+				),
 				'timeout' => $timeout,
 			)
 		);
-
-		return $this->handle_response( $response, $endpoint );
 	}
 
 	/**

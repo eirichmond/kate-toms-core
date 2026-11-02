@@ -207,6 +207,71 @@ class House_Calendar_Manager {
 	}
 
 	/**
+	 * Make an authenticated GET request to the booking API.
+	 *
+	 * Sends the access token as a Bearer header. If the API answers 401 (the
+	 * cached token has expired or been invalidated, e.g. after iPro rotates its
+	 * keys), the cached token is discarded, a new one is requested and the call
+	 * is retried once. Any non-200 response is returned as a WP_Error so that
+	 * callers never treat an error body as data, or cache it.
+	 *
+	 * @param string $url     Full API URL, without an access_token parameter.
+	 * @param int    $timeout Request timeout in seconds.
+	 * @return array|WP_Error Decoded JSON on success, WP_Error on failure.
+	 */
+	public function api_get( $url, $timeout = 30 ) {
+		$token = $this->api_access_token ? $this->api_access_token : $this->get_access_token();
+
+		for ( $attempt = 1; $attempt <= 2; $attempt++ ) {
+			if ( empty( $token ) ) {
+				return new WP_Error( 'kt_booking_api_no_token', 'Could not obtain a booking API access token.' );
+			}
+
+			$response = wp_remote_get(
+				$url,
+				array(
+					'timeout' => $timeout,
+					'headers' => array(
+						'Authorization' => 'Bearer ' . $token,
+						'User-Agent'    => 'Kate-Toms-Calendar/1.0',
+					),
+				)
+			);
+
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$code = (int) wp_remote_retrieve_response_code( $response );
+
+			if ( 401 === $code && 1 === $attempt ) {
+				// Token rejected: drop it, fetch a new one and retry once.
+				delete_transient( $this->token_transient_key );
+				$this->api_access_token = '';
+				$token                  = $this->refresh_access_token();
+				continue;
+			}
+
+			break;
+		}
+
+		$body = wp_remote_retrieve_body( $response );
+
+		if ( 200 !== $code ) {
+			error_log( sprintf( 'Booking API HTTP %d for %s: %s', $code, strtok( $url, '?' ), substr( $body, 0, 300 ) ) );
+			return new WP_Error( 'kt_booking_api_http_' . $code, sprintf( 'Booking API returned HTTP %d', $code ) );
+		}
+
+		$data = json_decode( $body, true );
+
+		if ( JSON_ERROR_NONE !== json_last_error() || ! is_array( $data ) ) {
+			return new WP_Error( 'json_decode_error', 'Failed to decode JSON response' );
+		}
+
+		return $data;
+	}
+
+	/**
 	 * Kate & Tom's stay duration definitions.
 	 *
 	 * @var array
@@ -1091,29 +1156,8 @@ class House_Calendar_Manager {
 	 * @return array|WP_Error Availability data or error.
 	 */
 	private function fetch_availability_data( $house_id, $access_token ) {
-		$url      = $this->api_base_url . "/{$house_id}/dayavailability?access_token={$access_token}";
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout' => 30,
-				'headers' => array(
-					'User-Agent' => 'Kate-Toms-Calendar/1.0',
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
-			return new WP_Error( 'json_decode_error', 'Failed to decode JSON response' );
-		}
-
-		return $data;
+		// $access_token is unused: api_get() manages the token and retries on 401.
+		return $this->api_get( $this->api_base_url . "/{$house_id}/dayavailability" );
 	}
 
 	/**
@@ -1124,29 +1168,8 @@ class House_Calendar_Manager {
 	 * @return array|WP_Error Rates data or error.
 	 */
 	private function fetch_rates_data( $house_id, $access_token ) {
-		$url      = $this->api_base_url . "/{$house_id}/customrates?access_token={$access_token}&version=2";
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout' => 30,
-				'headers' => array(
-					'User-Agent' => 'Kate-Toms-Calendar/1.0',
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			return $response;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( JSON_ERROR_NONE !== json_last_error() ) {
-			return new WP_Error( 'json_decode_error', 'Failed to decode JSON response' );
-		}
-
-		return $data;
+		// $access_token is unused: api_get() manages the token and retries on 401.
+		return $this->api_get( $this->api_base_url . "/{$house_id}/customrates?version=2" );
 	}
 
 	/**
@@ -1318,34 +1341,10 @@ class House_Calendar_Manager {
 	 * @return array|false Property mapping array or false on failure
 	 */
 	private function fetch_property_mapping() {
-		$url = 'http://booking.kateandtoms.com/apis/properties/reflookup?access_token=' . urlencode( $this->api_access_token );
+		$data = $this->api_get( 'https://booking.kateandtoms.com/apis/properties/reflookup' );
 
-		$response = wp_remote_get(
-			$url,
-			array(
-				'timeout' => 30,
-				'headers' => array(
-					'User-Agent' => 'Kate-Toms-Booking/1.0',
-				),
-			)
-		);
-
-		if ( is_wp_error( $response ) ) {
-			error_log( 'Failed to fetch property mapping: ' . $response->get_error_message() );
-			return false;
-		}
-
-		$response_code = wp_remote_retrieve_response_code( $response );
-		if ( $response_code !== 200 ) {
-			error_log( "Property mapping API returned status code: {$response_code}" );
-			return false;
-		}
-
-		$body = wp_remote_retrieve_body( $response );
-		$data = json_decode( $body, true );
-
-		if ( json_last_error() !== JSON_ERROR_NONE ) {
-			error_log( 'Failed to decode property mapping JSON: ' . json_last_error_msg() );
+		if ( is_wp_error( $data ) ) {
+			error_log( 'Failed to fetch property mapping: ' . $data->get_error_message() );
 			return false;
 		}
 
