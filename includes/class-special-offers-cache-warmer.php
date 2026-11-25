@@ -54,16 +54,24 @@ class Special_Offers_Cache_CLI_Command extends WP_CLI_Command {
 			WP_CLI::error( 'Kate_Toms_Special_Offer_Availability class not found.' );
 		}
 
+		// Shares the admin screen's lock and "last refreshed" (#505).
+		if ( ! Kate_Toms_Cache_Manager::begin_cli( 'special_offers' ) ) {
+			WP_CLI::warning( 'A special offers refresh started from Settings → House Caches is already running; skipping.' );
+			return;
+		}
+
 		// Don't rebuild the map while the booking API is down: keep yesterday's.
 		$api = ( new House_Calendar_Manager() )->check_api_available();
 
 		if ( is_wp_error( $api ) ) {
+			Kate_Toms_Cache_Manager::finish( 'special_offers', false, 'Booking API unavailable, existing cache left in place: ' . $api->get_error_message(), 'cli' );
 			WP_CLI::error( 'Booking API unavailable, existing offers cache left in place: ' . $api->get_error_message() );
 		}
 
 		$offers = Kate_Toms_Special_Offer_Availability::collect_offers();
 
 		if ( empty( $offers ) ) {
+			Kate_Toms_Cache_Manager::finish( 'special_offers', false, 'No dated special offers found.', 'cli' );
 			WP_CLI::warning( 'No dated special offers found — nothing to warm.' );
 			return;
 		}
@@ -77,6 +85,13 @@ class Special_Offers_Cache_CLI_Command extends WP_CLI_Command {
 		);
 
 		$progress->finish();
+
+		Kate_Toms_Cache_Manager::finish(
+			'special_offers',
+			true,
+			sprintf( '%d booked, %d bookable, %d unknown (shown).', $result['booked'], $result['bookable'], $result['unknown'] ),
+			'cli'
+		);
 
 		WP_CLI::success(
 			sprintf(
