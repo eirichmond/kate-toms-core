@@ -40,76 +40,53 @@ class Calendar_Cache_CLI_Command extends WP_CLI_Command {
 	 *     wp kt-cache warm
 	 *
 	 * @subcommand warm
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Associative arguments (unused).
 	 */
 	public function warm( $args, $assoc_args ) {
 		if ( ! class_exists( 'House_Calendar_Manager' ) ) {
 			WP_CLI::error( 'House_Calendar_Manager class not found.' );
 		}
 
-		$calendar_manager = new House_Calendar_Manager();
-		$access_token     = $this->get_access_token( $calendar_manager );
-
-		if ( empty( $access_token ) ) {
-			WP_CLI::error( 'Failed to obtain API access token.' );
+		// Shares the admin screen's lock (#505), so a click can't start a second warm alongside this one.
+		if ( ! Kate_Toms_Cache_Manager::begin_cli( 'calendar' ) ) {
+			WP_CLI::warning( 'A calendar refresh started from Settings → House Caches is already running; skipping.' );
+			return;
 		}
 
-		// Fetch the full property mapping.
-		$reflection     = new ReflectionClass( $calendar_manager );
-		$mapping_method = $reflection->getMethod( 'get_cached_property_mapping' );
-		$mapping_method->setAccessible( true );
-		$property_mapping = $mapping_method->invoke( $calendar_manager );
+		$calendar_manager = new House_Calendar_Manager();
 
-		if ( empty( $property_mapping ) || ! is_array( $property_mapping ) ) {
+		// One cheap call up front rather than ~800 failing ones if iPro is down.
+		$api = $calendar_manager->check_api_available();
+
+		if ( is_wp_error( $api ) ) {
+			Kate_Toms_Cache_Manager::finish( 'calendar', false, 'Booking API unavailable, existing cache left in place: ' . $api->get_error_message(), 'cli' );
+			WP_CLI::error( 'Booking API unavailable, existing calendars left in place: ' . $api->get_error_message() );
+		}
+
+		$wp_to_property = Kate_Toms_Cache_Manager::get_calendar_targets( $calendar_manager );
+
+		if ( false === $wp_to_property ) {
+			Kate_Toms_Cache_Manager::finish( 'calendar', false, 'Could not load the iPro property mapping; existing calendars left in place.', 'cli' );
 			WP_CLI::error( 'Failed to fetch property mapping.' );
 		}
 
-		// Build WP house ID → iPro PropertyId lookup.
-		$wp_to_property = array();
-		foreach ( $property_mapping as $property ) {
-			$wp_id   = isset( $property['PropertyReference'] ) ? (int) $property['PropertyReference'] : 0;
-			$ipro_id = isset( $property['PropertyId'] ) ? (string) $property['PropertyId'] : '';
-			if ( $wp_id && $ipro_id ) {
-				$wp_to_property[ $wp_id ] = $ipro_id;
-			}
-		}
-
 		if ( empty( $wp_to_property ) ) {
-			WP_CLI::error( 'No valid property mappings found.' );
-		}
-
-		// Only query published houses with a booking system property.
-		$houses = get_posts(
-			array(
-				'post_type'      => 'houses',
-				'posts_per_page' => -1,
-				'post_status'    => 'publish',
-				'post__in'       => array_keys( $wp_to_property ),
-				'fields'         => 'ids',
-			)
-		);
-
-		if ( empty( $houses ) ) {
+			Kate_Toms_Cache_Manager::finish( 'calendar', false, 'No published houses with an iPro property.', 'cli' );
 			WP_CLI::warning( 'No published houses found with booking properties.' );
 			return;
 		}
 
-		$total   = count( $houses );
-		$warmed  = 0;
-		$failed  = 0;
-		$skipped = 0;
+		$total  = count( $wp_to_property );
+		$warmed = 0;
+		$failed = 0;
 
 		$progress = \WP_CLI\Utils\make_progress_bar( "Warming $total houses", $total );
 
-		foreach ( $houses as $house_id ) {
-			$property_id = $wp_to_property[ $house_id ] ?? '';
-
-			if ( empty( $property_id ) ) {
-				++$skipped;
-				$progress->tick();
-				continue;
-			}
-
-			$result = $calendar_manager->get_calendar_data( $property_id, $access_token, true );
+		foreach ( $wp_to_property as $property_id ) {
+			// api_get() inside handles the token, including a refresh on 401.
+			$result = $calendar_manager->get_calendar_data( $property_id, '', true );
 
 			if ( is_array( $result ) && ! isset( $result['error'] ) ) {
 				++$warmed;
@@ -122,16 +99,23 @@ class Calendar_Cache_CLI_Command extends WP_CLI_Command {
 
 		$progress->finish();
 
-		WP_CLI::success( sprintf(
-			'Full warm complete: %d warmed, %d failed, %d skipped (of %d houses).',
-			$warmed,
-			$failed,
-			$skipped,
-			$total
-		) );
+		Kate_Toms_Cache_Manager::finish(
+			'calendar',
+			$warmed > 0,
+			sprintf( '%d of %d houses refreshed, %d failed (kept their previous data).', $warmed, $total, $failed ),
+			'cli'
+		);
 
-		wp_mail( 'elliott@squareonemd.co.uk', 'Full warm complete', 'Full warm complete: ' . $warmed . ' properties warmed, ' . $failed . ' properties failed to warm, ' . $skipped . ' properties skipped (of ' . $total . ' houses).' );
+		WP_CLI::success(
+			sprintf(
+				'Full warm complete: %d warmed, %d failed (of %d houses).',
+				$warmed,
+				$failed,
+				$total
+			)
+		);
 
+		wp_mail( 'elliott@squareonemd.co.uk', 'Full warm complete', 'Full warm complete: ' . $warmed . ' properties warmed, ' . $failed . ' properties failed to warm (of ' . $total . ' houses).' );
 	}
 
 	/**

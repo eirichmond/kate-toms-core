@@ -42,50 +42,42 @@ class Sitemap_Cache_CLI_Command extends WP_CLI_Command {
 	 *     wp kt-sitemap-cache warm
 	 *
 	 * @subcommand warm
+	 *
+	 * @param array $args       Positional arguments (unused).
+	 * @param array $assoc_args Associative arguments (unused).
 	 */
 	public function warm( $args, $assoc_args ) {
-		$warmed = 0;
-		$failed = 0;
-		$page   = 1;
+		// Shares the admin screen's lock and "last refreshed" (#505).
+		if ( ! Kate_Toms_Cache_Manager::begin_cli( 'sitemap' ) ) {
+			WP_CLI::warning( 'A sitemap refresh started from Settings → House Caches is already running; skipping.' );
+			return;
+		}
 
-		do {
-			$url = 1 === $page
-				? home_url( '/houses-sitemap.xml' )
-				: home_url( '/houses-sitemap' . $page . '.xml' );
+		$result = Kate_Toms_Cache_Manager::warm_houses_sitemap( $this->max_pages );
 
-			$response = wp_remote_get(
-				$url,
-				array(
-					'timeout' => 60,
-				)
-			);
+		if ( $result['error'] ) {
+			WP_CLI::warning( 'Failed to warm ' . $result['error'] );
+		}
 
-			$code = wp_remote_retrieve_response_code( $response );
-
-			if ( is_wp_error( $response ) || 200 !== $code ) {
-				if ( 1 === $page ) {
-					++$failed;
-					WP_CLI::warning( 'Failed to warm ' . $url . ( is_wp_error( $response ) ? ': ' . $response->get_error_message() : " (HTTP {$code})" ) );
-				}
-				break;
-			}
-
-			++$warmed;
-			++$page;
-		} while ( $page <= $this->max_pages );
+		Kate_Toms_Cache_Manager::finish(
+			'sitemap',
+			0 === $result['failed'],
+			$result['failed'] ? 'Rebuilding failed: ' . $result['error'] : sprintf( '%d sitemap page(s) rebuilt.', $result['warmed'] ),
+			'cli'
+		);
 
 		WP_CLI::success(
 			sprintf(
 				'Houses sitemap warm complete: %d page(s) warmed, %d failed.',
-				$warmed,
-				$failed
+				$result['warmed'],
+				$result['failed']
 			)
 		);
 
 		wp_mail(
 			'elliott@squareonemd.co.uk',
 			'Houses sitemap cache warm complete',
-			sprintf( 'Houses sitemap cache warm complete: %d page(s) warmed, %d failed.', $warmed, $failed )
+			sprintf( 'Houses sitemap cache warm complete: %d page(s) warmed, %d failed.', $result['warmed'], $result['failed'] )
 		);
 	}
 }

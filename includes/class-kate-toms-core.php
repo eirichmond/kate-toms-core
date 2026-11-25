@@ -189,6 +189,11 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'admin/class-kate-toms-core-admin.php';
 
 		/**
+		 * The Settings → House Caches screen.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'admin/class-kate-toms-core-cache-admin.php';
+
+		/**
 		 * The class responsible for defining all actions that occur in the public-facing
 		 * side of the site.
 		 */
@@ -220,6 +225,16 @@ class Kate_Toms_Core {
 		 * The bookable stays a house has inside a seasonal date range.
 		 */
 		require_once plugin_dir_path( __DIR__ ) . 'includes/seasonal/class-kate-toms-seasonal-stays.php';
+
+		/**
+		 * Recomputes the seasonal / availability landing page house lists.
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/seasonal/class-kate-toms-seasonal-cache-warmer.php';
+
+		/**
+		 * Background cache refreshes queued from Settings → House Caches (#505).
+		 */
+		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-cache-manager.php';
 
 		/**
 		 * The class responsible for the House Availability API functionality
@@ -287,6 +302,9 @@ class Kate_Toms_Core {
 		require_once plugin_dir_path( __DIR__ ) . 'includes/class-kate-toms-blueprint.php';
 
 		$this->loader = new Kate_Toms_Core_Loader();
+
+		// Runs cache refreshes queued from the admin.
+		Kate_Toms_Cache_Manager::register();
 
 		// Initialize the APIs
 		new Houses_Filter_API();
@@ -357,6 +375,7 @@ class Kate_Toms_Core {
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_adverts_admin_menu' );
 		$this->loader->add_action( 'admin_menu', $plugin_admin, 'add_house_settings_menu' );
 		$this->loader->add_action( 'admin_init', $plugin_admin, 'register_house_settings' );
+		$this->loader->add_action( 'admin_post_' . Kate_Toms_Core_Cache_Admin::ACTION, 'Kate_Toms_Core_Cache_Admin', 'handle_refresh' );
 		$this->loader->add_action( 'add_meta_boxes', $plugin_admin, 'add_houses_meta_box' );
 		$this->loader->add_action( 'save_post_houses', $plugin_admin, 'save_houses_meta_box' );
 		$this->loader->add_filter( 'render_block', $plugin_admin, 'add_signature_collection_badge', 10, 2 );

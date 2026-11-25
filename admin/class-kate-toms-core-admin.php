@@ -1007,6 +1007,9 @@ class Kate_Toms_Core_Admin {
 			'house-settings',
 			array( $this, 'house_settings_page' )
 		);
+
+		// Settings → House Caches: manual cache refreshes (#505).
+		Kate_Toms_Core_Cache_Admin::add_menu();
 	}
 
 	/**
@@ -1139,6 +1142,9 @@ class Kate_Toms_Core_Admin {
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+			<p>
+				<a href="<?php echo esc_url( Kate_Toms_Core_Cache_Admin::page_url() ); ?>"><?php esc_html_e( 'Refresh calendar, landing page, offers and sitemap caches »', 'kate-toms-core' ); ?></a>
+			</p>
 			<form method="post" action="options.php">
 				<?php
 				settings_fields( 'house_settings_group' );
